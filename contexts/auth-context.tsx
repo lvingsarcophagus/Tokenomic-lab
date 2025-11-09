@@ -1,0 +1,182 @@
+"use client"
+
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { onAuthStateChanged, type User } from "firebase/auth"
+import { doc, getDoc, setDoc } from "firebase/firestore"
+import { auth, db } from "@/lib/firebase"
+import { getUserProfile, createUserProfile, updateUserPlan } from "@/lib/services/firestore-service"
+import { migrateUserSchema } from "@/lib/services/migration-service"
+import type { UserDocument } from "@/lib/firestore-schema"
+
+interface UserData {
+  uid: string
+  email: string
+  name?: string
+  tier: "free" | "pro"
+  role?: "user" | "admin"
+  dailyAnalyses: number
+  watchlist: string[]
+  alerts: Array<Record<string, unknown>>
+  createdAt: string
+  nextBillingDate?: string
+  walletAddress?: string
+}
+
+interface AuthContextType {
+  user: User | null
+  userData: UserData | null
+  userProfile: UserDocument | null
+  loading: boolean
+  updateProfile: (data: Partial<UserData>) => Promise<void>
+  refreshProfile: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextType>({} as AuthContextType)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [userProfile, setUserProfile] = useState<UserDocument | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    console.log('[Auth Context] Setting up auth listener')
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('[Auth Context] Auth state changed:', { user: !!user, uid: user?.uid })
+      try {
+        setUser(user)
+
+        if (user) {
+          console.log('[Auth Context] User logged in, loading profile...')
+          
+          // First, try to migrate old schema if needed
+          let profile = await migrateUserSchema(user.uid)
+          
+          // If migration didn't return a profile, try to get it normally
+          if (!profile) {
+            profile = await getUserProfile(user.uid)
+          }
+          
+          console.log('[Auth Context] Profile loaded:', { exists: !!profile, plan: profile?.plan })
+          
+          if (profile) {
+            setUserProfile(profile)
+            // Map to old userData for backward compatibility
+            setUserData({
+              uid: user.uid,
+              email: user.email || '',
+              tier: profile.plan === 'PREMIUM' ? 'pro' : 'free',
+              dailyAnalyses: profile.usage?.tokensAnalyzed || 0,
+              watchlist: [],
+              alerts: [],
+              createdAt: profile.createdAt instanceof Date 
+                ? profile.createdAt.toISOString() 
+                : (profile.createdAt as any)?.toDate?.()?.toISOString() || new Date().toISOString(),
+            })
+          } else {
+            // Create new user profile
+            try {
+              await createUserProfile(user.uid, user.email || '', user.displayName)
+              profile = await getUserProfile(user.uid)
+              if (profile) {
+                setUserProfile(profile)
+                setUserData({
+                  uid: user.uid,
+                  email: user.email || '',
+                  tier: profile.plan === 'PREMIUM' ? 'pro' : 'free',
+                  dailyAnalyses: profile.usage?.tokensAnalyzed || 0,
+                  watchlist: [],
+                  alerts: [],
+                  createdAt: profile.createdAt instanceof Date 
+                    ? profile.createdAt.toISOString() 
+                    : (profile.createdAt as any)?.toDate?.()?.toISOString() || new Date().toISOString(),
+                })
+              }
+            } catch (createError) {
+              console.error('Failed to create user profile:', createError)
+              // Set minimal profile to allow app to function
+              const fallbackProfile: UserDocument = {
+                uid: user.uid,
+                email: user.email || '',
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+                plan: 'FREE',
+                subscription: {
+                  status: 'active',
+                  startDate: new Date(),
+                  endDate: null,
+                  autoRenew: false
+                },
+                usage: {
+                  tokensAnalyzed: 0,
+                  lastResetDate: new Date(),
+                  dailyLimit: 10
+                },
+                preferences: {
+                  notifications: true,
+                  emailAlerts: false,
+                  theme: 'system'
+                },
+                createdAt: new Date(),
+                lastLoginAt: new Date()
+              }
+              setUserProfile(fallbackProfile)
+              setUserData({
+                uid: user.uid,
+                email: user.email || '',
+                tier: 'free',
+                dailyAnalyses: 0,
+                watchlist: [],
+                alerts: [],
+                createdAt: new Date().toISOString(),
+              })
+            }
+          }
+        } else {
+          console.log('[Auth Context] No user logged in')
+          setUserData(null)
+          setUserProfile(null)
+        }
+      } catch (error) {
+        console.error('[Auth Context] Auth state change error:', error)
+      } finally {
+        console.log('[Auth Context] Setting loading = false')
+        setLoading(false)
+      }
+    })
+
+    return unsubscribe
+  }, [])
+
+  const refreshProfile = async () => {
+    if (!user) return
+    const profile = await getUserProfile(user.uid)
+    if (profile) {
+      setUserProfile(profile)
+      setUserData({
+        uid: user.uid,
+        email: user.email || '',
+        tier: profile.plan === 'PREMIUM' ? 'pro' : 'free',
+        dailyAnalyses: profile.usage?.tokensAnalyzed || 0,
+        watchlist: [],
+        alerts: [],
+        createdAt: profile.createdAt instanceof Date 
+          ? profile.createdAt.toISOString() 
+          : (profile.createdAt as any)?.toDate?.()?.toISOString() || new Date().toISOString(),
+      })
+    }
+  }
+
+  const updateProfile = async (data: Partial<UserData>) => {
+    if (!user) return
+
+    const userRef = doc(db, "users", user.uid)
+    await setDoc(userRef, data, { merge: true })
+    setUserData((prev) => ({ ...prev, ...data }) as UserData)
+    await refreshProfile()
+  }
+
+  return <AuthContext.Provider value={{ user, userData, userProfile, loading, updateProfile, refreshProfile }}>{children}</AuthContext.Provider>
+}
+
+export const useAuth = () => useContext(AuthContext)

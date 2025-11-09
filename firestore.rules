@@ -1,0 +1,79 @@
+// Firebase Security Rules for Firestore
+// Updated for new dashboard system with subcollections
+// Deploy: Firebase Console > Firestore Database > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isPremium(userId) {
+      return isAuthenticated() && 
+             isOwner(userId) && 
+             get(/databases/$(database)/documents/users/$(userId)).data.plan == 'PREMIUM';
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false; // Never delete users
+    }
+    
+    // Watchlist subcollection
+    match /watchlist/{userId}/tokens/{tokenAddress} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+    
+    // Alerts subcollection (Premium only for creation)
+    match /alerts/{userId}/notifications/{alertId} {
+      allow read: if isOwner(userId);
+      allow create: if isPremium(userId);
+      allow update: if isOwner(userId); // Can mark as read/dismissed
+      allow delete: if isOwner(userId);
+    }
+    
+    // Analysis history subcollection
+    match /analysis_history/{userId}/scans/{scanId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if false; // Immutable
+      allow delete: if isOwner(userId);
+    }
+    
+    // Portfolio collection (Premium only)
+    match /portfolio/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isPremium(userId);
+      allow delete: if isOwner(userId);
+    }
+    
+    // Settings collection
+    match /settings/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+      allow delete: if false; // Never delete settings
+    }
+    
+    // Legacy collections (backward compatibility)
+    match /tokens/{tokenId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    match /watchlists/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}
