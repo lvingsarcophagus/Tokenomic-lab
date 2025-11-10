@@ -87,6 +87,11 @@ export default function PremiumDashboard() {
   const [isInWatchlistState, setIsInWatchlistState] = useState(false)
   const [watchlistLoading, setWatchlistLoading] = useState(false)
   
+  // Token suggestions state
+  const [tokenSuggestions, setTokenSuggestions] = useState<any[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+  
   // Historical data states
   const [timeframe, setTimeframe] = useState('30D')
   const [historicalData, setHistoricalData] = useState<{
@@ -117,6 +122,19 @@ export default function PremiumDashboard() {
     holders: null
   })
   const [loadingInsights, setLoadingInsights] = useState(false)
+  
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.token-search-container')) {
+        setShowSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
   
   // Check premium access
   useEffect(() => {
@@ -228,6 +246,48 @@ export default function PremiumDashboard() {
     }
   }
   
+  const searchTokenSuggestions = async (query: string) => {
+    if (!query || query.trim().length < 2) {
+      setTokenSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    // If it's a contract address (0x...), don't show suggestions
+    if (query.startsWith('0x')) {
+      setTokenSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    setLoadingSuggestions(true)
+    try {
+      const response = await fetch(`/api/token/search?query=${encodeURIComponent(query)}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.tokens) {
+          setTokenSuggestions(data.tokens)
+          setShowSuggestions(data.tokens.length > 0)
+        }
+      }
+    } catch (error) {
+      console.error('[Suggestions] Failed to fetch:', error)
+    } finally {
+      setLoadingSuggestions(false)
+    }
+  }
+
+  const handleSelectSuggestion = (token: any) => {
+    setSearchQuery(token.address)
+    setShowSuggestions(false)
+    setTokenSuggestions([])
+    // Automatically trigger scan
+    setTimeout(() => {
+      handleScan()
+    }, 100)
+  }
+
   const handleScan = async () => {
     if (!searchQuery.trim()) return
     
@@ -241,6 +301,7 @@ export default function PremiumDashboard() {
     setSelectedToken(null)
     setScannedToken(null)
     setRiskResult(null)
+    setShowSuggestions(false)
     
     try {
       console.log('[Scanner] Starting scan for:', searchQuery)
@@ -509,7 +570,7 @@ export default function PremiumDashboard() {
   const loadHistoricalData = async (address: string, selectedTimeframe: string = timeframe) => {
     // Skip loading charts for symbols without valid contract addresses
     if (!address || address === 'N/A (Native Asset)' || address === 'N/A' || !address.startsWith('0x')) {
-      console.log('[Charts] Skipping historical data for symbol search')
+      console.log('[Charts] Skipping historical data for symbol search:', address)
       setLoadingHistory(false)
       setHistoricalData({
         risk: [],
@@ -522,17 +583,30 @@ export default function PremiumDashboard() {
       return
     }
     
+    console.log('[Charts] Loading historical data for:', address, 'timeframe:', selectedTimeframe)
     setLoadingHistory(true)
     try {
       const types = ['risk', 'price', 'holders', 'volume', 'transactions', 'whales']
       
       // Fetch all historical data in parallel
       const results = await Promise.allSettled(
-        types.map(type =>
-          fetch(`/api/token/history?address=${address}&type=${type}&timeframe=${selectedTimeframe}`)
-            .then(res => res.json())
-            .then(data => ({ type, data: data.success ? data.data : [] }))
-        )
+        types.map(type => {
+          const url = `/api/token/history?address=${address}&type=${type}&timeframe=${selectedTimeframe}`
+          console.log('[Charts] Fetching:', url)
+          return fetch(url)
+            .then(res => {
+              console.log(`[Charts] ${type} response:`, res.status)
+              return res.json()
+            })
+            .then(data => {
+              console.log(`[Charts] ${type} data:`, data.success ? `${data.data?.length || 0} points` : 'failed')
+              return { type, data: data.success ? data.data : [] }
+            })
+            .catch(err => {
+              console.error(`[Charts] ${type} error:`, err)
+              return { type, data: [] }
+            })
+        })
       )
       
       const newData: any = {
@@ -551,9 +625,18 @@ export default function PremiumDashboard() {
         }
       })
       
+      console.log('[Charts] Final historical data:', {
+        risk: newData.risk.length,
+        price: newData.price.length,
+        holders: newData.holders.length,
+        volume: newData.volume.length,
+        transactions: newData.transactions.length,
+        whales: newData.whales.length
+      })
+      
       setHistoricalData(newData)
     } catch (error) {
-      console.error('Failed to load historical data:', error)
+      console.error('[Charts] Failed to load historical data:', error)
     } finally {
       setLoadingHistory(false)
     }
@@ -798,30 +881,84 @@ export default function PremiumDashboard() {
             SCAN TOKEN
           </h2>
           
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleScan()}
-              placeholder="ENTER CONTRACT ADDRESS OR SYMBOL..."
-              className="flex-1 bg-black border border-white/30 text-white px-4 py-3 font-mono text-xs tracking-wider focus:outline-none focus:border-white placeholder:text-white/40"
-              disabled={scanning}
-            />
-            <button
-              onClick={handleScan}
-              disabled={scanning || !searchQuery.trim()}
-              className="px-6 py-3 bg-white text-black font-mono text-xs tracking-wider hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {scanning ? (
-                <>
-                  <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
-                  SCANNING...
-                </>
-              ) : (
-                'SCAN'
-              )}
-            </button>
+          <div className="relative token-search-container">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  searchTokenSuggestions(e.target.value)
+                }}
+                onKeyPress={(e) => e.key === 'Enter' && handleScan()}
+                onFocus={() => {
+                  if (tokenSuggestions.length > 0) {
+                    setShowSuggestions(true)
+                  }
+                }}
+                placeholder="ENTER CONTRACT ADDRESS OR SYMBOL..."
+                className="flex-1 bg-black border border-white/30 text-white px-4 py-3 font-mono text-xs tracking-wider focus:outline-none focus:border-white placeholder:text-white/40"
+                disabled={scanning}
+              />
+              <button
+                onClick={handleScan}
+                disabled={scanning || !searchQuery.trim()}
+                className="px-6 py-3 bg-white text-black font-mono text-xs tracking-wider hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {scanning ? (
+                  <>
+                    <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
+                    SCANNING...
+                  </>
+                ) : (
+                  'SCAN'
+                )}
+              </button>
+            </div>
+
+            {/* Token Suggestions Dropdown */}
+            {showSuggestions && tokenSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-black border border-white/30 z-50 max-h-[400px] overflow-y-auto">
+                {loadingSuggestions && (
+                  <div className="p-4 text-center">
+                    <Loader2 className="w-4 h-4 inline animate-spin text-white/60" />
+                  </div>
+                )}
+                {tokenSuggestions.map((token, index) => (
+                  <button
+                    key={`${token.address}-${token.chainId}-${index}`}
+                    onClick={() => handleSelectSuggestion(token)}
+                    className="w-full p-3 text-left hover:bg-white/10 transition-all border-b border-white/10 last:border-b-0"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-white font-mono text-sm font-bold">
+                            {token.symbol}
+                          </span>
+                          <span className="text-white/60 font-mono text-xs">
+                            {token.name}
+                          </span>
+                        </div>
+                        <div className="text-white/40 font-mono text-[10px] truncate">
+                          {token.address}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="px-2 py-1 bg-white/10 text-white font-mono text-[9px] tracking-wider whitespace-nowrap">
+                          {token.chainName || `CHAIN ${token.chainId}`}
+                        </span>
+                        {token.marketCap && (
+                          <span className="text-white/60 font-mono text-[10px]">
+                            ${(token.marketCap / 1000000).toFixed(2)}M
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           {scanError && (

@@ -269,44 +269,49 @@ export default function ScanPage() {
                   </div>
                 </div>
 
-                {/* Risk Factors */}
+                {/* Risk Flags and Insights */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {riskResult.risk_factors.map((factor, index) => (
-                    <div 
-                      key={index}
-                      className="border border-white/20 bg-black/30 p-4"
-                    >
+                  {/* Critical Flags */}
+                  {riskResult.critical_flags && riskResult.critical_flags.length > 0 && (
+                    <div className="border border-red-500/30 bg-black/30 p-4">
                       <div className="flex items-start gap-3">
-                        <AlertTriangle className={`w-5 h-5 mt-0.5 ${
-                          factor.severity === 'CRITICAL' ? 'text-red-500' :
-                          factor.severity === 'HIGH' ? 'text-orange-500' :
-                          factor.severity === 'MEDIUM' ? 'text-yellow-500' :
-                          'text-blue-500'
-                        }`} />
+                        <AlertTriangle className="w-5 h-5 mt-0.5 text-red-500" />
                         <div className="flex-1">
-                          <p className="text-white font-mono text-sm font-bold mb-1">
-                            {factor.factor}
+                          <p className="text-white font-mono text-sm font-bold mb-2">
+                            Critical Alerts
                           </p>
-                          <p className="text-white/60 font-mono text-xs">
-                            {factor.description}
-                          </p>
-                          <div className="mt-2 flex items-center gap-2">
-                            <span className={`px-2 py-1 border text-[10px] font-mono ${
-                              factor.severity === 'CRITICAL' ? 'border-red-500/50 text-red-500' :
-                              factor.severity === 'HIGH' ? 'border-orange-500/50 text-orange-500' :
-                              factor.severity === 'MEDIUM' ? 'border-yellow-500/50 text-yellow-500' :
-                              'border-blue-500/50 text-blue-500'
-                            }`}>
-                              {factor.severity}
-                            </span>
-                            <span className="text-white/40 font-mono text-[10px]">
-                              IMPACT: {factor.impact}
-                            </span>
-                          </div>
+                          <ul className="space-y-1">
+                            {riskResult.critical_flags.map((flag, index) => (
+                              <li key={index} className="text-white/60 font-mono text-xs">
+                                • {flag}
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Detailed Insights */}
+                  {riskResult.detailed_insights && riskResult.detailed_insights.length > 0 && (
+                    <div className="border border-white/20 bg-black/30 p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 mt-0.5 text-blue-500" />
+                        <div className="flex-1">
+                          <p className="text-white font-mono text-sm font-bold mb-2">
+                            Risk Insights
+                          </p>
+                          <ul className="space-y-1">
+                            {riskResult.detailed_insights.map((insight, index) => (
+                              <li key={index} className="text-white/60 font-mono text-xs">
+                                • {insight}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -314,50 +319,50 @@ export default function ScanPage() {
             {/* Market Data */}
             {tokenData.priceData && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {tokenData.priceData.market_cap && (
+                {tokenData.priceData.marketCap && (
                   <div className="border border-white/20 bg-black/30 p-6">
                     <div className="flex items-center gap-2 mb-2">
                       <DollarSign className="w-4 h-4 text-white/60" />
                       <p className="text-white/60 font-mono text-xs">MARKET CAP</p>
                     </div>
                     <p className="text-2xl font-bold text-white font-mono">
-                      ${(tokenData.priceData.market_cap / 1000000).toFixed(2)}M
+                      ${(tokenData.priceData.marketCap / 1000000).toFixed(2)}M
                     </p>
                   </div>
                 )}
 
-                {tokenData.priceData.total_volume && (
+                {tokenData.priceData.volume24h && (
                   <div className="border border-white/20 bg-black/30 p-6">
                     <div className="flex items-center gap-2 mb-2">
                       <Activity className="w-4 h-4 text-white/60" />
                       <p className="text-white/60 font-mono text-xs">24H VOLUME</p>
                     </div>
                     <p className="text-2xl font-bold text-white font-mono">
-                      ${(tokenData.priceData.total_volume / 1000000).toFixed(2)}M
+                      ${(tokenData.priceData.volume24h / 1000000).toFixed(2)}M
                     </p>
                   </div>
                 )}
 
-                {tokenData.priceData.high_24h && (
+                {tokenData.priceData.priceChange24h !== undefined && (
                   <div className="border border-white/20 bg-black/30 p-6">
                     <div className="flex items-center gap-2 mb-2">
                       <TrendingUp className="w-4 h-4 text-white/60" />
-                      <p className="text-white/60 font-mono text-xs">24H HIGH</p>
+                      <p className="text-white/60 font-mono text-xs">24H CHANGE</p>
                     </div>
-                    <p className="text-2xl font-bold text-white font-mono">
-                      ${tokenData.priceData.high_24h.toLocaleString()}
+                    <p className={`text-2xl font-bold font-mono ${tokenData.priceData.priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {tokenData.priceData.priceChange24h >= 0 ? '+' : ''}{tokenData.priceData.priceChange24h.toFixed(2)}%
                     </p>
                   </div>
                 )}
 
-                {tokenData.priceData.low_24h && (
+                {tokenData.priceData.liquidity && (
                   <div className="border border-white/20 bg-black/30 p-6">
                     <div className="flex items-center gap-2 mb-2">
                       <TrendingDown className="w-4 h-4 text-white/60" />
-                      <p className="text-white/60 font-mono text-xs">24H LOW</p>
+                      <p className="text-white/60 font-mono text-xs">LIQUIDITY</p>
                     </div>
                     <p className="text-2xl font-bold text-white font-mono">
-                      ${tokenData.priceData.low_24h.toLocaleString()}
+                      ${(tokenData.priceData.liquidity / 1000000).toFixed(2)}M
                     </p>
                   </div>
                 )}

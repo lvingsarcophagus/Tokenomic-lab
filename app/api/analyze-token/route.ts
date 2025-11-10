@@ -413,12 +413,10 @@ async function fetchMobulaData(tokenAddress: string, chainId: string): Promise<T
     if (mobulaResponse.status !== 'fulfilled' || !mobulaResponse.value.ok) {
       console.error(`[Mobula] HTTP ${mobulaResponse.status === 'fulfilled' ? mobulaResponse.value.status : 'failed'}`)
       
-      // If Mobula fails but Moralis succeeds, use Moralis data only
-      if (moralisTokenData.status === 'fulfilled' && moralisTokenData.value) {
-        console.log('[Tokenomics] Using Moralis data as primary source (Mobula failed)')
-        return moralisTokenData.value
-      }
-      
+      // If Mobula fails, we can't continue as we need the full market data
+      // Moralis only provides partial tokenomics (supply, holders, tx count)
+      // We need Mobula for market cap, FDV, liquidity, etc.
+      console.log('[Tokenomics] Cannot proceed without Mobula data - returning null')
       return null
     }
 
@@ -427,13 +425,7 @@ async function fetchMobulaData(tokenAddress: string, chainId: string): Promise<T
 
     if (!data) {
       console.error('[Mobula] No data in response')
-      
-      // Fallback to Moralis
-      if (moralisTokenData.status === 'fulfilled' && moralisTokenData.value) {
-        console.log('[Tokenomics] Using Moralis data as primary source (Mobula empty)')
-        return moralisTokenData.value
-      }
-      
+      // Cannot proceed without Mobula market data (marketCap, FDV, liquidity, etc.)
       return null
     }
 

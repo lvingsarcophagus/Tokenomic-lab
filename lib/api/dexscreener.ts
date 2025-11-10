@@ -150,23 +150,40 @@ export function aggregateDexData(pairs: DexPair[]): AggregatedDexData {
     }
   }
 
-  // Sort by liquidity (highest first)
-  const sortedPairs = [...pairs].sort((a, b) => b.liquidity.usd - a.liquidity.usd)
+  // Filter out pairs without liquidity data and sort by liquidity (highest first)
+  const validPairs = pairs.filter(pair => pair.liquidity?.usd && pair.liquidity.usd > 0)
+  
+  if (validPairs.length === 0) {
+    // No pairs with liquidity data - return basic info from first pair
+    const firstPair = pairs[0]
+    return {
+      totalLiquidity: 0,
+      totalVolume24h: firstPair?.volume?.h24 || 0,
+      avgPrice: parseFloat(firstPair?.priceUsd || '0'),
+      priceChange24h: firstPair?.priceChange?.h24 || 0,
+      bestDex: firstPair?.dexId || 'Unknown',
+      topPairs: pairs.slice(0, 5),
+    }
+  }
+  
+  const sortedPairs = [...validPairs].sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))
 
   // Calculate totals
-  const totalLiquidity = sortedPairs.reduce((sum, pair) => sum + pair.liquidity.usd, 0)
-  const totalVolume24h = sortedPairs.reduce((sum, pair) => sum + pair.volume.h24, 0)
+  const totalLiquidity = sortedPairs.reduce((sum, pair) => sum + (pair.liquidity?.usd || 0), 0)
+  const totalVolume24h = sortedPairs.reduce((sum, pair) => sum + (pair.volume?.h24 || 0), 0)
 
   // Calculate weighted average price (by liquidity)
   const avgPrice = sortedPairs.reduce((sum, pair) => {
-    const weight = pair.liquidity.usd / totalLiquidity
+    const liquidityUsd = pair.liquidity?.usd || 0
+    const weight = liquidityUsd / totalLiquidity
     return sum + parseFloat(pair.priceUsd || '0') * weight
   }, 0)
 
   // Calculate weighted average price change
   const priceChange24h = sortedPairs.reduce((sum, pair) => {
-    const weight = pair.liquidity.usd / totalLiquidity
-    return sum + pair.priceChange.h24 * weight
+    const liquidityUsd = pair.liquidity?.usd || 0
+    const weight = liquidityUsd / totalLiquidity
+    return sum + (pair.priceChange?.h24 || 0) * weight
   }, 0)
 
   // Best DEX = highest liquidity
@@ -240,13 +257,24 @@ export async function getMultiTimeframePriceChanges(
     if (!pairs || pairs.length === 0) return null
 
     // Use highest liquidity pair for price changes
-    const mainPair = pairs.sort((a, b) => b.liquidity.usd - a.liquidity.usd)[0]
+    const validPairs = pairs.filter(p => p.liquidity?.usd && p.liquidity.usd > 0)
+    if (validPairs.length === 0) {
+      const firstPair = pairs[0]
+      return {
+        m5: firstPair?.priceChange?.m5 || 0,
+        h1: firstPair?.priceChange?.h1 || 0,
+        h6: firstPair?.priceChange?.h6 || 0,
+        h24: firstPair?.priceChange?.h24 || 0,
+      }
+    }
+    
+    const mainPair = validPairs.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0]
     
     return {
-      m5: mainPair.priceChange.m5,
-      h1: mainPair.priceChange.h1,
-      h6: mainPair.priceChange.h6,
-      h24: mainPair.priceChange.h24,
+      m5: mainPair?.priceChange?.m5 || 0,
+      h1: mainPair?.priceChange?.h1 || 0,
+      h6: mainPair?.priceChange?.h6 || 0,
+      h24: mainPair?.priceChange?.h24 || 0,
     }
   } catch (error) {
     console.error('[DexScreener] Error getting price changes:', error)
@@ -274,20 +302,20 @@ export async function getTransactionCounts(
     const totals = pairs.reduce(
       (acc, pair) => ({
         m5: {
-          buys: acc.m5.buys + pair.txns.m5.buys,
-          sells: acc.m5.sells + pair.txns.m5.sells,
+          buys: acc.m5.buys + (pair.txns?.m5?.buys || 0),
+          sells: acc.m5.sells + (pair.txns?.m5?.sells || 0),
         },
         h1: {
-          buys: acc.h1.buys + pair.txns.h1.buys,
-          sells: acc.h1.sells + pair.txns.h1.sells,
+          buys: acc.h1.buys + (pair.txns?.h1?.buys || 0),
+          sells: acc.h1.sells + (pair.txns?.h1?.sells || 0),
         },
         h6: {
-          buys: acc.h6.buys + pair.txns.h6.buys,
-          sells: acc.h6.sells + pair.txns.h6.sells,
+          buys: acc.h6.buys + (pair.txns?.h6?.buys || 0),
+          sells: acc.h6.sells + (pair.txns?.h6?.sells || 0),
         },
         h24: {
-          buys: acc.h24.buys + pair.txns.h24.buys,
-          sells: acc.h24.sells + pair.txns.h24.sells,
+          buys: acc.h24.buys + (pair.txns?.h24?.buys || 0),
+          sells: acc.h24.sells + (pair.txns?.h24?.sells || 0),
         },
       }),
       {

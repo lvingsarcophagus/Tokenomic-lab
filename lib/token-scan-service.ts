@@ -183,13 +183,15 @@ export class TokenScanService {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch price data')
+        const errorText = await response.text()
+        console.warn(`[TokenScan] Price API returned ${response.status}:`, errorText)
+        return null // Gracefully return null instead of throwing
       }
 
       const data = await response.json()
       return data.data
     } catch (error) {
-      console.error('Price data fetch error:', error)
+      console.warn('[TokenScan] Price data unavailable:', error instanceof Error ? error.message : 'Unknown error')
       return null
     }
   }
