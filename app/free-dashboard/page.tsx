@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
+import { MorphingSquare } from '@/components/ui/morphing-square'
 import { 
   Shield, 
   Zap,
@@ -598,10 +599,10 @@ export default function FreeDashboard() {
   if (loading || loadingData) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="text-center">
-          <div className="w-16 h-16 border-2 border-white border-t-transparent animate-spin mx-auto mb-4"></div>
-          <p className="text-white/60 font-mono text-xs tracking-wider">LOADING DASHBOARD...</p>
-        </div>
+        <MorphingSquare 
+          message="LOADING DASHBOARD..."
+          messagePlacement="bottom"
+        />
       </div>
     )
   }
@@ -616,10 +617,14 @@ export default function FreeDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group">
-              <Shield className="w-6 h-6 text-white" />
-              <span className="text-white font-mono font-bold tracking-wider text-lg hidden sm:block">
-                TOKENGUARD
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+              <img 
+                src="/Logo.png" 
+                alt="Tokenomics Lab" 
+                className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain transition-all duration-300 group-hover:scale-110 group-hover:brightness-110 group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
+              />
+              <span className="text-white font-mono font-bold tracking-wider text-base sm:text-lg hidden sm:block group-hover:text-white/90 transition-colors">
+                TOKENOMICS LAB
               </span>
             </Link>
 
@@ -901,7 +906,7 @@ export default function FreeDashboard() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h2 className="text-2xl lg:text-3xl font-bold text-white font-mono tracking-wider">
-                      TOKEN GUARD
+                      TOKENOMICS LAB
                     </h2>
                     {userProfile?.plan === 'PREMIUM' && (
                       <div className="px-3 py-1 bg-white/10 border border-white/30">

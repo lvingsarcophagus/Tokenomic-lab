@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { auth } from '@/lib/firebase'
+import Navbar from '@/components/navbar'
+import { MorphingSquare } from '@/components/ui/morphing-square'
 import { 
   Shield, TrendingUp, TrendingDown, Activity, Users, Droplet,
   Zap, Crown, AlertCircle, CheckCircle, Sparkles, BarChart3,
@@ -69,12 +71,10 @@ export default function PremiumDashboard() {
   const { user, userProfile, loading: authLoading } = useAuth()
   
   // State management
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [watchlist, setWatchlist] = useState<WatchlistToken[]>([])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [portfolioStats, setPortfolioStats] = useState<PortfolioStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
   
   // Scan states
   const [searchQuery, setSearchQuery] = useState('')
@@ -122,6 +122,10 @@ export default function PremiumDashboard() {
     holders: null
   })
   const [loadingInsights, setLoadingInsights] = useState(false)
+  
+  // Wallet analysis state
+  const [walletData, setWalletData] = useState<any>(null)
+  const [loadingWallet, setLoadingWallet] = useState(false)
   
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -231,20 +235,7 @@ export default function PremiumDashboard() {
     }
   }
   
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    await loadDashboardData()
-    setRefreshing(false)
-  }
-  
-  const handleLogout = async () => {
-    try {
-      await auth.signOut()
-      router.push('/')
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
-  }
+
   
   const searchTokenSuggestions = async (query: string) => {
     if (!query || query.trim().length < 2) {
@@ -707,98 +698,18 @@ export default function PremiumDashboard() {
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="text-center">
-          <div className="w-16 h-16 border-2 border-white border-t-transparent animate-spin mx-auto mb-4"></div>
-          <p className="text-white/60 font-mono text-xs tracking-wider">LOADING PREMIUM DASHBOARD...</p>
-        </div>
+        <MorphingSquare 
+          message="LOADING PREMIUM DASHBOARD..."
+          messagePlacement="bottom"
+        />
       </div>
     )
   }
   
   return (
     <div className="min-h-screen bg-black">
-      {/* Navbar */}
-      <nav className="border-b border-white/20 bg-black/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <Shield className="w-6 h-6 text-white" />
-              <span className="text-white font-mono font-bold tracking-wider text-lg hidden sm:block">
-                TOKENGUARD
-              </span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-6">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="px-4 py-2 bg-transparent border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white hover:text-black transition-all duration-200 disabled:opacity-50"
-              >
-                <RefreshCw className={`w-4 h-4 inline mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                REFRESH
-              </button>
-              
-              <button className="relative px-4 py-2 bg-transparent border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white hover:text-black transition-all duration-200">
-                <Bell className="w-4 h-4 inline" />
-                {alerts.filter(a => !a.read).length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-black rounded-full text-xs flex items-center justify-center font-bold">
-                    {alerts.filter(a => !a.read).length}
-                  </span>
-                )}
-              </button>
-              
-              <Link 
-                href="/profile"
-                className="px-4 py-2 bg-transparent border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white hover:text-black transition-all duration-200"
-              >
-                <User className="w-4 h-4 inline mr-2" />
-                PROFILE
-              </Link>
-
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-transparent border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white hover:text-black transition-all duration-200"
-              >
-                <LogOut className="w-4 h-4 inline mr-2" />
-                LOGOUT
-              </button>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-white"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="md:hidden border-t border-white/20 py-4 space-y-2">
-              <button
-                onClick={handleRefresh}
-                className="w-full px-4 py-2 bg-transparent border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white hover:text-black transition-all duration-200"
-              >
-                REFRESH
-              </button>
-              <Link 
-                href="/profile"
-                className="w-full block px-4 py-2 bg-transparent border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white hover:text-black transition-all duration-200"
-              >
-                PROFILE
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full px-4 py-2 bg-transparent border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white hover:text-black transition-all duration-200"
-              >
-                LOGOUT
-              </button>
-            </div>
-          )}
-        </div>
-      </nav>
+      {/* Global Navbar */}
+      <Navbar />
 
       {/* Background */}
       <div className="fixed inset-0 stars-bg pointer-events-none opacity-30"></div>
@@ -825,30 +736,6 @@ export default function PremiumDashboard() {
                 <p className="text-white/60 font-mono text-xs">
                   {user?.email?.toUpperCase()}
                 </p>
-                {userProfile?.walletAddress && (
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <p className="text-green-500/80 font-mono text-xs flex items-center gap-2">
-                      <span className="text-white/40">WALLET:</span>
-                      {userProfile.walletAddress.slice(0, 6)}...{userProfile.walletAddress.slice(-4)}
-                    </p>
-                    <Link 
-                      href="/profile"
-                      className="text-white/40 hover:text-white transition-colors text-[10px] font-mono"
-                    >
-                      [MANAGE]
-                    </Link>
-                  </div>
-                )}
-                {!userProfile?.walletAddress && (
-                  <Link 
-                    href="/profile"
-                    className="inline-flex items-center gap-2 text-white/40 hover:text-white transition-colors font-mono text-xs group"
-                  >
-                    <AlertCircle className="w-3 h-3 group-hover:scale-110 transition-transform" />
-                    <span>NO WALLET CONNECTED - CLICK TO CONNECT</span>
-                  </Link>
-                )}
               </div>
             </div>
           </div>
@@ -863,79 +750,7 @@ export default function PremiumDashboard() {
           <StatCard icon={<Sparkles />} label="BEHAVIORAL INSIGHTS" value={portfolioStats?.behavioralInsights || 0} />
         </div>
 
-        {/* Connected Wallet Info Card */}
-        {userProfile?.walletAddress && (
-          <div className="border-2 border-green-500/30 bg-green-500/5 p-6 mb-8">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <h2 className="text-green-500 font-mono text-xs tracking-wider flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    CONNECTED WALLET
-                  </h2>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <span className="text-white/40 font-mono text-xs">ADDRESS:</span>
-                    <code className="text-white font-mono text-sm bg-black/40 px-3 py-1 border border-white/20">
-                      {userProfile.walletAddress}
-                    </code>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(userProfile.walletAddress || '')
-                        alert('Wallet address copied to clipboard!')
-                      }}
-                      className="text-white/40 hover:text-white transition-colors text-xs font-mono"
-                    >
-                      [COPY]
-                    </button>
-                  </div>
-                  <p className="text-white/40 font-mono text-[10px]">
-                    View your portfolio and receive personalized alerts for tokens in your wallet.
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/profile"
-                className="border-2 border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 px-4 py-2 text-white font-mono text-xs transition-all"
-              >
-                MANAGE WALLET
-              </Link>
-            </div>
-          </div>
-        )}
 
-        {/* No Wallet Connected Banner */}
-        {!userProfile?.walletAddress && (
-          <div className="border-2 border-yellow-500/30 bg-yellow-500/5 p-6 mb-8">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle className="w-4 h-4 text-yellow-500" />
-                  <h2 className="text-yellow-500 font-mono text-xs tracking-wider">
-                    NO WALLET CONNECTED
-                  </h2>
-                </div>
-                <p className="text-white/60 font-mono text-xs mb-3">
-                  Connect your wallet to track your portfolio, receive personalized token alerts, and access advanced features.
-                </p>
-                <ul className="space-y-1 text-white/40 font-mono text-[10px]">
-                  <li>• Track tokens in your wallet automatically</li>
-                  <li>• Get real-time alerts for your holdings</li>
-                  <li>• View portfolio analytics and insights</li>
-                  <li>• Monitor wallet activity and transactions</li>
-                </ul>
-              </div>
-              <Link
-                href="/profile"
-                className="border-2 border-yellow-500/30 hover:border-yellow-500/50 bg-yellow-500/10 hover:bg-yellow-500/20 px-4 py-2 text-yellow-500 hover:text-yellow-400 font-mono text-xs transition-all whitespace-nowrap"
-              >
-                CONNECT WALLET
-              </Link>
-            </div>
-          </div>
-        )}
 
         {/* Alerts Section - NEW ADDITION AT TOP */}
         {alerts.length > 0 && (
@@ -971,6 +786,117 @@ export default function PremiumDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Wallet Analysis Section */}
+        {user && (
+          <div className="border border-white/20 bg-black/60 p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-white font-mono text-xs tracking-wider flex items-center gap-2">
+                <User className="w-4 h-4" />
+                CONNECTED WALLET ANALYSIS
+              </h2>
+              <button
+                onClick={async () => {
+                  if (!user) return
+                  setLoadingWallet(true)
+                  try {
+                    // Fetch wallet holdings from Moralis or similar API
+                    const response = await fetch(`/api/wallet/analyze`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                        walletAddress: user.email // In production, use actual connected wallet
+                      })
+                    })
+                    const data = await response.json()
+                    setWalletData(data)
+                  } catch (error) {
+                    console.error('Failed to load wallet data:', error)
+                  } finally {
+                    setLoadingWallet(false)
+                  }
+                }}
+                disabled={loadingWallet}
+                className="px-4 py-2 bg-transparent border border-white/30 text-white font-mono text-[10px] hover:bg-white hover:text-black transition-all disabled:opacity-50"
+              >
+                {loadingWallet ? (
+                  <>
+                    <Loader2 className="w-3 h-3 inline animate-spin mr-1" />
+                    ANALYZING...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3 h-3 inline mr-1" />
+                    REFRESH WALLET
+                  </>
+                )}
+              </button>
+            </div>
+
+            {walletData ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="border border-white/10 p-4">
+                    <p className="text-white/60 font-mono text-[10px] mb-2">TOTAL HOLDINGS</p>
+                    <p className="text-white font-mono text-2xl">${walletData.totalValue?.toFixed(2) || '0.00'}</p>
+                  </div>
+                  <div className="border border-white/10 p-4">
+                    <p className="text-white/60 font-mono text-[10px] mb-2">TOKENS</p>
+                    <p className="text-white font-mono text-2xl">{walletData.tokenCount || 0}</p>
+                  </div>
+                  <div className="border border-white/10 p-4">
+                    <p className="text-white/60 font-mono text-[10px] mb-2">AVG RISK SCORE</p>
+                    <p className={`font-mono text-2xl ${
+                      (walletData.avgRiskScore || 0) < 30 ? 'text-green-500' :
+                      (walletData.avgRiskScore || 0) < 60 ? 'text-yellow-500' :
+                      'text-red-500'
+                    }`}>
+                      {walletData.avgRiskScore || 0}/100
+                    </p>
+                  </div>
+                </div>
+
+                {/* Wallet Tokens List */}
+                {walletData.tokens && walletData.tokens.length > 0 && (
+                  <div className="border border-white/10 p-4">
+                    <h3 className="text-white font-mono text-[10px] mb-3">YOUR TOKENS</h3>
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                      {walletData.tokens.map((token: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 transition-all">
+                          <div className="flex-1">
+                            <p className="text-white font-mono text-sm">{token.symbol}</p>
+                            <p className="text-white/60 font-mono text-[10px]">{token.name}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-white font-mono text-sm">{token.balance}</p>
+                            <p className="text-white/60 font-mono text-[10px]">${token.value?.toFixed(2) || '0.00'}</p>
+                          </div>
+                          <div className={`ml-4 px-2 py-1 border font-mono text-[10px] ${
+                            token.riskScore < 30 ? 'border-green-500/30 bg-green-500/10 text-green-500' :
+                            token.riskScore < 60 ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-500' :
+                            'border-red-500/30 bg-red-500/10 text-red-500'
+                          }`}>
+                            RISK: {token.riskScore || 0}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="border border-white/10 p-8 text-center">
+                <User className="w-8 h-8 text-white/40 mx-auto mb-3" />
+                <p className="text-white/60 font-mono text-xs mb-4">
+                  Connect your wallet to analyze your token holdings and get personalized risk insights
+                </p>
+                <p className="text-white/40 font-mono text-[10px]">
+                  Currently using: {user.email}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -1299,11 +1225,12 @@ export default function PremiumDashboard() {
           )}
         </div>
 
-        {/* Historical Analytics - Enhanced Section */}
+        {/* Historical Analytics - Enhanced Section - Only show when token is selected */}
+        {selectedToken && (
         <div className="border border-white/20 bg-black/60 p-6 mb-8">
           <h2 className="text-white font-mono text-xs tracking-wider mb-6 flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
-            HISTORICAL ANALYTICS
+            HISTORICAL ANALYTICS - {selectedToken.symbol}
           </h2>
 
           {/* Timeframe Selector */}
@@ -1531,8 +1458,10 @@ export default function PremiumDashboard() {
             </div>
           </div>
         </div>
+        )}
 
-        {/* Advanced Insights Section */}
+        {/* Advanced Insights Section - Only show when token is selected */}
+        {selectedToken && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Market Sentiment */}
           <div className="border border-white/20 bg-black/60 p-6">
@@ -1723,6 +1652,7 @@ export default function PremiumDashboard() {
             )}
           </div>
         </div>
+        )}
 
         {/* Recent Activity Feed */}
         <div className="border border-white/20 bg-black/60 p-6">

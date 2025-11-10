@@ -2,9 +2,10 @@
 
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
-import { Shield, Zap, Bell, TrendingUp, Lock, BarChart3, Search, Eye, Activity, Database, Globe, CheckCircle, ArrowRight, Flame, Target, Users, AlertTriangle } from "lucide-react"
+import { Shield, Zap, Bell, TrendingUp, Lock, BarChart3, Search, Eye, Activity, Database, Globe, CheckCircle, ArrowRight, Flame, Target, Users, AlertTriangle, Menu, X } from "lucide-react"
 import dynamic from "next/dynamic"
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
+import { Button } from "@/components/ui/button"
 
 // Dynamically import the 3D scene to avoid SSR issues
 const GenerativeArtScene = dynamic(
@@ -13,8 +14,87 @@ const GenerativeArtScene = dynamic(
 )
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
+      {/* Landing Page Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.05] via-transparent to-transparent pointer-events-none"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center justify-between h-12 sm:h-14">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+              <img 
+                src="/Logo.png" 
+                alt="Tokenomics Lab" 
+                className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain transition-all duration-300 group-hover:scale-110 group-hover:brightness-110 group-hover:drop-shadow-[0_0_12px_rgba(255,255,255,0.6)] group-hover:rotate-[5deg]" 
+              />
+              <div className="hidden sm:block">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-white font-mono tracking-widest group-hover:text-white/90 transition-colors drop-shadow-lg">
+                  TOKENOMICS LAB
+                </span>
+                <div className="text-[7px] sm:text-[8px] text-white/60 font-mono -mt-0.5 tracking-wider group-hover:text-white/80 transition-colors">ANALYTICS.PLATFORM</div>
+              </div>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-2">
+              <Link href="/pricing">
+                <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-white/10 border border-white/20 text-xs font-mono px-3 py-1.5 h-8">
+                  PRICING
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-white/10 border border-white/20 text-xs font-mono px-3 py-1.5 h-8">
+                  LOGIN
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button className="bg-transparent border border-white text-white hover:bg-white hover:text-black text-xs font-mono px-3 py-1.5 h-8 transition-all">
+                  SIGN UP
+                </Button>
+              </Link>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-md transition-all duration-300 group hover:shadow-lg hover:shadow-white/5 h-9 w-9 flex items-center justify-center"
+            >
+              {mobileMenuOpen ? 
+                <X className="w-4 h-4 text-white group-hover:rotate-90 transition-transform duration-300" /> : 
+                <Menu className="w-4 h-4 text-white group-hover:scale-110 transition-transform duration-300" />
+              }
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-white/20 bg-black/40 backdrop-blur-xl animate-in slide-in-from-top-2">
+            <div className="px-3 py-4 space-y-2">
+              <Link href="/pricing" onClick={() => setMobileMenuOpen(false)}>
+                <button className="w-full text-left px-3 py-2.5 border-2 border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 font-mono text-[10px]">
+                  PRICING
+                </button>
+              </Link>
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                <button className="w-full text-left px-3 py-2.5 border-2 border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 font-mono text-[10px]">
+                  LOGIN
+                </button>
+              </Link>
+              <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                <button className="w-full text-left px-3 py-2.5 border-2 border-white/40 bg-white/5 hover:bg-white/15 backdrop-blur-md text-white transition-all duration-300 font-mono text-[10px] font-bold">
+                  SIGN UP
+                </button>
+              </Link>
+            </div>
+          </div>
+        )}
+      </nav>
+
       {/* Enhanced Background Effects */}
       <div className="fixed inset-0 stars-bg pointer-events-none opacity-30"></div>
       <div className="fixed inset-0 grid-pattern pointer-events-none opacity-20"></div>
@@ -40,16 +120,16 @@ export default function LandingPage() {
             <div className="w-8 lg:w-12 h-px bg-white"></div>
             <span className="text-white text-[10px] font-mono tracking-wider">∞</span>
             <div className="flex-1 h-px bg-white"></div>
-            <span className="text-white text-[10px] font-mono tracking-wider">TOKENGUARD.SECURITY</span>
+            <span className="text-white text-[10px] font-mono tracking-wider">TOKENOMICS.LAB</span>
           </div>
 
           {/* Main Title - Enhanced */}
           <div className="relative mb-8">
             <div className="hidden lg:block absolute -right-3 top-0 bottom-0 w-1 dither-pattern opacity-40"></div>
             <h1 className="text-4xl lg:text-6xl xl:text-8xl font-bold text-white mb-6 leading-tight font-mono tracking-wider">
-              ADVANCED TOKEN
+              PROFESSIONAL
               <br />
-              <span className="text-white/80">SECURITY</span> PROTOCOL
+              <span className="text-white/80">TOKENOMICS</span> ANALYSIS
             </h1>
             <div className="flex items-center gap-3 mb-4">
               <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
@@ -74,12 +154,12 @@ export default function LandingPage() {
           {/* Description - Enhanced */}
           <div className="relative max-w-3xl mb-10">
             <p className="text-base lg:text-lg text-white/90 mb-6 leading-relaxed font-mono">
-              MILITARY-GRADE TOKEN ANALYSIS SYSTEM. DETECT SCAMS BEFORE THEY STRIKE. 
-              REAL-TIME THREAT DETECTION ACROSS 7+ BLOCKCHAINS.
+              COMPREHENSIVE TOKENOMICS ANALYSIS PLATFORM. REAL-TIME RISK ASSESSMENT & SECURITY AUDITS. 
+              PROFESSIONAL-GRADE ANALYTICS ACROSS 7+ BLOCKCHAINS.
             </p>
             <p className="text-sm lg:text-base text-white/70 mb-8 leading-relaxed font-mono">
               Powered by 5+ premium APIs including GoPlus, DexScreener, and Moralis. 
-              Advanced 7-factor risk algorithm with confidence scoring. Zero tolerance for honeypots and rug pulls.
+              Advanced 7-factor risk scoring with behavioral analysis. Expert insights for informed trading decisions.
             </p>
             
             <div className="hidden lg:block absolute -left-4 top-1/2 w-3 h-3 border border-white opacity-30" style={{ transform: 'translateY(-50%)' }}>
@@ -617,10 +697,10 @@ export default function LandingPage() {
       <section className="relative px-6 py-32 border-t border-white/10">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl lg:text-5xl font-bold text-white font-mono tracking-wider mb-6">
-            PROTECT YOUR INVESTMENTS TODAY
+            ELEVATE YOUR TOKEN RESEARCH
           </h2>
           <p className="text-white/70 text-base lg:text-lg font-mono mb-12 max-w-2xl mx-auto leading-relaxed">
-            Join thousands of traders using TokenGuard to detect scams, analyze risks, and make informed decisions in the crypto market.
+            Join thousands of traders using Tokenomics Lab for comprehensive token analysis, risk assessment, and data-driven investment decisions.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">

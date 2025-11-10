@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
-import { Loader2 } from 'lucide-react'
+import { MorphingSquare } from '@/components/ui/morphing-square'
 
 /**
  * Premium page redirect
@@ -25,11 +25,11 @@ export default function PremiumPage() {
   }, [user, userProfile, loading, router])
   
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-center">
-        <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
-        <p className="text-gray-400">Redirecting to premium dashboard...</p>
-      </div>
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <MorphingSquare 
+        message="Redirecting to premium dashboard..."
+        messagePlacement="bottom"
+      />
     </div>
   )
 }

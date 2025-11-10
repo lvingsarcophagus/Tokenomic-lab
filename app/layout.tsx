@@ -9,8 +9,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
 export const metadata: Metadata = {
-  title: "TokenGuard - Advanced Token Security Protocol",
-  description: "Military-grade token analysis and risk assessment system",
+  title: "Tokenomics Lab - Advanced Token Analytics & Risk Analysis",
+  description: "Professional tokenomics analysis with real-time risk assessment, security audits, and market intelligence",
   generator: "v0.app",
 }
 

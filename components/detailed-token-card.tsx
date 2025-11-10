@@ -84,7 +84,7 @@ export default function DetailedTokenCard({ token, isPremium = false }: Detailed
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <h2 className="text-2xl lg:text-3xl font-bold text-white font-mono tracking-wider">
-              TOKEN GUARD
+              TOKENOMICS LAB
             </h2>
             {isPremium && (
               <div className="px-3 py-1 bg-white/10 border border-white/30">
