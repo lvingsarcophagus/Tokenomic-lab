@@ -821,9 +821,35 @@ export default function PremiumDashboard() {
               <h1 className="text-2xl lg:text-4xl font-bold text-white font-mono tracking-wider mb-2">
                 PREMIUM DASHBOARD
               </h1>
-              <p className="text-white/60 font-mono text-xs">
-                {user?.email?.toUpperCase()}
-              </p>
+              <div className="space-y-1">
+                <p className="text-white/60 font-mono text-xs">
+                  {user?.email?.toUpperCase()}
+                </p>
+                {userProfile?.walletAddress && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <p className="text-green-500/80 font-mono text-xs flex items-center gap-2">
+                      <span className="text-white/40">WALLET:</span>
+                      {userProfile.walletAddress.slice(0, 6)}...{userProfile.walletAddress.slice(-4)}
+                    </p>
+                    <Link 
+                      href="/profile"
+                      className="text-white/40 hover:text-white transition-colors text-[10px] font-mono"
+                    >
+                      [MANAGE]
+                    </Link>
+                  </div>
+                )}
+                {!userProfile?.walletAddress && (
+                  <Link 
+                    href="/profile"
+                    className="inline-flex items-center gap-2 text-white/40 hover:text-white transition-colors font-mono text-xs group"
+                  >
+                    <AlertCircle className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                    <span>NO WALLET CONNECTED - CLICK TO CONNECT</span>
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -836,6 +862,80 @@ export default function PremiumDashboard() {
           <StatCard icon={<Activity />} label="TOTAL SCANS" value={portfolioStats?.totalScans || 0} />
           <StatCard icon={<Sparkles />} label="BEHAVIORAL INSIGHTS" value={portfolioStats?.behavioralInsights || 0} />
         </div>
+
+        {/* Connected Wallet Info Card */}
+        {userProfile?.walletAddress && (
+          <div className="border-2 border-green-500/30 bg-green-500/5 p-6 mb-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <h2 className="text-green-500 font-mono text-xs tracking-wider flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    CONNECTED WALLET
+                  </h2>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-white/40 font-mono text-xs">ADDRESS:</span>
+                    <code className="text-white font-mono text-sm bg-black/40 px-3 py-1 border border-white/20">
+                      {userProfile.walletAddress}
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(userProfile.walletAddress || '')
+                        alert('Wallet address copied to clipboard!')
+                      }}
+                      className="text-white/40 hover:text-white transition-colors text-xs font-mono"
+                    >
+                      [COPY]
+                    </button>
+                  </div>
+                  <p className="text-white/40 font-mono text-[10px]">
+                    View your portfolio and receive personalized alerts for tokens in your wallet.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/profile"
+                className="border-2 border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 px-4 py-2 text-white font-mono text-xs transition-all"
+              >
+                MANAGE WALLET
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* No Wallet Connected Banner */}
+        {!userProfile?.walletAddress && (
+          <div className="border-2 border-yellow-500/30 bg-yellow-500/5 p-6 mb-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-4 h-4 text-yellow-500" />
+                  <h2 className="text-yellow-500 font-mono text-xs tracking-wider">
+                    NO WALLET CONNECTED
+                  </h2>
+                </div>
+                <p className="text-white/60 font-mono text-xs mb-3">
+                  Connect your wallet to track your portfolio, receive personalized token alerts, and access advanced features.
+                </p>
+                <ul className="space-y-1 text-white/40 font-mono text-[10px]">
+                  <li>• Track tokens in your wallet automatically</li>
+                  <li>• Get real-time alerts for your holdings</li>
+                  <li>• View portfolio analytics and insights</li>
+                  <li>• Monitor wallet activity and transactions</li>
+                </ul>
+              </div>
+              <Link
+                href="/profile"
+                className="border-2 border-yellow-500/30 hover:border-yellow-500/50 bg-yellow-500/10 hover:bg-yellow-500/20 px-4 py-2 text-yellow-500 hover:text-yellow-400 font-mono text-xs transition-all whitespace-nowrap"
+              >
+                CONNECT WALLET
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Alerts Section - NEW ADDITION AT TOP */}
         {alerts.length > 0 && (
@@ -1115,39 +1215,85 @@ export default function PremiumDashboard() {
             <div className="text-center py-12 text-white/40">
               <Eye className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p className="font-mono text-xs">NO TOKENS IN WATCHLIST</p>
+              <p className="font-mono text-[10px] mt-2 text-white/30">SCAN TOKENS AND ADD THEM TO YOUR WATCHLIST</p>
             </div>
           ) : (
             <div className="space-y-3">
               {watchlist.map((token) => (
-                <button
+                <div
                   key={token.address}
-                  onClick={() => {
-                    setSearchQuery(token.address)
-                    handleScan()
-                  }}
-                  className="w-full border border-white/10 p-4 hover:border-white/30 transition-all text-left"
+                  className="group relative w-full border border-white/10 hover:border-white/30 transition-all"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-white font-mono font-bold">{token.symbol}</h3>
-                      <p className="text-white/60 font-mono text-xs">{token.name}</p>
-                      <p className={`font-mono text-xs mt-1 ${
-                        token.riskLevel === 'LOW' ? 'text-green-500' :
-                        token.riskLevel === 'MEDIUM' ? 'text-yellow-500' :
-                        token.riskLevel === 'HIGH' ? 'text-orange-500' : 'text-red-500'
-                      }`}>
-                        RISK: {token.riskScore} ({token.riskLevel})
-                      </p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery(token.address)
+                      handleScan()
+                    }}
+                    className="w-full p-4 text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-white font-mono font-bold">{token.symbol}</h3>
+                          <span className={`px-2 py-0.5 text-[8px] font-mono border ${
+                            token.riskLevel === 'LOW' ? 'border-green-500/30 bg-green-500/10 text-green-500' :
+                            token.riskLevel === 'MEDIUM' ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-500' :
+                            token.riskLevel === 'HIGH' ? 'border-orange-500/30 bg-orange-500/10 text-orange-500' : 
+                            'border-red-500/30 bg-red-500/10 text-red-500'
+                          }`}>
+                            {token.riskLevel}
+                          </span>
+                        </div>
+                        <p className="text-white/60 font-mono text-xs mt-0.5">{token.name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className={`font-mono text-xs ${
+                            token.riskLevel === 'LOW' ? 'text-green-500' :
+                            token.riskLevel === 'MEDIUM' ? 'text-yellow-500' :
+                            token.riskLevel === 'HIGH' ? 'text-orange-500' : 'text-red-500'
+                          }`}>
+                            RISK: {token.riskScore}/100
+                          </p>
+                          <span className="text-white/20">•</span>
+                          <p className="text-white/40 font-mono text-[10px]">{token.chain}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white font-mono text-sm">${token.price.toFixed(2)}</p>
+                        <p className={`font-mono text-xs ${token.change24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {token.change24h > 0 ? '+' : ''}{token.change24h.toFixed(2)}%
+                        </p>
+                        <p className="text-white/40 font-mono text-[9px] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          CLICK TO RESCAN
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-white font-mono">${token.price.toFixed(2)}</p>
-                      <p className={`font-mono text-xs ${token.change24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {token.change24h > 0 ? '+' : ''}{token.change24h.toFixed(2)}%
-                      </p>
-                      <p className="text-white/40 font-mono text-[10px] mt-1">CLICK TO RESCAN</p>
-                    </div>
-                  </div>
-                </button>
+                  </button>
+                  
+                  {/* Delete Button */}
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      if (!user) return
+                      
+                      // Confirm deletion
+                      if (!confirm(`Remove ${token.symbol} from watchlist?`)) return
+                      
+                      setWatchlistLoading(true)
+                      try {
+                        await removeFromWatchlist(user.uid, token.address)
+                        await loadDashboardData()
+                      } catch (error) {
+                        console.error('Failed to remove from watchlist:', error)
+                      } finally {
+                        setWatchlistLoading(false)
+                      }
+                    }}
+                    className="absolute top-2 right-2 p-1.5 bg-black/80 border border-white/10 hover:border-red-500 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                    title="Remove from watchlist"
+                  >
+                    <X className="w-3 h-3 text-white/60 hover:text-red-500 transition-colors" />
+                  </button>
+                </div>
               ))}
             </div>
           )}

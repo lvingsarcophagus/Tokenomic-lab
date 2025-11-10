@@ -1,46 +1,85 @@
+"use client"
+
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
-import { Shield, Zap, Bell, TrendingUp, Lock, BarChart3 } from "lucide-react"
+import { Shield, Zap, Bell, TrendingUp, Lock, BarChart3, Search, Eye, Activity, Database, Globe, CheckCircle, ArrowRight, Flame, Target, Users, AlertTriangle } from "lucide-react"
+import dynamic from "next/dynamic"
+import { Suspense } from "react"
+
+// Dynamically import the 3D scene to avoid SSR issues
+const GenerativeArtScene = dynamic(
+  () => import("@/components/generative-art-scene"),
+  { ssr: false }
+)
 
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
-      {/* Background Effects */}
+      {/* Enhanced Background Effects */}
       <div className="fixed inset-0 stars-bg pointer-events-none opacity-30"></div>
       <div className="fixed inset-0 grid-pattern pointer-events-none opacity-20"></div>
       
-      {/* Hero Section */}
-      <section className="relative min-h-[calc(100vh-8rem)] flex items-center justify-center px-6">
-        <div className="max-w-5xl w-full">
+      {/* 3D Generative Art Background */}
+      <div className="fixed inset-0 pointer-events-none opacity-20">
+        <Suspense fallback={<div className="w-full h-full bg-black" />}>
+          <GenerativeArtScene />
+        </Suspense>
+      </div>
+      
+      {/* Animated gradient overlay */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+      
+      {/* Hero Section - Enhanced */}
+      <section className="relative min-h-screen flex items-center justify-center px-6 py-20">
+        <div className="max-w-6xl w-full">
           {/* Top decorative line */}
-          <div className="flex items-center gap-2 mb-6 opacity-60">
+          <div className="flex items-center gap-2 mb-8 opacity-60">
             <div className="w-8 lg:w-12 h-px bg-white"></div>
             <span className="text-white text-[10px] font-mono tracking-wider">∞</span>
             <div className="flex-1 h-px bg-white"></div>
+            <span className="text-white text-[10px] font-mono tracking-wider">TOKENGUARD.SECURITY</span>
           </div>
 
-          {/* Main Title */}
-          <div className="relative mb-6">
+          {/* Main Title - Enhanced */}
+          <div className="relative mb-8">
             <div className="hidden lg:block absolute -right-3 top-0 bottom-0 w-1 dither-pattern opacity-40"></div>
-            <h1 className="text-3xl lg:text-5xl xl:text-7xl font-bold text-white mb-4 leading-tight font-mono tracking-wider">
+            <h1 className="text-4xl lg:text-6xl xl:text-8xl font-bold text-white mb-6 leading-tight font-mono tracking-wider">
               ADVANCED TOKEN
               <br />
-              SECURITY PROTOCOL
+              <span className="text-white/80">SECURITY</span> PROTOCOL
             </h1>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
+                <span className="text-white text-xs font-mono tracking-wider">MULTI-CHAIN</span>
+              </div>
+              <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
+                <span className="text-white text-xs font-mono tracking-wider">REAL-TIME</span>
+              </div>
+              <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
+                <span className="text-white text-xs font-mono tracking-wider">AI-POWERED</span>
+              </div>
+            </div>
           </div>
 
           {/* Decorative dots pattern */}
-          <div className="flex gap-1 mb-6 opacity-40">
-            {Array.from({ length: 60 }).map((_, i) => (
+          <div className="flex gap-1 mb-8 opacity-40">
+            {Array.from({ length: 80 }).map((_, i) => (
               <div key={i} className="w-0.5 h-0.5 bg-white"></div>
             ))}
           </div>
 
-          {/* Description */}
-          <div className="relative max-w-2xl">
-            <p className="text-sm lg:text-base text-white/80 mb-8 leading-relaxed font-mono">
-              MILITARY-GRADE TOKEN ANALYSIS SYSTEM. REAL-TIME THREAT DETECTION ACROSS MULTIPLE CHAINS. 
-              AI-POWERED RISK ASSESSMENT. ZERO TOLERANCE FOR SCAMS.
+          {/* Description - Enhanced */}
+          <div className="relative max-w-3xl mb-10">
+            <p className="text-base lg:text-lg text-white/90 mb-6 leading-relaxed font-mono">
+              MILITARY-GRADE TOKEN ANALYSIS SYSTEM. DETECT SCAMS BEFORE THEY STRIKE. 
+              REAL-TIME THREAT DETECTION ACROSS 7+ BLOCKCHAINS.
+            </p>
+            <p className="text-sm lg:text-base text-white/70 mb-8 leading-relaxed font-mono">
+              Powered by 5+ premium APIs including GoPlus, DexScreener, and Moralis. 
+              Advanced 7-factor risk algorithm with confidence scoring. Zero tolerance for honeypots and rug pulls.
             </p>
             
             <div className="hidden lg:block absolute -left-4 top-1/2 w-3 h-3 border border-white opacity-30" style={{ transform: 'translateY(-50%)' }}>
@@ -48,19 +87,44 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <Link href="/signup">
-              <button className="relative px-6 py-3 bg-transparent text-white font-mono text-xs lg:text-sm border border-white hover:bg-white hover:text-black transition-all duration-200 group">
-                <span className="hidden lg:block absolute -top-1 -left-1 w-2 h-2 border-t border-l border-white opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                <span className="hidden lg:block absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-white opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                INITIATE PROTOCOL
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
+              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">7+</div>
+              <div className="text-xs text-white/60 font-mono">BLOCKCHAINS</div>
+            </div>
+            <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
+              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">5</div>
+              <div className="text-xs text-white/60 font-mono">API SOURCES</div>
+            </div>
+            <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
+              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">7</div>
+              <div className="text-xs text-white/60 font-mono">RISK FACTORS</div>
+            </div>
+            <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
+              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">24/7</div>
+              <div className="text-xs text-white/60 font-mono">MONITORING</div>
+            </div>
+          </div>
+
+          {/* CTA Buttons - Enhanced */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Link href="/dashboard">
+              <button className="relative px-10 py-5 bg-white text-black font-mono text-base lg:text-lg border-2 border-white hover:bg-transparent hover:text-white transition-all duration-200 group overflow-hidden">
+                <span className="relative z-10 flex items-center gap-2 justify-center font-bold">
+                  ACCESS SYSTEM
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </span>
+                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-200"></div>
               </button>
             </Link>
             
-            <Link href="/dashboard">
-              <button className="relative px-6 py-3 bg-transparent border border-white text-white font-mono text-xs lg:text-sm hover:bg-white hover:text-black transition-all duration-200">
-                ACCESS SYSTEM
+            <Link href="/signup">
+              <button className="relative px-10 py-5 bg-transparent border-2 border-white text-white font-mono text-base lg:text-lg hover:bg-white/10 transition-all duration-200 group">
+                <span className="flex items-center gap-2 justify-center">
+                  GET STARTED FREE
+                  <Shield className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                </span>
               </button>
             </Link>
           </div>
@@ -69,113 +133,234 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 opacity-40">
             <span className="text-white text-[9px] font-mono">∞</span>
             <div className="flex-1 h-px bg-white max-w-xs"></div>
-            <span className="text-white text-[9px] font-mono">SECURITY.PROTOCOL.V1</span>
+            <span className="text-white text-[9px] font-mono">SECURITY.PROTOCOL.V1.0</span>
+            <div className="flex-1 h-px bg-white max-w-xs"></div>
+            <span className="text-white text-[9px] font-mono">∞</span>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="relative px-6 py-20">
+      {/* Core Technology Section - NEW */}
+      <section className="relative px-6 py-20 border-t border-white/10">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-16">
+            <div className="flex items-center gap-2 mb-4 opacity-60">
+              <div className="w-8 h-px bg-white"></div>
+              <span className="text-white text-[10px] font-mono tracking-wider">CORE.TECHNOLOGY</span>
+            </div>
+            <h2 className="text-3xl lg:text-5xl font-bold text-white font-mono tracking-wider mb-4">
+              POWERED BY INDUSTRY LEADERS
+            </h2>
+            <p className="text-white/60 text-sm lg:text-base font-mono max-w-3xl">
+              Our advanced risk engine aggregates data from multiple premium sources for comprehensive token analysis.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Database className="w-6 h-6 text-white" />
+                  <h4 className="text-lg font-bold text-white font-mono">GOPLUS</h4>
+                </div>
+                <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
+                  Smart contract security analysis, honeypot detection, and token safety verification.
+                </p>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  <span className="text-[10px] text-white/40 font-mono">PRIMARY SECURITY</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Activity className="w-6 h-6 text-white" />
+                  <h4 className="text-lg font-bold text-white font-mono">DEXSCREENER</h4>
+                </div>
+                <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
+                  Real-time DEX data aggregation, liquidity tracking, and price monitoring across chains.
+                </p>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  <span className="text-[10px] text-white/40 font-mono">MARKET DATA</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Globe className="w-6 h-6 text-white" />
+                  <h4 className="text-lg font-bold text-white font-mono">MOBULA</h4>
+                </div>
+                <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
+                  Multi-chain token search, metadata aggregation, and cross-chain discovery.
+                </p>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  <span className="text-[10px] text-white/40 font-mono">TOKEN SEARCH</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Target className="w-6 h-6 text-white" />
+                  <h4 className="text-lg font-bold text-white font-mono">MORALIS</h4>
+                </div>
+                <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
+                  Blockchain indexing, token metadata, holder analytics, and transaction tracking.
+                </p>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  <span className="text-[10px] text-white/40 font-mono">BLOCKCHAIN DATA</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                  <h4 className="text-lg font-bold text-white font-mono">COINGECKO</h4>
+                </div>
+                <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
+                  Historical price data, market metrics, volume tracking, and token rankings.
+                </p>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  <span className="text-[10px] text-white/40 font-mono">PRICE HISTORY</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Flame className="w-6 h-6 text-white" />
+                  <h4 className="text-lg font-bold text-white font-mono">CUSTOM AI</h4>
+                </div>
+                <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
+                  Proprietary 7-factor risk algorithm with confidence scoring and behavioral analysis.
+                </p>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  <span className="text-[10px] text-white/40 font-mono">RISK ENGINE</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section - Enhanced */}
+      <section className="relative px-6 py-20 border-t border-white/10">
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
-          <div className="mb-12">
+          <div className="mb-16">
             <div className="flex items-center gap-2 mb-4 opacity-60">
               <div className="w-8 h-px bg-white"></div>
               <span className="text-white text-[10px] font-mono tracking-wider">CAPABILITIES</span>
             </div>
-            <h2 className="text-3xl lg:text-4xl font-bold text-white font-mono tracking-wider">
-              SYSTEM FEATURES
+            <h2 className="text-3xl lg:text-5xl font-bold text-white font-mono tracking-wider mb-4">
+              ADVANCED FEATURES
             </h2>
+            <p className="text-white/60 text-sm lg:text-base font-mono max-w-3xl">
+              Comprehensive security analysis toolkit designed for both novice and professional crypto traders.
+            </p>
           </div>
 
           {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
-                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white group-hover:text-black transition-all duration-200">
-                  <BarChart3 className="w-5 h-5 text-white group-hover:text-black" />
+                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white transition-all duration-200">
+                  <Search className="w-6 h-6 text-white group-hover:text-black transition-colors" />
                 </div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-px bg-white"></div>
-                  <h4 className="text-base lg:text-lg font-bold text-white font-mono tracking-wider">MULTI-CHAIN</h4>
+                  <h4 className="text-lg font-bold text-white font-mono tracking-wider">MULTI-CHAIN SEARCH</h4>
                 </div>
-                <p className="text-white/60 text-xs font-mono">
-                  REAL-TIME ANALYSIS ACROSS ETHEREUM, SOLANA, BSC NETWORKS.
+                <p className="text-white/60 text-sm font-mono leading-relaxed">
+                  Search tokens across Ethereum, BSC, Polygon, Avalanche, Arbitrum, Optimism, and Base with real-time suggestions.
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
-                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white group-hover:text-black transition-all duration-200">
-                  <Zap className="w-5 h-5 text-white group-hover:text-black" />
+                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white transition-all duration-200">
+                  <AlertTriangle className="w-6 h-6 text-white group-hover:text-black transition-colors" />
                 </div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-px bg-white"></div>
-                  <h4 className="text-base lg:text-lg font-bold text-white font-mono tracking-wider">AI ANALYSIS</h4>
+                  <h4 className="text-lg font-bold text-white font-mono tracking-wider">SCAM DETECTION</h4>
                 </div>
-                <p className="text-white/60 text-xs font-mono">
-                  NEURAL NETWORK RISK ASSESSMENT WITH PLAIN-LANGUAGE OUTPUT.
+                <p className="text-white/60 text-sm font-mono leading-relaxed">
+                  Advanced honeypot detection, rug pull identification, and malicious contract analysis with 93%+ confidence.
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
-                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white group-hover:text-black transition-all duration-200">
-                  <Bell className="w-5 h-5 text-white group-hover:text-black" />
+                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white transition-all duration-200">
+                  <BarChart3 className="w-6 h-6 text-white group-hover:text-black transition-colors" />
                 </div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-px bg-white"></div>
-                  <h4 className="text-base lg:text-lg font-bold text-white font-mono tracking-wider">ALERTS</h4>
+                  <h4 className="text-lg font-bold text-white font-mono tracking-wider">RISK SCORING</h4>
                 </div>
-                <p className="text-white/60 text-xs font-mono">
-                  INSTANT THREAT NOTIFICATIONS FOR WATCHLIST TOKENS.
+                <p className="text-white/60 text-sm font-mono leading-relaxed">
+                  7-factor algorithm analyzing contract security, supply distribution, liquidity, whale concentration, and more.
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
-                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white group-hover:text-black transition-all duration-200">
-                  <TrendingUp className="w-5 h-5 text-white group-hover:text-black" />
+                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white transition-all duration-200">
+                  <Eye className="w-6 h-6 text-white group-hover:text-black transition-colors" />
                 </div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-px bg-white"></div>
-                  <h4 className="text-base lg:text-lg font-bold text-white font-mono tracking-wider">TRACKING</h4>
+                  <h4 className="text-lg font-bold text-white font-mono tracking-wider">WATCHLIST</h4>
                 </div>
-                <p className="text-white/60 text-xs font-mono">
-                  PORTFOLIO MONITORING WITH RISK METRICS AND ANALYTICS.
+                <p className="text-white/60 text-sm font-mono leading-relaxed">
+                  Track unlimited tokens with real-time price updates, risk monitoring, and customizable alerts for portfolio management.
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
-                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white group-hover:text-black transition-all duration-200">
-                  <Lock className="w-5 h-5 text-white group-hover:text-black" />
+                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white transition-all duration-200">
+                  <Activity className="w-6 h-6 text-white group-hover:text-black transition-colors" />
                 </div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-px bg-white"></div>
-                  <h4 className="text-base lg:text-lg font-bold text-white font-mono tracking-wider">CONTRACT AUDIT</h4>
+                  <h4 className="text-lg font-bold text-white font-mono tracking-wider">LIVE CHARTS</h4>
                 </div>
-                <p className="text-white/60 text-xs font-mono">
-                  DEEP SMART CONTRACT VULNERABILITY DETECTION SYSTEM.
+                <p className="text-white/60 text-sm font-mono leading-relaxed">
+                  Historical analytics with 6 comprehensive charts: risk timeline, price history, holder trends, volume, and whale activity.
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
-                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white group-hover:text-black transition-all duration-200">
-                  <Shield className="w-5 h-5 text-white group-hover:text-black" />
+                <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white transition-all duration-200">
+                  <Bell className="w-6 h-6 text-white group-hover:text-black transition-colors" />
                 </div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-px bg-white"></div>
-                  <h4 className="text-base lg:text-lg font-bold text-white font-mono tracking-wider">SCAM DETECT</h4>
+                  <h4 className="text-lg font-bold text-white font-mono tracking-wider">SMART ALERTS</h4>
                 </div>
-                <p className="text-white/60 text-xs font-mono">
-                  ADVANCED HONEYPOT AND RUG PULL IDENTIFICATION.
+                <p className="text-white/60 text-sm font-mono leading-relaxed">
+                  Instant notifications for risk increases, price changes, liquidity drops, and suspicious holder activity.
                 </p>
               </CardContent>
             </Card>
@@ -183,91 +368,291 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="relative px-6 py-20">
-        <div className="max-w-4xl mx-auto">
-          {/* Section Header */}
-          <div className="mb-12">
+      {/* How It Works Section - NEW */}
+      <section className="relative px-6 py-20 border-t border-white/10">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-16">
             <div className="flex items-center gap-2 mb-4 opacity-60">
               <div className="w-8 h-px bg-white"></div>
-              <span className="text-white text-[10px] font-mono tracking-wider">ACCESS LEVELS</span>
+              <span className="text-white text-[10px] font-mono tracking-wider">PROCESS</span>
             </div>
-            <h2 className="text-3xl lg:text-4xl font-bold text-white font-mono tracking-wider">
-              PRICING TIERS
+            <h2 className="text-3xl lg:text-5xl font-bold text-white font-mono tracking-wider mb-4">
+              HOW IT WORKS
             </h2>
+            <p className="text-white/60 text-sm lg:text-base font-mono max-w-3xl">
+              Three simple steps to secure your investments and avoid scams.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4 lg:gap-6">
-            <Card className="bg-black/60 backdrop-blur-lg border border-white/20">
-              <CardContent className="p-6 lg:p-8">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="relative">
+              <div className="absolute -left-4 top-0 text-6xl font-bold text-white/10 font-mono">01</div>
+              <div className="relative z-10">
+                <div className="w-16 h-16 border-2 border-white/30 bg-black/80 flex items-center justify-center mb-6">
+                  <Search className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white font-mono mb-3 tracking-wider">SEARCH TOKEN</h3>
+                <p className="text-white/60 text-sm font-mono leading-relaxed mb-4">
+                  Enter any token symbol or contract address. Our system searches across 7+ blockchains with intelligent auto-suggestions.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-2 py-1 bg-white/10 border border-white/20 text-[10px] font-mono text-white">ETHEREUM</span>
+                  <span className="px-2 py-1 bg-white/10 border border-white/20 text-[10px] font-mono text-white">BSC</span>
+                  <span className="px-2 py-1 bg-white/10 border border-white/20 text-[10px] font-mono text-white">POLYGON</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -left-4 top-0 text-6xl font-bold text-white/10 font-mono">02</div>
+              <div className="relative z-10">
+                <div className="w-16 h-16 border-2 border-white/30 bg-black/80 flex items-center justify-center mb-6">
+                  <Shield className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white font-mono mb-3 tracking-wider">ANALYZE</h3>
+                <p className="text-white/60 text-sm font-mono leading-relaxed mb-4">
+                  Our AI engine analyzes 7 risk factors using data from 5 premium APIs, delivering results in seconds with confidence scores.
+                </p>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-white"></div>
+                    <span className="text-[10px] font-mono text-white/60">CONTRACT SECURITY</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-white"></div>
+                    <span className="text-[10px] font-mono text-white/60">SUPPLY DISTRIBUTION</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-white"></div>
+                    <span className="text-[10px] font-mono text-white/60">WHALE CONCENTRATION</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -left-4 top-0 text-6xl font-bold text-white/10 font-mono">03</div>
+              <div className="relative z-10">
+                <div className="w-16 h-16 border-2 border-white/30 bg-black/80 flex items-center justify-center mb-6">
+                  <Eye className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white font-mono mb-3 tracking-wider">MONITOR</h3>
+                <p className="text-white/60 text-sm font-mono leading-relaxed mb-4">
+                  Add tokens to your watchlist for 24/7 monitoring. Receive instant alerts on risk changes, price movements, and suspicious activity.
+                </p>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                    <span className="text-[10px] font-mono text-white/60">REAL-TIME UPDATES</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                    <span className="text-[10px] font-mono text-white/60">CUSTOM ALERTS</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                    <span className="text-[10px] font-mono text-white/60">HISTORICAL CHARTS</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section - Enhanced */}
+      <section className="relative px-6 py-20 border-t border-white/10">
+        <div className="max-w-6xl mx-auto">
+          {/* Section Header */}
+          <div className="mb-16 text-center">
+            <div className="flex items-center gap-2 mb-4 opacity-60 justify-center">
+              <div className="w-8 h-px bg-white"></div>
+              <span className="text-white text-[10px] font-mono tracking-wider">ACCESS LEVELS</span>
+              <div className="w-8 h-px bg-white"></div>
+            </div>
+            <h2 className="text-3xl lg:text-5xl font-bold text-white font-mono tracking-wider mb-4">
+              CHOOSE YOUR PLAN
+            </h2>
+            <p className="text-white/60 text-sm lg:text-base font-mono max-w-2xl mx-auto">
+              Start with our free tier and upgrade when you need advanced features. No credit card required.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all">
+              <CardContent className="p-8 lg:p-10">
                 <div className="flex items-center gap-2 mb-4 opacity-60">
                   <div className="w-6 h-px bg-white"></div>
                   <span className="text-white text-[9px] font-mono">TIER.01</span>
                 </div>
-                <h4 className="text-xl lg:text-2xl font-bold text-white mb-2 font-mono tracking-wider">FREE</h4>
-                <div className="text-4xl lg:text-5xl font-bold text-white mb-6 font-mono">
-                  $0<span className="text-sm lg:text-lg text-white/40 font-mono">/MONTH</span>
+                <h4 className="text-2xl lg:text-3xl font-bold text-white mb-2 font-mono tracking-wider">FREE</h4>
+                <div className="text-5xl lg:text-6xl font-bold text-white mb-2 font-mono">
+                  $0
                 </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center text-white/80 text-xs lg:text-sm font-mono">
-                    <span className="text-white mr-3">▸</span>
-                    20 ANALYSES/DAY
+                <p className="text-sm text-white/40 font-mono mb-8">PERFECT FOR GETTING STARTED</p>
+                
+                <ul className="space-y-4 mb-10">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">20 SCANS PER DAY</div>
+                      <div className="text-white/60 text-xs font-mono">Analyze up to 20 tokens daily</div>
+                    </div>
                   </li>
-                  <li className="flex items-center text-white/80 text-xs lg:text-sm font-mono">
-                    <span className="text-white mr-3">▸</span>
-                    BASIC RISK SCORE
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">BASIC RISK SCORE</div>
+                      <div className="text-white/60 text-xs font-mono">7-factor risk analysis with confidence</div>
+                    </div>
                   </li>
-                  <li className="flex items-center text-white/80 text-xs lg:text-sm font-mono">
-                    <span className="text-white mr-3">▸</span>
-                    COMMUNITY ALERTS
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">MULTI-CHAIN SUPPORT</div>
+                      <div className="text-white/60 text-xs font-mono">Access all 7+ supported chains</div>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">COMMUNITY ALERTS</div>
+                      <div className="text-white/60 text-xs font-mono">General market notifications</div>
+                    </div>
                   </li>
                 </ul>
-                <Link href="/signup">
-                  <button className="w-full px-6 py-3 bg-transparent border border-white text-white font-mono text-xs lg:text-sm hover:bg-white hover:text-black transition-all duration-200">
-                    ACTIVATE FREE
+
+                <Link href="/signup" className="block">
+                  <button className="w-full px-6 py-4 bg-transparent border-2 border-white text-white font-mono text-sm hover:bg-white hover:text-black transition-all duration-200 flex items-center justify-center gap-2 group">
+                    START FREE
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </Link>
               </CardContent>
             </Card>
 
-            <Card className="bg-black/60 backdrop-blur-lg border-2 border-white relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black px-3 py-1 text-[8px] lg:text-xs font-mono tracking-wider border border-white">
-                RECOMMENDED
+            <Card className="bg-gradient-to-br from-black/80 to-black/60 backdrop-blur-lg border-2 border-white relative overflow-hidden">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1.5 text-xs font-mono tracking-wider border-2 border-white z-10">
+                ⚡ RECOMMENDED
               </div>
-              <CardContent className="p-6 lg:p-8">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+              
+              <CardContent className="p-8 lg:p-10 relative z-10">
                 <div className="flex items-center gap-2 mb-4 opacity-60">
                   <div className="w-6 h-px bg-white"></div>
                   <span className="text-white text-[9px] font-mono">TIER.02</span>
                 </div>
-                <h4 className="text-xl lg:text-2xl font-bold text-white mb-2 font-mono tracking-wider">PRO</h4>
-                <div className="text-4xl lg:text-5xl font-bold text-white mb-6 font-mono">
-                  $29<span className="text-sm lg:text-lg text-white/40 font-mono">/MONTH</span>
+                <h4 className="text-2xl lg:text-3xl font-bold text-white mb-2 font-mono tracking-wider">PREMIUM</h4>
+                <div className="text-5xl lg:text-6xl font-bold text-white mb-2 font-mono">
+                  $29
                 </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center text-white/80 text-xs lg:text-sm font-mono">
-                    <span className="text-white mr-3">▸</span>
-                    UNLIMITED ANALYSES
+                <p className="text-sm text-white/40 font-mono mb-8">FOR SERIOUS TRADERS</p>
+
+                <ul className="space-y-4 mb-10">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">UNLIMITED SCANS</div>
+                      <div className="text-white/60 text-xs font-mono">Analyze as many tokens as you need</div>
+                    </div>
                   </li>
-                  <li className="flex items-center text-white/80 text-xs lg:text-sm font-mono">
-                    <span className="text-white mr-3">▸</span>
-                    ADVANCED AI INSIGHTS
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">ADVANCED AI INSIGHTS</div>
+                      <div className="text-white/60 text-xs font-mono">Deep behavioral analysis & predictions</div>
+                    </div>
                   </li>
-                  <li className="flex items-center text-white/80 text-xs lg:text-sm font-mono">
-                    <span className="text-white mr-3">▸</span>
-                    CUSTOM ALERTS
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">UNLIMITED WATCHLIST</div>
+                      <div className="text-white/60 text-xs font-mono">Track portfolio with custom alerts</div>
+                    </div>
                   </li>
-                  <li className="flex items-center text-white/80 text-xs lg:text-sm font-mono">
-                    <span className="text-white mr-3">▸</span>
-                    API ACCESS
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">HISTORICAL CHARTS</div>
+                      <div className="text-white/60 text-xs font-mono">6 comprehensive analytics charts</div>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">PRIORITY SUPPORT</div>
+                      <div className="text-white/60 text-xs font-mono">24/7 dedicated assistance</div>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">API ACCESS</div>
+                      <div className="text-white/60 text-xs font-mono">Integrate with your tools</div>
+                    </div>
                   </li>
                 </ul>
-                <Link href="/pricing">
-                  <button className="w-full px-6 py-3 bg-white text-black font-mono text-xs lg:text-sm hover:bg-transparent hover:text-white border-2 border-white transition-all duration-200">
-                    UPGRADE TO PRO
+
+                <Link href="/pricing" className="block">
+                  <button className="w-full px-6 py-4 bg-white text-black font-mono text-sm hover:bg-transparent hover:text-white border-2 border-white transition-all duration-200 flex items-center justify-center gap-2 group font-bold">
+                    UPGRADE TO PREMIUM
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </Link>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Money-back guarantee */}
+          <div className="mt-12 text-center">
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/20 backdrop-blur-sm">
+              <Shield className="w-5 h-5 text-white" />
+              <span className="text-white text-sm font-mono">30-DAY MONEY-BACK GUARANTEE</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="relative px-6 py-32 border-t border-white/10">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl lg:text-5xl font-bold text-white font-mono tracking-wider mb-6">
+            PROTECT YOUR INVESTMENTS TODAY
+          </h2>
+          <p className="text-white/70 text-base lg:text-lg font-mono mb-12 max-w-2xl mx-auto leading-relaxed">
+            Join thousands of traders using TokenGuard to detect scams, analyze risks, and make informed decisions in the crypto market.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Link href="/signup">
+              <button className="px-10 py-5 bg-white text-black font-mono text-base border-2 border-white hover:bg-transparent hover:text-white transition-all duration-200 group font-bold">
+                <span className="flex items-center gap-2 justify-center">
+                  GET STARTED FREE
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </button>
+            </Link>
+            
+            <Link href="/dashboard">
+              <button className="px-10 py-5 bg-transparent border-2 border-white text-white font-mono text-base hover:bg-white/10 transition-all duration-200">
+                VIEW DEMO
+              </button>
+            </Link>
+          </div>
+
+          <div className="flex items-center justify-center gap-8 text-white/40 text-xs font-mono">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              <span>NO CREDIT CARD</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              <span>FREE FOREVER</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              <span>INSTANT ACCESS</span>
+            </div>
           </div>
         </div>
       </section>
