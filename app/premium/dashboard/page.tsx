@@ -781,7 +781,7 @@ export default function PremiumDashboard() {
             </div>
             {!isPremium && (
               <Link href="/pricing">
-                <button className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-mono text-sm hover:from-yellow-600 hover:to-orange-600 transition-all flex items-center gap-2">
+                <button className="px-6 py-3 bg-black border-2 border-white text-white font-mono text-sm hover:bg-white hover:text-black transition-all flex items-center gap-2 uppercase tracking-wider">
                   <Crown className="w-4 h-4" />
                   UPGRADE TO PREMIUM
                 </button>
@@ -1144,7 +1144,7 @@ export default function PremiumDashboard() {
                     <button
                       onClick={handleRemoveFromWatchlist}
                       disabled={watchlistLoading}
-                      className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-mono text-xs tracking-wider hover:from-yellow-600 hover:to-orange-600 transition-all disabled:opacity-50 shadow-lg hover:shadow-yellow-500/50"
+                      className="flex items-center gap-2 px-5 py-3 bg-black border-2 border-white text-white font-mono text-xs tracking-wider hover:bg-white hover:text-black transition-all disabled:opacity-50 uppercase"
                     >
                       {watchlistLoading ? (
                         <>

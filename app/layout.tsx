@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/contexts/auth-context"
+import CookieConsentBanner from "@/components/cookie-consent"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -28,6 +29,7 @@ export default function RootLayout({
           </main>
         </AuthProvider>
 
+        <CookieConsentBanner />
         <Analytics />
       </body>
     </html>
