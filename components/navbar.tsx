@@ -49,23 +49,24 @@ export default function Navbar() {
   // Build navigation links based on user role, tier, and current page
   const navLinks = []
   const isPremiumDashboard = pathname === "/premium/dashboard"
+  const isFreeDashboard = pathname === "/free-dashboard"
   
   if (user) {
-    // Dashboard link - different based on tier
+    // Dashboard link - route based on tier ("pro" is now legacy for PREMIUM)
     if (userData?.tier === "pro") {
       navLinks.push({ href: "/premium/dashboard", label: "Dashboard", icon: Home })
     } else {
-      navLinks.push({ href: "/dashboard", label: "Dashboard", icon: Home })
+      navLinks.push({ href: "/free-dashboard", label: "Dashboard", icon: Home })
     }
     
-    // Hide pricing button on premium dashboard
-    if (!isPremiumDashboard && userData?.tier !== "pro") {
+    // Hide pricing button on dashboards for premium users
+    const isPremiumUser = userData?.tier === "pro"
+    if (!isPremiumDashboard && !isFreeDashboard && !isPremiumUser) {
       navLinks.push({ href: "/pricing", label: "Pricing", icon: TrendingUp })
     }
     
     // Admin-only links
     if (userData?.role === "admin") {
-      navLinks.push({ href: "/api-test", label: "API Test", icon: Settings })
       navLinks.push({ href: "/admin", label: "Admin", icon: Shield })
     }
   }
@@ -115,7 +116,7 @@ export default function Navbar() {
       <div className="relative max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between h-12 sm:h-14">
           {/* Logo with Dynamic Hover */}
-          <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 group relative">
+          <Link href={user ? (userData?.tier === "pro" ? "/premium/dashboard" : "/free-dashboard") : "/"} className="flex items-center gap-2 sm:gap-3 group relative">
             <img 
               src="/Logo.png" 
               alt="Tokenomics Lab" 

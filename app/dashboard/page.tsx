@@ -16,20 +16,14 @@ export default function DashboardRouter() {
     console.log('[Dashboard Router] Auth state:', { user: !!user, userProfile, loading })
 
     if (!user) {
-      console.log('[Dashboard Router] No user, redirecting to login')
       setHasRedirected(true)
       router.replace('/login')
     } else if (userProfile?.plan === 'PREMIUM') {
-      console.log('[Dashboard Router] Premium user, redirecting to /premium')
       setHasRedirected(true)
-      router.replace('/premium')
-    } else if (userProfile?.plan === 'FREE') {
-      console.log('[Dashboard Router] Free user, redirecting to /free-dashboard')
+      router.replace('/premium/dashboard')
+    } else if (user && userProfile) {
       setHasRedirected(true)
       router.replace('/free-dashboard')
-    } else if (user && !userProfile) {
-      // User logged in but profile not loaded yet, wait
-      console.log('[Dashboard Router] User logged in, waiting for profile...')
     }
   }, [user, userProfile, loading, router, hasRedirected])
 

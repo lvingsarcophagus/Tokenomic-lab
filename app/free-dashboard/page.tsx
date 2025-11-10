@@ -91,8 +91,8 @@ export default function FreeDashboard() {
       console.log('[Free Dashboard] No user, redirecting to login')
       router.push('/login')
     } else if (!loading && userProfile?.plan === 'PREMIUM') {
-      console.log('[Free Dashboard] Premium user, redirecting to premium')
-      router.push('/premium')
+      console.log('[Free Dashboard] Premium user, redirecting to premium dashboard')
+      router.push('/premium/dashboard')
     }
   }, [user, userProfile, loading, router])
 

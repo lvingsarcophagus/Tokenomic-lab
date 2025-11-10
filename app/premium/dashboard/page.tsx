@@ -140,16 +140,19 @@ export default function PremiumDashboard() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
   
-  // Check premium access
+  // Check authentication (allow both FREE and PREMIUM)
   useEffect(() => {
-    if (!authLoading && (!user || userProfile?.plan !== 'PREMIUM')) {
-      router.push('/premium-signup')
+    if (!authLoading && !user) {
+      router.push('/login')
     }
-  }, [user, userProfile, authLoading, router])
+  }, [user, authLoading, router])
+  
+  // Determine if user has premium features
+  const isPremium = userProfile?.plan === 'PREMIUM'
   
   // Load dashboard data
   useEffect(() => {
-    if (user && userProfile?.plan === 'PREMIUM') {
+    if (user && userProfile) {
       loadDashboardData()
     }
   }, [user, userProfile])
@@ -167,8 +170,9 @@ export default function PremiumDashboard() {
     setLoading(true)
     try {
       // Load real data from Firebase
+      const userPlan = userProfile?.plan === 'PREMIUM' ? 'PREMIUM' : 'FREE'
       const [stats, userWatchlist] = await Promise.all([
-        getDashboardStats(user.uid, 'PREMIUM'),
+        getDashboardStats(user.uid, userPlan),
         getWatchlist(user.uid)
       ])
       
@@ -284,6 +288,12 @@ export default function PremiumDashboard() {
     
     if (!user) {
       setScanError('USER NOT AUTHENTICATED. PLEASE LOGIN AGAIN.')
+      return
+    }
+    
+    // Check scan limit for FREE users (10 scans per day)
+    if (!isPremium && portfolioStats && portfolioStats.totalScans >= 10) {
+      setScanError('DAILY LIMIT REACHED (10/10). UPGRADE TO PREMIUM FOR UNLIMITED SCANS.')
       return
     }
     
@@ -711,13 +721,13 @@ export default function PremiumDashboard() {
     }
   }
   
-  // Load historical data and insights when a token is scanned or selected
+  // Load historical data and insights when a token is scanned or selected (PREMIUM only)
   useEffect(() => {
-    if (selectedToken?.address) {
+    if (isPremium && selectedToken?.address) {
       loadHistoricalData(selectedToken.address, timeframe)
       loadInsightData(selectedToken.address)
     }
-  }, [selectedToken?.address])
+  }, [selectedToken?.address, isPremium])
   
   if (authLoading || loading) {
     return (
@@ -746,22 +756,37 @@ export default function PremiumDashboard() {
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4 opacity-60">
             <div className="w-8 h-px bg-white"></div>
-            <Crown className="w-4 h-4 text-white" />
-            <span className="text-white text-[10px] font-mono tracking-wider">PREMIUM TIER</span>
+            {isPremium ? <Crown className="w-4 h-4 text-yellow-400" /> : <Shield className="w-4 h-4 text-white" />}
+            <span className="text-white text-[10px] font-mono tracking-wider">
+              {isPremium ? 'PREMIUM TIER' : 'FREE TIER'}
+            </span>
             <div className="flex-1 h-px bg-white"></div>
           </div>
           
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className="text-2xl lg:text-4xl font-bold text-white font-mono tracking-wider mb-2">
-                PREMIUM DASHBOARD
+                {isPremium ? 'PREMIUM DASHBOARD' : 'DASHBOARD'}
               </h1>
               <div className="space-y-1">
                 <p className="text-white/60 font-mono text-xs">
                   {user?.email?.toUpperCase()}
                 </p>
+                {!isPremium && (
+                  <p className="text-yellow-400 font-mono text-xs">
+                    {portfolioStats?.totalScans || 0}/10 SCANS TODAY
+                  </p>
+                )}
               </div>
             </div>
+            {!isPremium && (
+              <Link href="/pricing">
+                <button className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-mono text-sm hover:from-yellow-600 hover:to-orange-600 transition-all flex items-center gap-2">
+                  <Crown className="w-4 h-4" />
+                  UPGRADE TO PREMIUM
+                </button>
+              </Link>
+            )}
           </div>
         </div>
 

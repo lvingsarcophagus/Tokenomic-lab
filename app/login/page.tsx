@@ -45,7 +45,7 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password)
       // Wait a bit for auth context to update
       setTimeout(() => {
-        router.push("/dashboard")
+        router.push("/premium/dashboard") // Will auto-redirect FREE users to free-dashboard
       }, 500)
     } catch (error: unknown) {
       console.error("Login failed:", error)
@@ -124,7 +124,7 @@ export default function LoginPage() {
       
       // Wait for auth context to update
       setTimeout(() => {
-        router.push("/dashboard")
+        router.push("/premium/dashboard") // Will auto-redirect FREE users to free-dashboard
       }, 500)
     } catch (error: unknown) {
       console.error("Google login failed:", error)
