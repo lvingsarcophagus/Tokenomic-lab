@@ -35,17 +35,42 @@ export async function POST(request: NextRequest) {
       userId = snap.docs[0].id
     }
 
-    await adminDb.collection('users').doc(userId).set(
-      {
-        uid: userId,
-        email,
-        name: name ?? null,
-        tier,
-      },
-      { merge: true }
-    )
+    // Update user tier and plan
+    const updateData: any = {
+      uid: userId,
+      email,
+      tier,
+      plan: tier === 'pro' ? 'PREMIUM' : 'FREE', // Update plan field too
+      updatedAt: new Date().toISOString(),
+    }
 
-    return NextResponse.json({ success: true, userId, tier })
+    if (name) {
+      updateData.name = name
+    }
+
+    // If upgrading to premium, add premium-specific fields
+    if (tier === 'pro') {
+      updateData.premiumSince = new Date().toISOString()
+    }
+
+    await adminDb.collection('users').doc(userId).set(updateData, { merge: true })
+
+    // Create notification for the user
+    const notificationRef = adminDb.collection('notifications').doc()
+    await notificationRef.set({
+      userId,
+      type: tier === 'pro' ? 'tier_upgrade' : 'tier_downgrade',
+      title: tier === 'pro' ? '🎉 PREMIUM UPGRADE!' : 'Account Updated',
+      message: tier === 'pro' 
+        ? 'Congratulations! Your account has been upgraded to PREMIUM. Enjoy unlimited scans, advanced analytics, and priority support!'
+        : 'Your account tier has been updated by an administrator.',
+      read: false,
+      createdAt: new Date().toISOString(),
+    })
+
+    console.log(`✅ User ${email} upgraded to ${tier}. Notification sent.`)
+
+    return NextResponse.json({ success: true, userId, tier, notificationSent: true })
   } catch (error) {
     console.error('set-tier error:', error)
     return NextResponse.json({ error: 'Failed to set tier' }, { status: 500 })

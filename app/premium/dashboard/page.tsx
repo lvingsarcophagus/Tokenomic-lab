@@ -78,6 +78,8 @@ export default function PremiumDashboard() {
   
   // Scan states
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedChain, setSelectedChain] = useState<'ethereum' | 'bsc' | 'polygon' | 'avalanche' | 'solana'>('ethereum')
+  const [manualTokenType, setManualTokenType] = useState<'MEME_TOKEN' | 'UTILITY_TOKEN' | null>(null)
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState('')
   const [scannedToken, setScannedToken] = useState<CompleteTokenData | null>(null)
@@ -344,6 +346,13 @@ export default function PremiumDashboard() {
       if (hasValidAddress && data.chainInfo) {
         console.log('[Scanner] Analyzing token:', data.address, 'on chain:', data.chainInfo.chainId)
         
+        // Prepare metadata for AI meme detection and Twitter metrics
+        const secData = data.securityData as any
+        const tokenSymbol = data.priceData?.symbol || secData?.token_symbol || searchQuery.toUpperCase()
+        const tokenName = data.priceData?.name || secData?.token_name || searchQuery
+        
+        console.log('[Scanner] Token metadata:', { symbol: tokenSymbol, name: tokenName })
+        
         // Use the full multi-API analyze endpoint
         const res = await fetch('/api/analyze-token', {
           method: 'POST',
@@ -354,7 +363,15 @@ export default function PremiumDashboard() {
             tokenAddress: data.address,
             chainId: String(data.chainInfo.chainId),
             plan: 'PREMIUM', // Use PREMIUM plan for full behavioral data
-            userId: user?.uid // Pass user ID for rate limiting
+            userId: user?.uid, // Pass user ID for rate limiting
+            metadata: {
+              tokenSymbol,
+              tokenName,
+              chain: data.chainInfo.chainName === 'Ethereum' ? 'ETHEREUM' : 
+                     data.chainInfo.chainName === 'BSC' ? 'BSC' : 
+                     data.chainInfo.chainName === 'Polygon' ? 'POLYGON' : 'ETHEREUM',
+              manualClassification: manualTokenType // Send user's manual override if set
+            }
           })
         })
         
@@ -363,6 +380,8 @@ export default function PremiumDashboard() {
         if (res.ok) {
           const result = await res.json()
           console.log('Full risk analysis received:', result)
+          console.log('[AI Insights]:', result.ai_insights)
+          console.log('[Twitter Metrics]:', result.twitter_metrics)
           
           // Extract data from enhanced result
           const riskScore = result.overall_risk_score || 15
@@ -395,7 +414,9 @@ export default function PremiumDashboard() {
             positiveSignals,
             criticalFlags,
             rawData: data,
-            enhancedData: result // Store full result for debugging
+            enhancedData: result, // Store full result for debugging
+            ai_insights: result.ai_insights, // Add AI insights
+            twitter_metrics: result.twitter_metrics // Add Twitter metrics
           })
           
           setTimeout(() => {
@@ -955,6 +976,77 @@ export default function PremiumDashboard() {
             <Search className="w-4 h-4" />
             SCAN TOKEN
           </h2>
+
+          {/* Chain Selector */}
+          <div className="mb-4">
+            <label className="text-white/60 font-mono text-[10px] tracking-wider mb-2 block">
+              SELECT BLOCKCHAIN
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { id: 'ethereum', name: 'ETHEREUM', icon: '⟠' },
+                { id: 'bsc', name: 'BSC', icon: '🔶' },
+                { id: 'polygon', name: 'POLYGON', icon: '🟣' },
+                { id: 'avalanche', name: 'AVALANCHE', icon: '🔺' },
+                { id: 'solana', name: 'SOLANA', icon: '🌟' }
+              ].map((chain) => (
+                <button
+                  key={chain.id}
+                  onClick={() => setSelectedChain(chain.id as any)}
+                  className={`px-4 py-2 font-mono text-[10px] tracking-wider border transition-all ${
+                    selectedChain === chain.id
+                      ? 'bg-white text-black border-white'
+                      : 'bg-black text-white/60 border-white/20 hover:border-white/40'
+                  }`}
+                >
+                  <span className="mr-1">{chain.icon}</span>
+                  {chain.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Token Type Override (Manual Classification) */}
+          <div className="mb-4">
+            <label className="text-white/60 font-mono text-[10px] tracking-wider mb-2 block">
+              TOKEN CLASSIFICATION (OPTIONAL)
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setManualTokenType(null)}
+                className={`flex-1 px-4 py-2 font-mono text-[10px] tracking-wider border transition-all ${
+                  manualTokenType === null
+                    ? 'bg-white text-black border-white'
+                    : 'bg-black text-white/60 border-white/20 hover:border-white/40'
+                }`}
+              >
+                🤖 AUTO DETECT
+              </button>
+              <button
+                onClick={() => setManualTokenType('MEME_TOKEN')}
+                className={`flex-1 px-4 py-2 font-mono text-[10px] tracking-wider border transition-all ${
+                  manualTokenType === 'MEME_TOKEN'
+                    ? 'bg-purple-500 text-white border-purple-500'
+                    : 'bg-black text-white/60 border-white/20 hover:border-purple-500/40'
+                }`}
+              >
+                🎭 MEME TOKEN
+              </button>
+              <button
+                onClick={() => setManualTokenType('UTILITY_TOKEN')}
+                className={`flex-1 px-4 py-2 font-mono text-[10px] tracking-wider border transition-all ${
+                  manualTokenType === 'UTILITY_TOKEN'
+                    ? 'bg-blue-500 text-white border-blue-500'
+                    : 'bg-black text-white/60 border-white/20 hover:border-blue-500/40'
+                }`}
+              >
+                🏢 UTILITY TOKEN
+              </button>
+            </div>
+            <p className="text-white/40 font-mono text-[9px] mt-2">
+              Override AI classification. Meme tokens have minimum 55/100 risk score.
+            </p>
+          </div>
           
           <div className="relative token-search-container">
             <div className="flex gap-2">
@@ -1240,6 +1332,88 @@ export default function PremiumDashboard() {
                 </div>
               ))}
             </div>
+
+            {/* AI Insights */}
+            {selectedToken.ai_insights && (
+              <div className="border border-purple-500/50 bg-purple-500/10 p-4 mb-4">
+                <h3 className="text-purple-400 font-mono text-xs tracking-wider mb-3 flex items-center gap-2">
+                  <span className="text-lg">🤖</span>
+                  AI MEME DETECTION
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60 font-mono text-[10px]">CLASSIFICATION</span>
+                    <span className={`font-mono text-xs font-bold ${
+                      selectedToken.ai_insights.classification === 'MEME_TOKEN' ? 'text-yellow-400' : 'text-blue-400'
+                    }`}>
+                      {selectedToken.ai_insights.classification === 'MEME_TOKEN' ? '🎭 MEME TOKEN' : '🏢 UTILITY TOKEN'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60 font-mono text-[10px]">CONFIDENCE</span>
+                    <span className="text-white font-mono text-xs">{selectedToken.ai_insights.confidence}%</span>
+                  </div>
+                  {selectedToken.ai_insights.reasoning && (
+                    <div className="mt-2 p-2 bg-black/40 border border-purple-500/30">
+                      <p className="text-purple-300 font-mono text-[10px] leading-relaxed">
+                        {selectedToken.ai_insights.reasoning}
+                      </p>
+                    </div>
+                  )}
+                  {selectedToken.ai_insights.classification === 'MEME_TOKEN' && (
+                    <div className="mt-2 flex items-center gap-2 text-yellow-400 font-mono text-[10px]">
+                      <AlertTriangle className="w-3 h-3" />
+                      <span>Meme tokens have minimum 55/100 risk score due to speculative nature</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Twitter/X Social Metrics */}
+            {selectedToken.twitter_metrics && (
+              <div className="border border-blue-500/50 bg-blue-500/10 p-4 mb-4">
+                <h3 className="text-blue-400 font-mono text-xs tracking-wider mb-3 flex items-center gap-2">
+                  <span className="text-lg">𝕏</span>
+                  TWITTER / X METRICS
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-white/60 font-mono text-[10px] mb-1">FOLLOWERS</div>
+                    <div className="text-white font-mono text-sm">{selectedToken.twitter_metrics.followers?.toLocaleString() || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/60 font-mono text-[10px] mb-1">ENGAGEMENT</div>
+                    <div className="text-white font-mono text-sm">{selectedToken.twitter_metrics.engagement || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/60 font-mono text-[10px] mb-1">TWEETS (7D)</div>
+                    <div className="text-white font-mono text-sm">{selectedToken.twitter_metrics.tweets_7d || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/60 font-mono text-[10px] mb-1">ADOPTION SCORE</div>
+                    <div className={`font-mono text-sm font-bold ${
+                      (selectedToken.twitter_metrics.adoption_score || 0) > 70 ? 'text-green-400' :
+                      (selectedToken.twitter_metrics.adoption_score || 0) > 40 ? 'text-yellow-400' : 'text-red-400'
+                    }`}>
+                      {selectedToken.twitter_metrics.adoption_score || 'N/A'}/100
+                    </div>
+                  </div>
+                </div>
+                {selectedToken.twitter_metrics.handle && (
+                  <div className="mt-2 pt-2 border-t border-blue-500/30">
+                    <a 
+                      href={`https://twitter.com/${selectedToken.twitter_metrics.handle}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 font-mono text-[10px] underline"
+                    >
+                      @{selectedToken.twitter_metrics.handle}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Flags */}
             {selectedToken.criticalFlags?.length > 0 && (

@@ -1,4 +1,7 @@
 import { TokenData, RiskResult, RiskBreakdown } from './types/token-data'
+import { detectMemeTokenWithAI, generateAIExplanation } from './ai/gemini'
+import { getTwitterAdoptionData, calculateAdoptionRisk } from './twitter/adoption'
+import { getWeights, ChainType } from './risk-factors/weights'
 
 const WEIGHTS = {
   supplyDilution: 0.18,
@@ -15,14 +18,78 @@ const WEIGHTS = {
 
 /**
  * Calculate token risk using a unified 10-factor algorithm for both FREE and PREMIUM plans.
+ * Enhanced with AI meme detection, Twitter metrics, and chain-adaptive weights.
  */
 export async function calculateRisk(
   data: TokenData,
-  plan: 'FREE' | 'PREMIUM'
+  plan: 'FREE' | 'PREMIUM',
+  metadata?: {
+    tokenSymbol?: string
+    tokenName?: string
+    tokenDescription?: string
+    twitterHandle?: string
+    chain?: ChainType
+    manualClassification?: 'MEME_TOKEN' | 'UTILITY_TOKEN' | null
+  }
 ): Promise<RiskResult> {
   const hasGoPlus = data.is_honeypot !== undefined
 
-  console.log(`[Risk Calc] Starting calculation - Plan: ${plan}, GoPlus: ${hasGoPlus ? 'ACTIVE' : 'FALLBACK'}`)
+  console.log(`\n🔬 [Tokenomics Lab] Starting calculation - Plan: ${plan}, GoPlus: ${hasGoPlus ? 'ACTIVE' : 'FALLBACK'}`)
+  
+  // ═══════════════════════════════════════════════════════════
+  // STEP 1: AI MEME DETECTION → SELECT WEIGHT PROFILE
+  // ═══════════════════════════════════════════════════════════
+  
+  let memeDetection = { isMeme: false, confidence: 0, reasoning: '' }
+  let useNewWeights = false
+  let isManualOverride = false
+  
+  // Check for manual classification override
+  if (metadata?.manualClassification) {
+    console.log(`👤 [User Override] Manual classification: ${metadata.manualClassification}`)
+    memeDetection = {
+      isMeme: metadata.manualClassification === 'MEME_TOKEN',
+      confidence: 100,
+      reasoning: 'Manual classification by user'
+    }
+    useNewWeights = true
+    isManualOverride = true
+  } else if (metadata?.tokenSymbol || metadata?.tokenName) {
+    try {
+      console.log(`🤖 [AI] Detecting meme token...`)
+      memeDetection = await detectMemeTokenWithAI(
+        { symbol: metadata.tokenSymbol, name: metadata.tokenName },
+        metadata
+      )
+      console.log(`✓ Classification: ${memeDetection.isMeme ? 'MEME' : 'UTILITY'} (${memeDetection.confidence}% confident)`)
+      useNewWeights = true
+    } catch (error) {
+      console.log(`⚠ AI detection failed, using fallback`)
+    }
+  }
+  
+  // ═══════════════════════════════════════════════════════════
+  // STEP 2: TWITTER SOCIAL METRICS → ADOPTION SCORING
+  // ═══════════════════════════════════════════════════════════
+  
+  let twitterAdoptionScore: number | null = null
+  let twitterMetrics: any = null
+  
+  if (metadata?.tokenSymbol && metadata?.twitterHandle) {
+    try {
+      console.log(`🐦 [Twitter] Fetching social metrics...`)
+      const twitterData = await getTwitterAdoptionData(
+        metadata.tokenSymbol,
+        metadata.twitterHandle
+      )
+      twitterAdoptionScore = calculateAdoptionRisk(twitterData, data.holderCount)
+      twitterMetrics = twitterData // Store for later
+      console.log(`✓ Twitter Adoption Score: ${twitterAdoptionScore}/100`)
+    } catch (error) {
+      console.log(`⚠ Twitter API unavailable, using fallback adoption`)
+    }
+  }
+
   console.log(`[Risk Calc] Token Data:`, {
     marketCap: data.marketCap,
     fdv: data.fdv,
@@ -46,17 +113,50 @@ export async function calculateRisk(
     taxFee: calcTaxFee(data, hasGoPlus),
     distribution: calcDistribution(data),
     burnDeflation: calcBurnDeflation(data),
-    adoption: calcAdoption(data),
+    adoption: twitterAdoptionScore !== null ? twitterAdoptionScore : calcAdoption(data),
     auditTransparency: calcAuditTransparency(data, hasGoPlus)
   }
 
   console.log(`[Risk Calc] Individual Scores:`, scores)
 
-  // Weighted overall score
-  const overallScoreRaw = Object.entries(scores).reduce(
-    (sum, [key, value]) => sum + value * (WEIGHTS as any)[key],
-    0
-  )
+  // ═══════════════════════════════════════════════════════════
+  // STEP 3: WEIGHTED OVERALL SCORE (with chain-adaptive weights)
+  // ═══════════════════════════════════════════════════════════
+  
+  let overallScoreRaw: number
+  
+  if (useNewWeights) {
+    // Use new 9-factor weighted system
+    const chain = metadata?.chain || ChainType.EVM
+    const weights = getWeights(memeDetection.isMeme, chain)
+    
+    // Calculate weighted score (9 factors, excluding vesting)
+    overallScoreRaw = 
+      scores.supplyDilution * weights.supply_dilution +
+      scores.holderConcentration * weights.holder_concentration +
+      scores.liquidityDepth * weights.liquidity_depth +
+      scores.contractControl * weights.contract_control +
+      scores.taxFee * weights.tax_fee +
+      scores.distribution * weights.distribution +
+      scores.burnDeflation * weights.burn_deflation +
+      scores.adoption * weights.adoption +
+      scores.auditTransparency * weights.audit
+    
+    console.log(`⚖️ [New Weights] Using ${memeDetection.isMeme ? 'MEME' : 'STANDARD'} + ${chain} profile`)
+    
+    // MEME BASELINE: Meme tokens start at 50-60 baseline
+    if (memeDetection.isMeme) {
+      const memeBaseline = 55
+      overallScoreRaw = Math.max(overallScoreRaw, memeBaseline)
+      console.log(`✓ Meme Baseline Applied: min ${memeBaseline}`)
+    }
+  } else {
+    // Use legacy 10-factor weighted system
+    overallScoreRaw = Object.entries(scores).reduce(
+      (sum, [key, value]) => sum + value * (WEIGHTS as any)[key],
+      0
+    )
+  }
 
   console.log(`[Risk Calc] Overall Score (raw): ${overallScoreRaw.toFixed(2)}`)
 
@@ -89,13 +189,64 @@ export async function calculateRisk(
   }
 
   // PREMIUM PLAN - Show everything
-  return {
+  const result: RiskResult = {
     ...baseResult,
     breakdown: scores,
     critical_flags: extractCriticalFlags(data, hasGoPlus),
     upcoming_risks: calculateUpcomingRisks(data),
     detailed_insights: generateInsights(scores, data, hasGoPlus)
   }
+  
+  // ═══════════════════════════════════════════════════════════
+  // STEP 4: ADD MEME DETECTION TO INSIGHTS (PREMIUM only)
+  // ═══════════════════════════════════════════════════════════
+  
+  if (plan === 'PREMIUM' && useNewWeights) {
+    // Add structured AI insights
+    result.ai_insights = {
+      classification: memeDetection.isMeme ? 'MEME_TOKEN' : 'UTILITY_TOKEN',
+      confidence: memeDetection.confidence,
+      reasoning: isManualOverride ? 'Manual classification by user' : memeDetection.reasoning,
+      meme_baseline_applied: memeDetection.isMeme,
+      is_manual_override: isManualOverride
+    }
+    
+    // Add meme detection insight to detailed_insights (for backward compatibility)
+    const classificationPrefix = isManualOverride ? '👤 Manual Classification' : '🤖 AI Classification'
+    if (memeDetection.isMeme) {
+      result.detailed_insights = [
+        `${classificationPrefix}: MEME TOKEN (${memeDetection.confidence}% confident) - ${memeDetection.reasoning}`,
+        `⚠️ Meme Baseline Applied: Minimum risk score set to 55 due to speculative nature`,
+        ...(result.detailed_insights || [])
+      ]
+    } else {
+      result.detailed_insights = [
+        `${classificationPrefix}: UTILITY TOKEN (${memeDetection.confidence}% confident) - ${memeDetection.reasoning}`,
+        ...(result.detailed_insights || [])
+      ]
+    }
+    
+    // Add Twitter metrics if available
+    if (twitterMetrics && twitterAdoptionScore !== null) {
+      result.twitter_metrics = {
+        followers: twitterMetrics.followersCount || 0,
+        engagement_rate: twitterMetrics.engagementRate || 0,
+        tweets_7d: twitterMetrics.tweetsLast7Days || 0,
+        adoption_score: twitterAdoptionScore,
+        handle: metadata?.twitterHandle || ''
+      }
+      
+      result.detailed_insights.push(
+        `🐦 Twitter Metrics: Adoption risk score ${twitterAdoptionScore}/100 based on social presence`
+      )
+    }
+    
+    console.log(`✓ Enhanced insights added`)
+  }
+  
+  console.log(`✅ Risk calculation complete!\n`)
+  
+  return result
 }
 
 function classifyRisk(score: number): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
@@ -175,9 +326,10 @@ function calcHolderConcentration(data: TokenData): number {
 function calcLiquidityDepth(data: TokenData, hasGoPlus: boolean): number {
   let score = 0
   
-  // If no liquidity data, high risk
+  // CRITICAL FIX: If no liquidity data, default to HIGH RISK (not 0)
   if (!data.liquidityUSD || data.liquidityUSD === 0) {
-    return 85 // No liquidity data = very high risk
+    console.warn('[Liquidity] Missing liquidity data - defaulting to HIGH RISK (85)')
+    return 85 // ⚠️ No liquidity data = very high risk
   }
   
   // Absolute liquidity amount
@@ -191,8 +343,10 @@ function calcLiquidityDepth(data: TokenData, hasGoPlus: boolean): number {
   else if (data.liquidityUSD < 500000) score += 3
 
   // Market cap to liquidity ratio (if market cap available)
-  if (data.marketCap > 0) {
+  if (data.marketCap > 0 && data.liquidityUSD > 0) {
     const mcLiqRatio = data.marketCap / data.liquidityUSD
+    console.log(`[Liquidity] MC/Liq Ratio: ${mcLiqRatio.toFixed(2)}x (MC: $${(data.marketCap/1e6).toFixed(2)}M, Liq: $${(data.liquidityUSD/1e3).toFixed(2)}K)`)
+    
     if (mcLiqRatio > 500) score += 38
     else if (mcLiqRatio > 300) score += 32
     else if (mcLiqRatio > 200) score += 28
@@ -205,7 +359,9 @@ function calcLiquidityDepth(data: TokenData, hasGoPlus: boolean): number {
   if (hasGoPlus && !data.lp_locked) score += 20
   if (hasGoPlus && data.lp_locked) score -= 5 // Reduce risk if locked
 
-  return Math.min(score, 100)
+  const finalScore = Math.min(score, 100)
+  console.log(`[Liquidity] Final score: ${finalScore}`)
+  return finalScore
 }
 
 // FACTOR 4: Vesting & Unlock (Pure Mobula)
@@ -294,14 +450,37 @@ function calcTaxFee(data: TokenData, hasGoPlus: boolean): number {
 // FACTOR 7: Distribution (Pure Mobula)
 function calcDistribution(data: TokenData): number {
   let score = 0
+  
+  // CRITICAL FIX: Default estimate of 0.5 means we don't have real data
+  const hasRealData = data.top10HoldersPct !== 0.5 || data.teamAllocationPct
+  
+  if (!hasRealData) {
+    console.warn('[Distribution] No real holder distribution data (using default 0.5) - defaulting to 65')
+    return 65 // ⚠️ Unknown distribution = assume concentrated (risky)
+  }
+  
+  // Team allocation risk
   if (data.teamAllocationPct) {
     if (data.teamAllocationPct > 0.4) score += 35
     else if (data.teamAllocationPct > 0.3) score += 25
     else if (data.teamAllocationPct > 0.2) score += 15
   }
-  if (data.top10HoldersPct > 0.6) score += 30
-  else if (data.top10HoldersPct > 0.5) score += 20
-  return Math.min(score, 100)
+  
+  // Top 10 holders concentration (more important)
+  if (data.top10HoldersPct > 0) {
+    console.log(`[Distribution] Top 10 holders: ${(data.top10HoldersPct * 100).toFixed(1)}%`)
+    
+    if (data.top10HoldersPct >= 0.80) score += 55 // 80%+ = EXTREME
+    else if (data.top10HoldersPct >= 0.70) score += 45 // 70%+ = VERY HIGH
+    else if (data.top10HoldersPct >= 0.60) score += 35 // 60%+ = HIGH
+    else if (data.top10HoldersPct >= 0.50) score += 25 // 50%+ = MEDIUM-HIGH (includes default 0.5)
+    else if (data.top10HoldersPct >= 0.40) score += 15 // 40%+ = MEDIUM
+    else if (data.top10HoldersPct >= 0.30) score += 8  // 30%+ = LOW-MEDIUM
+  }
+  
+  const finalScore = Math.min(score, 100)
+  console.log(`[Distribution] Final score: ${finalScore}`)
+  return finalScore
 }
 
 // FACTOR 8: Burn & Deflation (Pure Mobula)

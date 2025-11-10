@@ -193,7 +193,15 @@ async function getPriceHistory(
   endDate: Date
 ): Promise<HistoricalDataPoint[]> {
   try {
-    // Try CoinGecko first (most reliable for established tokens)
+    // Try CoinMarketCap first (most reliable and has historical data)
+    const cmcData = await getPriceHistoryFromCoinMarketCap(address, startDate, endDate)
+    if (cmcData && cmcData.length > 0) {
+      console.log(`[Price History] Using CoinMarketCap data (${cmcData.length} points)`)
+      return cmcData
+    }
+
+    // Fallback to CoinGecko
+    console.log('[Price History] CoinMarketCap unavailable, trying CoinGecko...')
     const coinGeckoData = await getPriceHistoryFromCoinGecko(address, startDate, endDate)
     if (coinGeckoData && coinGeckoData.length > 0) {
       console.log(`[Price History] Using CoinGecko data (${coinGeckoData.length} points)`)
@@ -220,7 +228,86 @@ async function getPriceHistory(
 }
 
 /**
- * Get price history from CoinGecko API (primary source)
+ * Get price history from CoinMarketCap API (primary source)
+ */
+async function getPriceHistoryFromCoinMarketCap(
+  address: string,
+  startDate: Date,
+  endDate: Date
+): Promise<HistoricalDataPoint[]> {
+  try {
+    const apiKey = process.env.COINMARKETCAP_API_KEY
+    if (!apiKey) {
+      console.log('[CoinMarketCap] No API key configured')
+      return []
+    }
+
+    // First, get the CMC ID for this token
+    const infoUrl = `https://pro-api.coinmarketcap.com/v2/cryptocurrency/info?address=${address}`
+    const infoResponse = await fetch(infoUrl, {
+      headers: {
+        'X-CMC_PRO_API_KEY': apiKey,
+        'Accept': 'application/json'
+      }
+    })
+
+    if (!infoResponse.ok) {
+      console.log(`[CoinMarketCap] Info lookup failed: ${infoResponse.status}`)
+      return []
+    }
+
+    const infoData = await infoResponse.json()
+    const tokenIds = Object.keys(infoData.data || {})
+    
+    if (tokenIds.length === 0) {
+      console.log('[CoinMarketCap] No token found for address')
+      return []
+    }
+
+    const cmcId = tokenIds[0]
+    
+    // Calculate time range
+    const timeStart = Math.floor(startDate.getTime() / 1000)
+    const timeEnd = Math.floor(endDate.getTime() / 1000)
+    
+    // Get historical quotes (OHLCV data)
+    const quotesUrl = `https://pro-api.coinmarketcap.com/v2/cryptocurrency/ohlcv/historical?id=${cmcId}&time_start=${timeStart}&time_end=${timeEnd}&interval=daily`
+    
+    const quotesResponse = await fetch(quotesUrl, {
+      headers: {
+        'X-CMC_PRO_API_KEY': apiKey,
+        'Accept': 'application/json'
+      }
+    })
+
+    if (!quotesResponse.ok) {
+      console.log(`[CoinMarketCap] Historical quotes failed: ${quotesResponse.status}`)
+      return []
+    }
+
+    const quotesData = await quotesResponse.json()
+    const quotes = quotesData.data?.quotes || []
+
+    if (quotes.length === 0) {
+      console.log('[CoinMarketCap] No historical data available')
+      return []
+    }
+
+    // Convert to HistoricalDataPoint format
+    return quotes.map((quote: any) => ({
+      timestamp: new Date(quote.time_close).getTime(),
+      date: new Date(quote.time_close).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      value: quote.quote?.USD?.close || 0
+    }))
+
+  } catch (error) {
+    console.error('[CoinMarketCap] Error:', error)
+    return []
+  }
+}
+
+/**
+ * Get price history from CoinGecko API (fallback source)
  */
 async function getPriceHistoryFromCoinGecko(
   address: string,

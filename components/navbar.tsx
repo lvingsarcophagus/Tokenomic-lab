@@ -9,6 +9,7 @@ import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { Button } from "./ui/button"
 import { analyticsEvents } from "@/lib/firebase-analytics"
+import NotificationBell from "./notification-bell"
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -163,14 +164,9 @@ export default function Navbar() {
           {/* Desktop User Menu with Dynamic Interactions */}
           <div className="hidden md:flex items-center gap-1.5">
             {/* Notifications with Pulse & Glassmorphism */}
-            <button className="relative p-2 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-md transition-all duration-300 group hover:shadow-lg hover:shadow-white/5 h-9 w-9 flex items-center justify-center">
-              <Bell className="w-3.5 h-3.5 text-white/60 group-hover:text-white transition-all duration-300 group-hover:scale-110" />
-              {userData?.alerts && userData.alerts.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-white text-black flex items-center justify-center text-[8px] font-bold border border-black animate-pulse shadow-lg">
-                  {userData.alerts.length}
-                </span>
-              )}
-            </button>
+            <div className="border-2 border-white/20 hover:border-white/40 backdrop-blur-md transition-all duration-300 hover:shadow-lg hover:shadow-white/5 h-9 flex items-center justify-center">
+              <NotificationBell />
+            </div>
 
             {/* Profile with Hover Effect & Glassmorphism */}
             <Link href="/profile" className="group">

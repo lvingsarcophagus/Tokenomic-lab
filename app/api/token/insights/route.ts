@@ -316,19 +316,32 @@ async function getSecurityMetrics(address: string): Promise<SecurityMetrics> {
 }
 
 /**
- * Analyze top holder distribution
+ * Analyze top holder distribution - Fetch fresh data from GoPlus API
  */
 async function getHolderDistribution(address: string): Promise<HolderDistribution> {
   try {
-    // Get most recent scan with holder data
-    const historyRef = db.collectionGroup('scans')
-    const recentScan = await historyRef
-      .where('tokenAddress', '==', address.toLowerCase())
-      .orderBy('analyzedAt', 'desc')
-      .limit(1)
-      .get()
+    console.log(`[Holder Distribution] Fetching fresh data for ${address}`)
+    
+    // Fetch fresh data directly from GoPlus API
+    const goplusUrl = `https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=${address}`
+    const response = await fetch(goplusUrl, {
+      headers: {
+        'Accept': 'application/json',
+      },
+    })
 
-    if (recentScan.empty) {
+    if (!response.ok) {
+      console.error(`[Holder Distribution] GoPlus API error: ${response.status}`)
+      throw new Error('GoPlus API request failed')
+    }
+
+    const data = await response.json()
+    
+    // Extract token data (GoPlus returns data nested under token address)
+    const tokenData = data.result?.[address.toLowerCase()]
+    
+    if (!tokenData || !Array.isArray(tokenData.holders) || tokenData.holders.length === 0) {
+      console.log('[Holder Distribution] No holder data available from GoPlus')
       return {
         top10: 0,
         top50: 0,
@@ -338,33 +351,60 @@ async function getHolderDistribution(address: string): Promise<HolderDistributio
       }
     }
 
-    const data = recentScan.docs[0].data()
-    const holderConcentration = data.results?.breakdown?.holderConcentration || 50
+    const holders = tokenData.holders
+    console.log(`[Holder Distribution] Found ${holders.length} holders in GoPlus data`)
     
-    // Estimate distribution based on concentration
-    // Higher concentration = more centralized
-    let top10Percent = 15
-    let top50Percent = 35
-    let top100Percent = 50
-
-    if (holderConcentration > 70) {
-      // Very concentrated
-      top10Percent = 40
-      top50Percent = 70
-      top100Percent = 85
-    } else if (holderConcentration > 50) {
-      // Concentrated
-      top10Percent = 25
-      top50Percent = 50
-      top100Percent = 65
-    } else if (holderConcentration < 30) {
-      // Well distributed
-      top10Percent = 8
-      top50Percent = 20
-      top100Percent = 35
+    // Calculate actual TOP 10 percentage from GoPlus data
+    let top10Percent = 0
+    if (holders.length >= 10) {
+      top10Percent = holders.slice(0, 10).reduce((sum: number, h: any) => {
+        // GoPlus returns percent as decimal string (e.g., "0.208243" = 20.8243%)
+        const pct = parseFloat(h.percent || '0')
+        return sum + (pct * 100)
+      }, 0)
     }
+    
+    // Calculate actual TOP 50 percentage
+    let top50Percent = 0
+    if (holders.length >= 50) {
+      top50Percent = holders.slice(0, 50).reduce((sum: number, h: any) => {
+        const pct = parseFloat(h.percent || '0')
+        return sum + (pct * 100)
+      }, 0)
+    } else if (holders.length > 10) {
+      // Use all available holders if less than 50
+      top50Percent = holders.reduce((sum: number, h: any) => {
+        const pct = parseFloat(h.percent || '0')
+        return sum + (pct * 100)
+      }, 0)
+    }
+    
+    // Calculate actual TOP 100 percentage
+    let top100Percent = 0
+    if (holders.length >= 100) {
+      top100Percent = holders.slice(0, 100).reduce((sum: number, h: any) => {
+        const pct = parseFloat(h.percent || '0')
+        return sum + (pct * 100)
+      }, 0)
+    } else if (holders.length > 50) {
+      // Use all available holders if less than 100
+      top100Percent = holders.reduce((sum: number, h: any) => {
+        const pct = parseFloat(h.percent || '0')
+        return sum + (pct * 100)
+      }, 0)
+    } else {
+      // Estimate if we have less than 50 holders
+      top100Percent = top50Percent * 1.2 // Rough estimate
+    }
+    
+    // Round to 1 decimal place for display
+    top10Percent = Math.round(top10Percent * 10) / 10
+    top50Percent = Math.round(top50Percent * 10) / 10
+    top100Percent = Math.round(top100Percent * 10) / 10
 
-    // Determine decentralization rating
+    console.log(`[Holder Distribution] ✅ Calculated: TOP10=${top10Percent}%, TOP50=${top50Percent}%, TOP100=${top100Percent}%`)
+
+    // Determine decentralization rating based on TOP 10 holders
     let decentralization: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'CRITICAL' = 'FAIR'
     
     if (top10Percent < 10) decentralization = 'EXCELLENT'
@@ -378,11 +418,11 @@ async function getHolderDistribution(address: string): Promise<HolderDistributio
       top50: top50Percent,
       top100: top100Percent,
       decentralization,
-      concentration: Math.round(holderConcentration)
+      concentration: Math.round(top10Percent)
     }
 
   } catch (error) {
-    console.error('Error fetching holder distribution:', error)
+    console.error('❌ Error fetching holder distribution:', error)
     return {
       top10: 0,
       top50: 0,

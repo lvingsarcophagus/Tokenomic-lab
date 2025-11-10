@@ -237,6 +237,7 @@ export default function FreeDashboard() {
             
             console.log('[Dashboard] ✅ Setting NEW selectedToken with risk:', newToken.overallRisk)
             setSelectedToken(newToken)
+            setShowPreviousScans(false) // Reset flag to prevent auto-loading
 
             // Reload dashboard stats (but delay to prevent overwriting fresh scan)
             setTimeout(() => {
@@ -539,11 +540,12 @@ export default function FreeDashboard() {
       hasStats: !!stats?.recentScans?.length, 
       hasSelectedToken: !!selectedToken,
       justScanned,
-      showPreviousScans
+      showPreviousScans,
+      scanning
     })
     
-    // Only auto-load if user explicitly wants to see previous scans
-    if (stats?.recentScans && stats.recentScans.length > 0 && !selectedToken && !justScanned && showPreviousScans) {
+    // Only auto-load if user explicitly wants to see previous scans AND not currently scanning
+    if (stats?.recentScans && stats.recentScans.length > 0 && !selectedToken && !justScanned && showPreviousScans && !scanning) {
       const latest = stats.recentScans[0]
       console.log('[Dashboard] Loading latest scan from Firebase:', latest)
       console.log('[Dashboard] Latest scan risk score:', latest.results.overall_risk_score)
@@ -903,295 +905,262 @@ export default function FreeDashboard() {
               <div className="flex-1 h-px bg-white"></div>
             </div>
 
-            {/* Token Header Card */}
-            <div className="border border-white/30 bg-black/60 p-6 mb-6">
-              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl lg:text-3xl font-bold text-white font-mono tracking-wider">
-                      TOKENOMICS LAB
-                    </h2>
-                    {userProfile?.plan === 'PREMIUM' && (
-                      <div className="px-3 py-1 bg-white/10 border border-white/30">
-                        <span className="text-white font-mono text-xs tracking-wider flex items-center gap-1">
-                          <Crown className="w-3 h-3" />
-                          PREMIUM
+            {/* Token Analysis Card - Clean Design */}
+            <div className="border border-white/20 bg-black/60 p-6 mb-8">
+              {/* Top Section: Token Info + Stats + Risk Score */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                {/* Token Info */}
+                <div className="lg:col-span-1">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1">
+                      <h2 className="text-3xl font-bold text-white font-mono tracking-wider">
+                        {selectedToken.symbol}
+                      </h2>
+                      <p className="text-white/70 font-mono text-sm mt-1">
+                        {selectedToken.name || selectedToken.symbol}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="px-2 py-1 bg-white/10 border border-white/20 text-white/60 font-mono text-[10px] tracking-wider">
+                          {selectedToken.chain}
+                        </span>
+                        <span className="px-2 py-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-[10px] tracking-wider">
+                          {selectedToken.confidence || 93}% CONFIDENCE
                         </span>
                       </div>
-                    )}
+                      <p className="text-white/40 font-mono text-[10px] mt-2 break-all">
+                        {selectedToken.address}
+                      </p>
+                    </div>
                   </div>
-                  <div className="w-full h-px bg-white/30 mb-3"></div>
-                  <div className="flex flex-wrap items-center gap-2 text-white font-mono text-sm">
-                    <span className="font-bold">{selectedToken.symbol}</span>
-                    <span className="text-white/40">|</span>
-                    <span className="text-white/80">{selectedToken.marketCap} MC</span>
-                    <span className="text-white/40">|</span>
-                    <span className="text-white/80">{selectedToken.age} old</span>
-                    <span className="text-white/40">|</span>
-                    <span className="text-white/80">{selectedToken.chain}</span>
-                  </div>
-                </div>
-                
-                {/* Add to Watchlist Button */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={isInWatchlistState ? handleRemoveFromWatchlist : handleAddToWatchlist}
-                    disabled={watchlistLoading}
-                    className={`
-                      px-6 py-3 border font-mono text-sm tracking-wider
-                      transition-all duration-300 flex items-center gap-2
-                      ${isInWatchlistState 
-                        ? 'bg-green-500/20 border-green-500/40 text-green-400 hover:bg-green-500/30' 
-                        : 'bg-white/10 border-white/30 text-white hover:bg-white/20'
-                      }
-                      ${watchlistLoading ? 'opacity-50 cursor-not-allowed' : ''}
-                    `}
-                  >
-                    {watchlistLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        LOADING...
-                      </>
-                    ) : isInWatchlistState ? (
-                      <>
-                        <CheckCircle className="w-4 h-4" />
-                        IN WATCHLIST
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4" />
-                        ADD TO WATCHLIST
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-              
-              <div className="w-full h-px bg-white/30 mb-6"></div>
-
-              {/* Main Risk Indicators */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                {/* Price */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/60 font-mono text-xs tracking-wider">CURRENT PRICE</span>
-                  </div>
-                  <div className="text-4xl font-bold text-white font-mono mb-2">
-                    {selectedToken.price !== undefined && selectedToken.price !== null && selectedToken.price > 0
-                      ? `$${selectedToken.price < 1 ? selectedToken.price.toFixed(6) : selectedToken.price.toFixed(2)}`
-                      : 'N/A'}
-                  </div>
-                  <div className="h-2 bg-black border border-white/20 mb-2">
-                    <div className="h-full bg-green-500" style={{ width: selectedToken.price > 0 ? '100%' : '0%' }}></div>
-                  </div>
-                  <span className="text-sm font-mono text-white/60">
-                    {selectedToken.price > 0 ? 'LIVE MARKET DATA' : 'NO PRICE DATA'}
-                  </span>
                 </div>
 
-                {/* Overall Risk */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/60 font-mono text-xs tracking-wider">OVERALL RISK</span>
-                    <span className="text-white font-mono text-xs">{selectedToken.lastUpdated}</span>
+                {/* Token Stats */}
+                <div className="lg:col-span-1 border-l border-r border-white/10 px-6">
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-white/60 font-mono text-[10px] tracking-wider mb-1">CURRENT PRICE</div>
+                      <div className="text-2xl font-bold text-white font-mono">
+                        {selectedToken.price !== undefined && selectedToken.price !== null && selectedToken.price > 0
+                          ? `$${selectedToken.price < 1 ? selectedToken.price.toFixed(6) : selectedToken.price.toLocaleString()}`
+                          : 'N/A'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-white/60 font-mono text-[10px] tracking-wider mb-1">MARKET CAP</div>
+                      <div className="text-lg font-bold text-white/90 font-mono">{selectedToken.marketCap}</div>
+                    </div>
+                    <div>
+                      <div className="text-white/60 font-mono text-[10px] tracking-wider mb-1">TOKEN AGE</div>
+                      <div className="text-sm font-bold text-white/80 font-mono">{selectedToken.age}</div>
+                    </div>
                   </div>
-                  <div className="text-4xl font-bold text-white font-mono mb-2">
+                </div>
+
+                {/* Risk Score */}
+                <div className="lg:col-span-1 flex flex-col items-center justify-center">
+                  <div className={`text-6xl font-bold font-mono ${
+                    (selectedToken.overallRisk || 0) <= 30 ? 'text-green-500' :
+                    (selectedToken.overallRisk || 0) <= 60 ? 'text-yellow-500' :
+                    'text-red-500'
+                  }`}>
                     {selectedToken.overallRisk || 0}
                   </div>
-                  <div className="h-2 bg-black border border-white/20 mb-2">
-                    <div 
-                      className={`h-full ${getRiskColor(selectedToken.overallRisk || 0)}`}
-                      style={{ width: getRiskBarWidth(selectedToken.overallRisk || 0) }}
-                    ></div>
-                  </div>
-                  <span className={`text-sm font-mono font-bold ${
-                    (selectedToken.overallRisk || 0) <= 30 ? 'text-green-400' :
-                    (selectedToken.overallRisk || 0) <= 60 ? 'text-yellow-400' :
-                    'text-red-400'
+                  <div className="text-white/60 font-mono text-xs mt-2 tracking-wider">RISK SCORE</div>
+                  <div className={`mt-3 px-4 py-2 rounded border font-mono text-xs tracking-wider ${
+                    (selectedToken.overallRisk || 0) <= 30 
+                      ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                      : (selectedToken.overallRisk || 0) <= 60 
+                      ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+                      : 'bg-red-500/10 border-red-500/30 text-red-400'
                   }`}>
                     {getRiskLabel(selectedToken.overallRisk || 0)}
-                  </span>
-                </div>
-
-                {/* Confidence */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/60 font-mono text-xs tracking-wider">CONFIDENCE</span>
-                    {selectedToken.dataTier && (
-                      <span className={`px-1.5 py-0.5 text-[8px] font-mono tracking-wider border ${
-                        selectedToken.dataTier === 'TIER_1_PREMIUM' ? 'bg-green-500/20 text-green-400 border-green-500/40' :
-                        selectedToken.dataTier === 'TIER_2_STANDARD' ? 'bg-blue-500/20 text-blue-400 border-blue-500/40' :
-                        selectedToken.dataTier === 'TIER_3_LIMITED' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' :
-                        'bg-red-500/20 text-red-400 border-red-500/40'
-                      }`}>
-                        {selectedToken.dataTier.replace('TIER_', 'T').replace('_', ' ')}
-                      </span>
-                    )}
                   </div>
-                  <div className="text-4xl font-bold text-white font-mono mb-2">
-                    {selectedToken.confidence || 0}%
-                  </div>
-                  <div className="h-2 bg-black border border-white/20 mb-2">
-                    <div 
-                      className={`h-full ${
-                        (selectedToken.confidence || 0) >= 90 ? 'bg-green-500' :
-                        (selectedToken.confidence || 0) >= 70 ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`}
-                      style={{ width: `${selectedToken.confidence || 0}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-sm font-mono text-white/60">
-                    {selectedToken.dataFreshness 
-                      ? `${Math.round((selectedToken.dataFreshness || 1) * 100)}% FRESH`
-                      : (userProfile?.plan === 'PREMIUM' ? 'PREMIUM DATA' : 'BASIC DATA')
-                    }
-                  </span>
-                </div>
-
-                {/* Freshness */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/60 font-mono text-xs tracking-wider">FRESHNESS</span>
-                  </div>
-                  <div className="text-4xl font-bold text-white font-mono mb-2">
-                    {selectedToken.lastUpdated || 'N/A'}
-                  </div>
-                  <div className="h-2 bg-black border border-white/20 mb-2">
-                    <div className="h-full bg-white" style={{ width: '90%' }}></div>
-                  </div>
-                  <span className="text-sm font-mono text-green-400 flex items-center gap-1">
-                    <Activity className="w-3 h-3" />
-                    LIVE
-                  </span>
                 </div>
               </div>
 
-              {/* Critical Flags Alert */}
-              {selectedToken.criticalFlags.length > 0 ? (
-                <div className="bg-red-500/20 border-2 border-red-500 p-4 mb-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AlertTriangle className="w-5 h-5 text-red-500" />
-                    <span className="text-red-500 font-mono text-sm font-bold tracking-wider">
-                      CRITICAL FLAGS
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {selectedToken.criticalFlags.map((flag: string, i: number) => (
-                      <div key={i} className="text-white font-mono text-xs flex items-start gap-2">
-                        <XCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                        <span>{flag}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-green-500/10 border border-green-500/30 p-4 mb-6">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-green-400 font-mono text-sm font-bold tracking-wider">
-                      CRITICAL FLAGS
-                    </span>
-                    <span className="text-white font-mono text-sm ml-auto">None 🎉</span>
-                  </div>
-                </div>
+              <div className="border-t border-white/10 mb-6"></div>
+
+              {/* Action Buttons */}
+              <button
+                onClick={isInWatchlistState ? handleRemoveFromWatchlist : handleAddToWatchlist}
+                disabled={watchlistLoading}
+                className="flex items-center gap-2 px-5 py-3 bg-white/10 border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white hover:text-black hover:border-white transition-all disabled:opacity-50 backdrop-blur-md"
+              >
+                {watchlistLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    LOADING...
+                  </>
+                ) : isInWatchlistState ? (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    IN WATCHLIST
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    ADD TO WATCHLIST
+                  </>
+                )}
+              </button>
+
+              {selectedToken.address && selectedToken.chain && (
+                <a
+                  href={`https://${selectedToken.chain === 'Ethereum' ? 'etherscan.io' : 'bscscan.com'}/token/${selectedToken.address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-5 py-3 bg-white/10 border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-cyan-500 hover:border-cyan-500 hover:text-white transition-all backdrop-blur-md"
+                >
+                  <Search className="w-4 h-4" />
+                  VIEW ON EXPLORER
+                  <ArrowRight className="w-3 h-3" />
+                </a>
               )}
 
-              {/* 7-Factor Breakdown */}
-              <div className="border border-white/30 bg-black/40 p-6 mb-6">
-                <h3 className="text-white font-mono text-sm tracking-wider mb-4 flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  7-FACTOR BREAKDOWN
+              <button
+                onClick={() => {
+                  setSelectedToken(null)
+                  setScannedToken(null)
+                  setJustScanned(false)
+                }}
+                className="flex items-center gap-2 px-5 py-3 bg-transparent border border-red-500/30 text-red-400 font-mono text-xs tracking-wider hover:bg-red-500 hover:border-red-500 hover:text-white transition-all ml-auto"
+              >
+                <X className="w-4 h-4" />
+                CLOSE
+              </button>
+            </div>
+
+            {/* Risk Factors Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+              {/* Risk Factors - Clean Grid */}
+              <div className="border border-white/10 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-white/60 font-mono text-[10px] tracking-wider">CONTRACT SECURITY</span>
+                  <span className="text-white font-mono text-sm font-bold">{selectedToken.factors.contractSecurity}</span>
+                </div>
+                <div className="h-1 bg-white/20 rounded overflow-hidden">
+                  <div className={`h-full ${getRiskColor(selectedToken.factors.contractSecurity)}`} style={{ width: `${selectedToken.factors.contractSecurity}%` }}></div>
+                </div>
+              </div>
+
+              <div className="border border-white/10 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-white/60 font-mono text-[10px] tracking-wider">SUPPLY RISK</span>
+                  <span className="text-white font-mono text-sm font-bold">{selectedToken.factors.supplyRisk}</span>
+                </div>
+                <div className="h-1 bg-white/20 rounded overflow-hidden">
+                  <div className={`h-full ${getRiskColor(selectedToken.factors.supplyRisk)}`} style={{ width: `${selectedToken.factors.supplyRisk}%` }}></div>
+                </div>
+              </div>
+
+              <div className="border border-white/10 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-white/60 font-mono text-[10px] tracking-wider">WHALE CONCENTRATION</span>
+                  <span className="text-white font-mono text-sm font-bold">{Math.round(selectedToken.factors.whaleConcentration)}</span>
+                </div>
+                <div className="h-1 bg-white/20 rounded overflow-hidden">
+                  <div className={`h-full ${getRiskColor(selectedToken.factors.whaleConcentration)}`} style={{ width: `${selectedToken.factors.whaleConcentration}%` }}></div>
+                </div>
+              </div>
+
+              <div className="border border-white/10 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-white/60 font-mono text-[10px] tracking-wider">LIQUIDITY DEPTH</span>
+                  <span className="text-white font-mono text-sm font-bold">{Math.round(selectedToken.factors.liquidityDepth)}</span>
+                </div>
+                <div className="h-1 bg-white/20 rounded overflow-hidden">
+                  <div className={`h-full ${getRiskColor(selectedToken.factors.liquidityDepth)}`} style={{ width: `${selectedToken.factors.liquidityDepth}%` }}></div>
+                </div>
+              </div>
+
+              <div className="border border-white/10 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-white/60 font-mono text-[10px] tracking-wider">MARKET ACTIVITY</span>
+                  <span className="text-white font-mono text-sm font-bold">{Math.round(selectedToken.factors.marketActivity)}</span>
+                </div>
+                <div className="h-1 bg-white/20 rounded overflow-hidden">
+                  <div className={`h-full ${getRiskColor(selectedToken.factors.marketActivity)}`} style={{ width: `${selectedToken.factors.marketActivity}%` }}></div>
+                </div>
+              </div>
+
+              <div className="border border-white/10 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-white/60 font-mono text-[10px] tracking-wider">BURN MECHANICS</span>
+                  <span className="text-white font-mono text-sm font-bold">{selectedToken.factors.burnMechanics}</span>
+                </div>
+                <div className="h-1 bg-white/20 rounded overflow-hidden">
+                  <div className={`h-full ${getRiskColor(selectedToken.factors.burnMechanics)}`} style={{ width: `${selectedToken.factors.burnMechanics}%` }}></div>
+                </div>
+              </div>
+
+              <div className="border border-white/10 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-white/60 font-mono text-[10px] tracking-wider">TOKEN AGE</span>
+                  <span className="text-white font-mono text-sm font-bold">{selectedToken.factors.tokenAge}</span>
+                </div>
+                <div className="h-1 bg-white/20 rounded overflow-hidden">
+                  <div className={`h-full ${getRiskColor(selectedToken.factors.tokenAge)}`} style={{ width: `${selectedToken.factors.tokenAge}%` }}></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Red Flags */}
+            {selectedToken.redFlags.length > 0 && (
+              <div className="border border-red-500/30 bg-red-500/5 p-6 mb-6">
+                <h3 className="text-red-400 font-mono text-lg font-bold tracking-wider mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  RED FLAGS
                 </h3>
                 <div className="space-y-3">
-                  {[
-                    { name: 'Contract Security', score: selectedToken.factors.contractSecurity, badge: 'verified', icon: Shield },
-                    { name: 'Supply Risk', score: selectedToken.factors.supplyRisk, badge: 'on-chain', icon: Droplet },
-                    { name: 'Whale Concentration', score: selectedToken.factors.whaleConcentration, badge: '95% top10', icon: Users },
-                    { name: 'Liquidity Depth', score: selectedToken.factors.liquidityDepth, badge: '$89K', icon: TrendingUp },
-                    { name: 'Market Activity', score: selectedToken.factors.marketActivity, badge: '12 tx/h', icon: Activity },
-                    { name: 'Burn Mechanics', score: selectedToken.factors.burnMechanics, badge: 'defi', icon: Flame },
-                    { name: 'Token Age', score: selectedToken.factors.tokenAge, badge: '2 h', icon: Clock },
-                  ].map((factor, i) => (
-                    <div key={i} className="group">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <factor.icon className="w-3 h-3 text-white/40" />
-                          <span className="text-white/80 font-mono text-xs">{factor.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-mono text-xs font-bold">{factor.score}</span>
-                          <span className="text-white/40 font-mono text-[10px]">({factor.badge})</span>
-                        </div>
-                      </div>
-                      <div className="h-1.5 bg-black border border-white/10">
-                        <div 
-                          className={`h-full transition-all duration-300 ${getRiskColor(factor.score)}`}
-                          style={{ width: getRiskBarWidth(factor.score) }}
-                        ></div>
-                      </div>
+                  {selectedToken.redFlags.map((flag: string, i: number) => (
+                    <div key={i} className="flex items-start gap-3 text-white/90 font-mono text-sm">
+                      <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                      <span>{flag}</span>
                     </div>
                   ))}
                 </div>
               </div>
+            )}
 
-              {/* Red Flags */}
-              {selectedToken.redFlags.length > 0 && (
-                <div className="border border-red-500/30 bg-red-500/5 p-6 mb-6">
-                  <h3 className="text-red-400 font-mono text-lg font-bold tracking-wider mb-4 flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5" />
-                    RED FLAGS
-                  </h3>
-                  <div className="space-y-3">
-                    {selectedToken.redFlags.map((flag: string, i: number) => (
-                      <div key={i} className="flex items-start gap-3 text-white/90 font-mono text-sm">
-                        <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                        <span>{flag}</span>
-                      </div>
-                    ))}
-                  </div>
+            {/* Positive Signals */}
+            {selectedToken.positiveSignals.length > 0 && (
+              <div className="border border-green-500/30 bg-green-500/5 p-6 mb-6">
+                <h3 className="text-green-400 font-mono text-lg font-bold tracking-wider mb-4 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  POSITIVE SIGNALS
+                </h3>
+                <div className="space-y-3">
+                  {selectedToken.positiveSignals.map((signal: string, i: number) => (
+                    <div key={i} className="flex items-start gap-3 text-white/90 font-mono text-sm">
+                      <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{signal}</span>
+                    </div>
+                  ))}
                 </div>
-              )}
-
-              {/* Positive Signals */}
-              {selectedToken.positiveSignals.length > 0 && (
-                <div className="border border-green-500/30 bg-green-500/5 p-6 mb-6">
-                  <h3 className="text-green-400 font-mono text-lg font-bold tracking-wider mb-4 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" />
-                    POSITIVE SIGNALS
-                  </h3>
-                  <div className="space-y-3">
-                    {selectedToken.positiveSignals.map((signal: string, i: number) => (
-                      <div key={i} className="flex items-start gap-3 text-white/90 font-mono text-sm">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span>{signal}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Raw JSON Data */}
-              <div className="border border-white/20 bg-black/60">
-                <button
-                  onClick={() => setShowRawData(!showRawData)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
-                >
-                  <span className="text-white font-mono text-sm tracking-wider">RAW JSON DATA</span>
-                  {showRawData ? (
-                    <ChevronUp className="w-4 h-4 text-white" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-white" />
-                  )}
-                </button>
-                {showRawData && (
-                  <div className="p-4 border-t border-white/20 bg-black/80">
-                    <pre className="text-white/80 font-mono text-[10px] overflow-x-auto">
-                      {JSON.stringify(selectedToken.rawData, null, 2)}
-                    </pre>
-                  </div>
-                )}
               </div>
+            )}
+
+            {/* Raw JSON Data */}
+            <div className="border border-white/20 bg-black/60">
+              <button
+                onClick={() => setShowRawData(!showRawData)}
+                className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+              >
+                <span className="text-white font-mono text-sm tracking-wider">RAW JSON DATA</span>
+                {showRawData ? (
+                  <ChevronUp className="w-4 h-4 text-white" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-white" />
+                )}
+              </button>
+              {showRawData && (
+                <div className="p-4 border-t border-white/20 bg-black/80">
+                  <pre className="text-white/80 font-mono text-[10px] overflow-x-auto">
+                    {JSON.stringify(selectedToken.rawData, null, 2)}
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
         )}

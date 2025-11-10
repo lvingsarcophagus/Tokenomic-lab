@@ -127,19 +127,22 @@ export default function LandingPage() {
           <div className="relative mb-8">
             <div className="hidden lg:block absolute -right-3 top-0 bottom-0 w-1 dither-pattern opacity-40"></div>
             <h1 className="text-4xl lg:text-6xl xl:text-8xl font-bold text-white mb-6 leading-tight font-mono tracking-wider">
-              PROFESSIONAL
+              AI-POWERED
               <br />
-              <span className="text-white/80">TOKENOMICS</span> ANALYSIS
+              <span className="text-white/80">MEME COIN</span> DETECTION
             </h1>
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <div className="px-3 py-1 bg-blue-500/20 border border-blue-500/50 backdrop-blur-sm">
+                <span className="text-blue-400 text-xs font-mono tracking-wider">🎭 MEME DETECTION</span>
+              </div>
               <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
                 <span className="text-white text-xs font-mono tracking-wider">MULTI-CHAIN</span>
               </div>
               <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
                 <span className="text-white text-xs font-mono tracking-wider">REAL-TIME</span>
               </div>
-              <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
-                <span className="text-white text-xs font-mono tracking-wider">AI-POWERED</span>
+              <div className="px-3 py-1 bg-cyan-500/20 border border-cyan-500/50 backdrop-blur-sm">
+                <span className="text-cyan-400 text-xs font-mono tracking-wider">AI-POWERED</span>
               </div>
             </div>
           </div>
@@ -154,12 +157,13 @@ export default function LandingPage() {
           {/* Description - Enhanced */}
           <div className="relative max-w-3xl mb-10">
             <p className="text-base lg:text-lg text-white/90 mb-6 leading-relaxed font-mono">
-              COMPREHENSIVE TOKENOMICS ANALYSIS PLATFORM. REAL-TIME RISK ASSESSMENT & SECURITY AUDITS. 
-              PROFESSIONAL-GRADE ANALYTICS ACROSS 7+ BLOCKCHAINS.
+              ADVANCED AI CLASSIFIES MEME vs UTILITY TOKENS INSTANTLY. DETECTS HIGH-RISK MEMECOINS WITH 80%+ CONFIDENCE.
+              REAL-TIME SECURITY AUDITS & RISK ASSESSMENT ACROSS 5+ BLOCKCHAINS.
             </p>
             <p className="text-sm lg:text-base text-white/70 mb-8 leading-relaxed font-mono">
-              Powered by 5+ premium APIs including GoPlus, DexScreener, and Moralis. 
-              Advanced 7-factor risk scoring with behavioral analysis. Expert insights for informed trading decisions.
+              Our proprietary AI analyzes token names, symbols, and metadata to identify meme coins and apply appropriate risk baselines.
+              Meme tokens automatically flagged with minimum 55/100 risk score due to speculative nature.
+              Powered by Gemini AI, GoPlus Security, DexScreener, Moralis, and CoinGecko.
             </p>
             
             <div className="hidden lg:block absolute -left-4 top-1/2 w-3 h-3 border border-white opacity-30" style={{ transform: 'translateY(-50%)' }}>
@@ -169,21 +173,21 @@ export default function LandingPage() {
 
           {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <div className="border border-blue-500/30 bg-blue-500/10 backdrop-blur-sm p-4">
+              <div className="text-2xl lg:text-3xl font-bold text-blue-400 font-mono mb-1">🎭 AI</div>
+              <div className="text-xs text-blue-300/80 font-mono">MEME DETECTION</div>
+            </div>
             <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
-              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">7+</div>
+              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">5+</div>
               <div className="text-xs text-white/60 font-mono">BLOCKCHAINS</div>
             </div>
             <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
-              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">5</div>
-              <div className="text-xs text-white/60 font-mono">API SOURCES</div>
+              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">80%+</div>
+              <div className="text-xs text-white/60 font-mono">AI CONFIDENCE</div>
             </div>
             <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
-              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">7</div>
-              <div className="text-xs text-white/60 font-mono">RISK FACTORS</div>
-            </div>
-            <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
-              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">24/7</div>
-              <div className="text-xs text-white/60 font-mono">MONITORING</div>
+              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">55</div>
+              <div className="text-xs text-white/60 font-mono">MEME BASELINE</div>
             </div>
           </div>
 
@@ -192,7 +196,7 @@ export default function LandingPage() {
             <Link href="/dashboard">
               <button className="relative px-10 py-5 bg-white text-black font-mono text-base lg:text-lg border-2 border-white hover:bg-transparent hover:text-white transition-all duration-200 group overflow-hidden">
                 <span className="relative z-10 flex items-center gap-2 justify-center font-bold">
-                  ACCESS SYSTEM
+                  SCAN MEME COINS NOW
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </span>
                 <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-200"></div>
@@ -200,10 +204,10 @@ export default function LandingPage() {
             </Link>
             
             <Link href="/signup">
-              <button className="relative px-10 py-5 bg-transparent border-2 border-white text-white font-mono text-base lg:text-lg hover:bg-white/10 transition-all duration-200 group">
+              <button className="relative px-10 py-5 bg-transparent border-2 border-blue-500 text-blue-400 font-mono text-base lg:text-lg hover:bg-blue-500/10 transition-all duration-200 group">
                 <span className="flex items-center gap-2 justify-center">
-                  GET STARTED FREE
-                  <Shield className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  TRY AI DETECTION FREE
+                  <span className="text-xl">🎭</span>
                 </span>
               </button>
             </Link>
@@ -213,9 +217,123 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 opacity-40">
             <span className="text-white text-[9px] font-mono">∞</span>
             <div className="flex-1 h-px bg-white max-w-xs"></div>
-            <span className="text-white text-[9px] font-mono">SECURITY.PROTOCOL.V1.0</span>
+            <span className="text-white text-[9px] font-mono">AI.MEME.DETECTION.V2.0</span>
             <div className="flex-1 h-px bg-white max-w-xs"></div>
             <span className="text-white text-[9px] font-mono">∞</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Meme Coin Detection Section - FEATURED */}
+      <section className="relative px-6 py-20 border-t border-blue-500/20 bg-gradient-to-b from-blue-500/5 to-transparent">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-12 text-center">
+            <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-blue-500/10 border border-blue-500/30 backdrop-blur-sm">
+              <span className="text-blue-400 text-2xl">🎭</span>
+              <span className="text-blue-400 text-xs font-mono tracking-wider">MEME COIN SPECIALIST</span>
+            </div>
+            <h2 className="text-3xl lg:text-5xl font-bold text-white font-mono tracking-wider mb-6">
+              INTELLIGENT MEME DETECTION
+            </h2>
+            <p className="text-white/70 text-sm lg:text-base font-mono max-w-3xl mx-auto leading-relaxed">
+              Our AI analyzes token metadata to instantly classify meme coins and apply appropriate risk assessment. 
+              Stay protected from speculative tokens with automated baseline scoring.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            {/* Feature 1 */}
+            <Card className="bg-black/60 backdrop-blur-lg border border-blue-500/30 hover:border-blue-500/50 transition-all group">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-blue-500/20 border border-blue-500/40 flex items-center justify-center mb-4 text-2xl">
+                  🤖
+                </div>
+                <h4 className="text-lg font-bold text-blue-400 font-mono tracking-wider mb-3">AI CLASSIFICATION</h4>
+                <p className="text-white/60 text-sm font-mono leading-relaxed mb-4">
+                  Advanced Gemini AI analyzes token names, symbols, and metadata patterns to identify meme coins with 80%+ accuracy.
+                </p>
+                <div className="flex items-center gap-2 text-blue-400/60 text-xs font-mono">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>INSTANT DETECTION</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Feature 2 */}
+            <Card className="bg-black/60 backdrop-blur-lg border border-blue-500/30 hover:border-blue-500/50 transition-all group">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-blue-500/20 border border-blue-500/40 flex items-center justify-center mb-4 text-2xl">
+                  ⚠️
+                </div>
+                <h4 className="text-lg font-bold text-blue-400 font-mono tracking-wider mb-3">55 RISK BASELINE</h4>
+                <p className="text-white/60 text-sm font-mono leading-relaxed mb-4">
+                  Meme tokens automatically receive minimum 55/100 risk score due to high volatility and speculative nature.
+                </p>
+                <div className="flex items-center gap-2 text-blue-400/60 text-xs font-mono">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>AUTOMATIC FLAGGING</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Feature 3 */}
+            <Card className="bg-black/60 backdrop-blur-lg border border-blue-500/30 hover:border-blue-500/50 transition-all group">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-blue-500/20 border border-blue-500/40 flex items-center justify-center mb-4 text-2xl">
+                  🎯
+                </div>
+                <h4 className="text-lg font-bold text-blue-400 font-mono tracking-wider mb-3">MANUAL OVERRIDE</h4>
+                <p className="text-white/60 text-sm font-mono leading-relaxed mb-4">
+                  Don't agree with AI classification? Override with manual selection: Auto Detect, Meme Token, or Utility Token.
+                </p>
+                <div className="flex items-center gap-2 text-blue-400/60 text-xs font-mono">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>USER CONTROL</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* How It Works */}
+          <div className="border border-blue-500/20 bg-black/40 backdrop-blur-lg p-8">
+            <h3 className="text-xl font-bold text-blue-400 font-mono mb-6 flex items-center gap-3">
+              <span className="text-2xl">⚡</span>
+              HOW MEME DETECTION WORKS
+            </h3>
+            <div className="grid md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-500/20 border border-blue-500/40 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-400 font-mono font-bold">
+                  1
+                </div>
+                <p className="text-white/70 text-xs font-mono leading-relaxed">
+                  Scan token by address or symbol across 5+ blockchains
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-500/20 border border-blue-500/40 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-400 font-mono font-bold">
+                  2
+                </div>
+                <p className="text-white/70 text-xs font-mono leading-relaxed">
+                  AI analyzes token name, symbol, and metadata patterns
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-500/20 border border-blue-500/40 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-400 font-mono font-bold">
+                  3
+                </div>
+                <p className="text-white/70 text-xs font-mono leading-relaxed">
+                  Classification: Meme Token 🎭 or Utility Token 🏢
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-500/20 border border-blue-500/40 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-400 font-mono font-bold">
+                  4
+                </div>
+                <p className="text-white/70 text-xs font-mono leading-relaxed">
+                  Meme tokens get 55 minimum risk + detailed warnings
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -355,6 +473,21 @@ export default function LandingPage() {
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-lg border border-blue-500/40 hover:border-blue-500/60 transition-all group">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-blue-500/20 border border-blue-500/40 flex items-center justify-center mb-4 text-2xl">
+                  🎭
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-px bg-blue-500"></div>
+                  <h4 className="text-lg font-bold text-blue-400 font-mono tracking-wider">AI MEME CLASSIFIER</h4>
+                </div>
+                <p className="text-white/60 text-sm font-mono leading-relaxed">
+                  Gemini AI instantly identifies meme coins by analyzing token metadata. Automatic 55 baseline risk score for all meme tokens.
+                </p>
+              </CardContent>
+            </Card>
+
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
                 <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white transition-all duration-200">
@@ -365,7 +498,7 @@ export default function LandingPage() {
                   <h4 className="text-lg font-bold text-white font-mono tracking-wider">MULTI-CHAIN SEARCH</h4>
                 </div>
                 <p className="text-white/60 text-sm font-mono leading-relaxed">
-                  Search tokens across Ethereum, BSC, Polygon, Avalanche, Arbitrum, Optimism, and Base with real-time suggestions.
+                  Search tokens across Ethereum, BSC, Polygon, Avalanche, and Solana with real-time suggestions and instant scanning.
                 </p>
               </CardContent>
             </Card>
@@ -736,6 +869,64 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="relative border-t border-white/10 bg-black">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* Brand */}
+            <div className="col-span-1">
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="w-6 h-6 text-white" />
+                <span className="text-white font-mono font-bold tracking-wider">TOKENGUARD</span>
+              </div>
+              <p className="text-white/60 font-mono text-xs leading-relaxed">
+                Advanced token analysis and security insights for informed crypto decisions.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h4 className="text-white font-mono font-bold text-sm mb-4 uppercase tracking-wider">PRODUCT</h4>
+              <ul className="space-y-2">
+                <li><Link href="/pricing" className="text-white/60 hover:text-white font-mono text-xs transition">Pricing</Link></li>
+                <li><Link href="/signup" className="text-white/60 hover:text-white font-mono text-xs transition">Sign Up</Link></li>
+                <li><Link href="/login" className="text-white/60 hover:text-white font-mono text-xs transition">Log In</Link></li>
+                <li><Link href="/dashboard" className="text-white/60 hover:text-white font-mono text-xs transition">Demo</Link></li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h4 className="text-white font-mono font-bold text-sm mb-4 uppercase tracking-wider">RESOURCES</h4>
+              <ul className="space-y-2">
+                <li><Link href="/profile" className="text-white/60 hover:text-white font-mono text-xs transition">Profile</Link></li>
+                <li><Link href="/privacy-settings" className="text-white/60 hover:text-white font-mono text-xs transition">Privacy Settings</Link></li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="text-white font-mono font-bold text-sm mb-4 uppercase tracking-wider">LEGAL</h4>
+              <ul className="space-y-2">
+                <li><Link href="/privacy" className="text-white/60 hover:text-white font-mono text-xs transition">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="text-white/60 hover:text-white font-mono text-xs transition">Terms of Service</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-white/40 font-mono text-xs">
+              © 2025 TOKENGUARD. ALL RIGHTS RESERVED.
+            </p>
+            <div className="flex items-center gap-4">
+              <Link href="/privacy" className="text-white/40 hover:text-white font-mono text-xs transition uppercase">Privacy</Link>
+              <Link href="/terms" className="text-white/40 hover:text-white font-mono text-xs transition uppercase">Terms</Link>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

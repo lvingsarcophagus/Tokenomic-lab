@@ -47,6 +47,22 @@ export interface RiskResult {
   detailed_insights?: string[];
   upgrade_message?: string; // Free users only
   plan?: "FREE" | "PREMIUM";
+  
+  // AI & Social Metrics (Premium only)
+  ai_insights?: {
+    classification: 'MEME_TOKEN' | 'UTILITY_TOKEN';
+    confidence: number;
+    reasoning: string;
+    meme_baseline_applied: boolean;
+    is_manual_override?: boolean;
+  };
+  twitter_metrics?: {
+    followers: number;
+    engagement_rate: number;
+    tweets_7d: number;
+    adoption_score: number;
+    handle: string;
+  };
 }
 
 export interface RiskBreakdown {

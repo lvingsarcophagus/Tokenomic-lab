@@ -23,6 +23,7 @@ import Link from 'next/link'
 interface User {
   uid: string
   email: string
+  name?: string
   role: string
   tier: string
   admin: boolean
@@ -420,6 +421,7 @@ export default function EnhancedAdminDashboard() {
 
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.uid.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
@@ -591,6 +593,7 @@ export default function EnhancedAdminDashboard() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b-2 border-white/20">
+                    <th className="text-left p-3 text-white/60 text-xs font-mono tracking-wider">NAME</th>
                     <th className="text-left p-3 text-white/60 text-xs font-mono tracking-wider">EMAIL</th>
                     <th className="text-left p-3 text-white/60 text-xs font-mono tracking-wider">UID</th>
                     <th className="text-left p-3 text-white/60 text-xs font-mono tracking-wider">ROLE</th>
@@ -602,6 +605,7 @@ export default function EnhancedAdminDashboard() {
                 <tbody>
                   {filteredUsers.map((user) => (
                     <tr key={user.uid} className="border-b border-white/10 hover:bg-white/5 backdrop-blur-sm transition-colors">
+                      <td className="p-3 text-white text-sm font-mono tracking-wider">{user.name || 'N/A'}</td>
                       <td className="p-3 text-white text-sm font-mono tracking-wider">{user.email}</td>
                       <td className="p-3 text-white/60 text-xs font-mono tracking-wider">
                         {user.uid.slice(0, 12)}...

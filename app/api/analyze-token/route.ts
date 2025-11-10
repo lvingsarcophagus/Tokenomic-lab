@@ -20,9 +20,49 @@ import {
 import { getHeliusSolanaData } from '@/lib/api/helius'
 import { getBlockfrostCardanoData } from '@/lib/api/blockfrost'
 
+// NEW: Chain-adaptive unified data fetcher
+import { fetchCompleteTokenData, type CompleteTokenData } from '@/lib/data/chain-adaptive-fetcher'
+
 // Algorithm flags
-const USE_ENHANCED_ALGORITHM = true
-const USE_MULTICHAIN_ALGORITHM = true // Enable multi-chain enhanced features
+const USE_ENHANCED_ALGORITHM = true // Enhanced 7-factor algorithm
+const USE_MULTICHAIN_ALGORITHM = false // DISABLED: Use legacy calculator with AI features for now
+const USE_UNIFIED_FETCHER = true // NEW: Use chain-adaptive unified data fetcher
+
+/**
+ * Convert CompleteTokenData to legacy TokenData format
+ */
+function adaptCompleteToLegacy(completeData: CompleteTokenData): TokenData {
+  return {
+    // Market data
+    marketCap: completeData.marketCap,
+    fdv: completeData.fdv,
+    liquidityUSD: completeData.liquidityUSD,
+    volume24h: completeData.volume24h,
+    
+    // Supply data
+    totalSupply: completeData.totalSupply,
+    circulatingSupply: completeData.circulatingSupply,
+    maxSupply: completeData.maxSupply,
+    burnedSupply: completeData.burnedSupply,
+    
+    // Holder data (from chain-specific APIs)
+    holderCount: completeData.holderCount,
+    top10HoldersPct: completeData.top10HoldersPct,
+    
+    // Activity data
+    txCount24h: completeData.txCount24h,
+    ageDays: completeData.ageDays,
+    
+    // Security flags from chain adapters (converted to GoPlus format)
+    is_honeypot: completeData.criticalFlags.some(f => f.toLowerCase().includes('honeypot')),
+    is_mintable: completeData.criticalFlags.some(f => f.toLowerCase().includes('mintable')),
+    owner_renounced: !completeData.criticalFlags.some(f => f.toLowerCase().includes('owner control')),
+    
+    // Tax data (estimate from warnings)
+    buy_tax: 0, // Would need to parse from warnings
+    sell_tax: 0  // Would need to parse from warnings
+  }
+}
 
 /**
  * Convert old TokenData format to new EnhancedTokenData format
@@ -178,7 +218,7 @@ async function fetchBehavioralData(
 
 export async function POST(req: NextRequest) {
   try {
-    const { tokenAddress, chainId, userId, plan } = await req.json()
+    const { tokenAddress, chainId, userId, plan, metadata } = await req.json()
 
     // Validate inputs (userId is optional for testing)
     if (!tokenAddress || !chainId || !plan) {
@@ -187,6 +227,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+    
+    console.log(`[API] Received metadata:`, metadata)
 
     // Check cache first
     const cachedData = await getCachedTokenData(tokenAddress)
@@ -219,138 +261,99 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Fetch Mobula data (always required)
-    const mobulaData = await fetchMobulaData(tokenAddress, chainId)
-
-    if (!mobulaData) {
-      // Fallback for well-known tokens that might not be in Mobula
-      const fallbackData = getFallbackTokenData(tokenAddress)
-      if (fallbackData) {
-        console.log(`[Mobula] Using fallback data for ${tokenAddress}`)
-        const goplusData = await tryGoPlusWithFallback(tokenAddress, chainId)
-        const tokenData: TokenData = { ...fallbackData, ...(goplusData || {}) }
-        
-        let result: any
-        if (USE_MULTICHAIN_ALGORITHM) {
-          // Fetch behavioral data
-          const behavioralData = await fetchBehavioralData(tokenAddress, chainId)
-          
-          // Build multi-chain enhanced data
-          const enhancedData: MultiChainTokenData = {
-            ...adaptToEnhancedFormat(tokenData, goplusData, tokenAddress, chainId),
-            ...behavioralData
-          }
-          
-          const enhancedResult = calculateMultiChainTokenRisk(enhancedData)
-          result = adaptFromEnhancedResult(enhancedResult)
-          console.log(`✅ Using MULTI-CHAIN enhanced algorithm - Risk: ${result.overall_risk_score}`)
-        } else if (USE_ENHANCED_ALGORITHM) {
-          const enhancedData = adaptToEnhancedFormat(tokenData, goplusData, tokenAddress, chainId)
-          const enhancedResult = calculateTokenRisk(enhancedData)
-          result = adaptFromEnhancedResult(enhancedResult)
-        } else {
-          result = await calculateRisk(tokenData, plan)
-        }
-        
-        // Save to Firestore for fallback case too
-        if (userId && userId !== 'anonymous') {
-          try {
-            await incrementTokenAnalyzedAdmin(userId)
-            const cachedInfo = await getCachedTokenData(tokenAddress)
-            await saveAnalysisHistoryAdmin(userId, {
-              tokenAddress,
-              tokenName: cachedInfo?.name || 'WETH',
-              tokenSymbol: cachedInfo?.symbol || 'WETH',
-              chainId,
-              results: {
-                overall_risk_score: result.overall_risk_score,
-                risk_level: result.risk_level,
-                confidence_score: result.confidence_score,
-                breakdown: result.breakdown as Record<string, number>,
-                ...(result.critical_flags && { critical_flags: result.critical_flags }),
-                ...(result.upcoming_risks && { upcoming_risks: result.upcoming_risks })
-              },
-              marketSnapshot: {
-                price: 0,
-                marketCap: tokenData.marketCap || 0,
-                volume24h: tokenData.volume24h || 0,
-                liquidity: tokenData.liquidityUSD || 0
-              },
-              plan: plan as 'FREE' | 'PREMIUM',
-              analyzedAt: new Date()
-            })
-          } catch (err) {
-            console.error('Failed to save fallback to Firestore:', err)
-          }
-        }
-        
-        return NextResponse.json(result)
-      }
+    // ============================================================================
+    // NEW: UNIFIED CHAIN-ADAPTIVE DATA FETCHER
+    // ============================================================================
+    
+    let tokenData: TokenData
+    
+    if (USE_UNIFIED_FETCHER) {
+      console.log(`\n🚀 [UNIFIED FETCHER] Fetching complete token data...`)
       
-      return NextResponse.json(
-        { error: 'Failed to fetch token data from Mobula API' },
-        { status: 404 }
-      )
+      try {
+        // Fetch complete data using chain-adaptive logic
+        const completeData = await fetchCompleteTokenData(tokenAddress, chainId)
+        
+        // Convert to legacy TokenData format
+        tokenData = adaptCompleteToLegacy(completeData)
+        
+        console.log(`✅ [UNIFIED FETCHER] Complete data fetched`)
+        console.log(`   Chain Type: ${completeData.chainType}`)
+        console.log(`   Data Quality: ${completeData.dataQuality}`)
+        console.log(`   Market Cap: $${(completeData.marketCap / 1e6).toFixed(2)}M`)
+        console.log(`   Liquidity: $${(completeData.liquidityUSD / 1e3).toFixed(2)}K`)
+        console.log(`   Holders: ${completeData.holderCount.toLocaleString()}`)
+        console.log(`   Security Score: ${completeData.securityScore}/100`)
+        console.log(`   Critical Flags: ${completeData.criticalFlags.length}`)
+        
+        // Only block if data quality is POOR (< 40 score = missing critical market data)
+        if (completeData.dataQuality === 'POOR') {
+          console.log(`❌ [UNIFIED FETCHER] Data quality too poor to analyze`)
+          return NextResponse.json(
+            { 
+              error: 'Insufficient token data',
+              message: 'Unable to fetch reliable data for this token. Missing critical market data (market cap, liquidity, or supply).',
+              data_quality: completeData.dataQuality,
+              chain_type: completeData.chainType,
+              suggestion: 'This token may not be listed on major data aggregators yet.'
+            },
+            { status: 404 }
+          )
+        }
+        
+        // Warn if MODERATE quality (proceed but flag it)
+        if (completeData.dataQuality === 'MODERATE') {
+          console.log(`⚠️ [UNIFIED FETCHER] MODERATE data quality - some estimates used`)
+        }
+      } catch (error) {
+        console.error(`❌ [UNIFIED FETCHER] Failed:`, error)
+        return NextResponse.json(
+          { error: 'Failed to fetch token data', details: error instanceof Error ? error.message : 'Unknown error' },
+          { status: 500 }
+        )
+      }
+    } else {
+      // OLD LOGIC: Fallback to legacy Mobula + GoPlus flow
+      const mobulaData = await fetchMobulaData(tokenAddress, chainId)
+
+      if (!mobulaData) {
+        const fallbackData = getFallbackTokenData(tokenAddress)
+        if (!fallbackData) {
+          return NextResponse.json(
+            { error: 'Failed to fetch token data from Mobula API' },
+            { status: 404 }
+          )
+        }
+        tokenData = fallbackData
+      } else {
+        const goplusData = await tryGoPlusWithFallback(tokenAddress, chainId)
+        tokenData = { ...mobulaData, ...(goplusData || {}) }
+        
+        // Use GoPlus holder_count if available
+        if (goplusData && goplusData.holder_count) {
+          const goplusHolderCount = parseInt(goplusData.holder_count) || 0
+          if (goplusHolderCount > 0) {
+            console.log(`[Tokenomics] Overriding with GoPlus holder count: ${goplusHolderCount}`)
+            tokenData.holderCount = goplusHolderCount
+          }
+        }
+      }
     }
 
-    // Try GoPlus with fallback
-    const goplusData = await tryGoPlusWithFallback(tokenAddress, chainId)
-
-    // Merge data
-    const tokenData: TokenData = { ...mobulaData, ...(goplusData || {}) }
-
-    // Calculate risk using appropriate algorithm
+    // ============================================================================
+    // RISK CALCULATION WITH AI + TWITTER FEATURES
+    // ============================================================================
+    
     let result: any
     try {
-      if (USE_MULTICHAIN_ALGORITHM) {
-        // Fetch behavioral data in parallel
-        console.log('[Multi-Chain] Fetching behavioral data...')
-        const behavioralData = await fetchBehavioralData(tokenAddress, chainId)
-        
-        // Build multi-chain enhanced data
-        const enhancedData: MultiChainTokenData = {
-          ...adaptToEnhancedFormat(tokenData, goplusData, tokenAddress, chainId),
-          ...behavioralData
-        }
-        
-        console.log('🔍 Multi-Chain Enhanced Data INPUT:', JSON.stringify({
-          tokenAddress: enhancedData.tokenAddress,
-          chainId: enhancedData.chainId,
-          hasGoPlusData: enhancedData.hasGoPlusData,
-          marketCap: enhancedData.marketCap,
-          holderCount: enhancedData.holderCount,
-          liquidityUSD: enhancedData.liquidityUSD,
-          hasBehavioralData: !!enhancedData.holderHistory,
-          // Truncate large arrays for logging
-          lp_holders: enhancedData.lp_holders ? `[${enhancedData.lp_holders.length} holders]` : undefined
-        }))
-        
-        const enhancedResult = calculateMultiChainTokenRisk(enhancedData)
-        console.log('🔍 Multi-Chain Result RAW:', {
-          overall_risk_score: enhancedResult.overall_risk_score,
-          risk_level: enhancedResult.risk_level,
-          confidence_score: enhancedResult.confidence_score,
-          data_tier: enhancedResult.data_tier,
-          critical_flags: enhancedResult.critical_flags?.length || 0,
-          warning_flags: enhancedResult.warning_flags?.length || 0
-        })
-        result = adaptFromEnhancedResult(enhancedResult)
-        console.log(`✅ Using MULTI-CHAIN enhanced algorithm - Risk: ${result.overall_risk_score}, Confidence: ${result.confidence_score}%, Tier: ${result.data_tier}`)
-      } else if (USE_ENHANCED_ALGORITHM) {
-        const enhancedData = adaptToEnhancedFormat(tokenData, goplusData, tokenAddress, chainId)
-        console.log('🔍 Enhanced Data INPUT:', JSON.stringify(enhancedData, null, 2))
-        const enhancedResult = calculateTokenRisk(enhancedData)
-        console.log('🔍 Enhanced Result RAW:', JSON.stringify(enhancedResult, null, 2))
-        result = adaptFromEnhancedResult(enhancedResult)
-        console.log(`✅ Using ENHANCED 7-factor algorithm - Risk: ${result.overall_risk_score}, Confidence: ${result.confidence_score}%, Tier: ${result.data_tier}`)
-      } else {
-        result = await calculateRisk(tokenData, plan)
-        console.log(`Using legacy 10-factor algorithm - Risk: ${result.overall_risk_score}`)
-      }
+      // Use legacy calculator with AI/Twitter features
+      // (Enhanced and Multi-Chain algorithms currently disabled)
+      console.log(`\n🧮 [RISK CALCULATOR] Using legacy 9-factor algorithm with AI enhancements`)
+      result = await calculateRisk(tokenData, plan, metadata)
+      console.log(`✅ [RISK CALCULATOR] Risk: ${result.overall_risk_score}/100, Level: ${result.risk_level}`)
     } catch (calcError: any) {
-      console.error('[Risk Calculation] CRITICAL ERROR:', calcError)
-      console.error('[Risk Calculation] Stack:', calcError.stack)
-      // Re-throw the error instead of falling back
+      console.error('❌ [RISK CALCULATOR] CRITICAL ERROR:', calcError)
+      console.error('[RISK CALCULATOR] Stack:', calcError.stack)
       throw new Error(`Risk calculation failed: ${calcError.message}`)
     }
 

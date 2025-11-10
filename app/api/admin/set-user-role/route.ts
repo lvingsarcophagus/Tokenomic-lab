@@ -76,22 +76,44 @@ export async function POST(request: NextRequest) {
     await adminAuth.setCustomUserClaims(targetUid, customClaims)
 
     // Update Firestore user document
-    const userDoc = {
+    const userDoc: any = {
       role,
-      tier: role === 'PREMIUM' ? 'pro' : 'free',
+      tier: role === 'PREMIUM' ? 'pro' : role === 'ADMIN' ? 'pro' : 'free',
+      plan: role === 'PREMIUM' ? 'PREMIUM' : role === 'ADMIN' ? 'PREMIUM' : 'FREE',
       admin: role === 'ADMIN',
       updatedAt: new Date().toISOString(),
       ...(email && { email }),
     }
 
+    // If upgrading to PREMIUM or ADMIN, add premium-specific fields
+    if (role === 'PREMIUM' || role === 'ADMIN') {
+      userDoc.premiumSince = new Date().toISOString()
+    }
+
     await adminDb.collection('users').doc(targetUid).set(userDoc, { merge: true })
 
-    console.log(`✅ User ${targetUid} role set to ${role}`)
+    // Create notification for the user
+    const notificationRef = adminDb.collection('notifications').doc()
+    await notificationRef.set({
+      userId: targetUid,
+      type: role === 'PREMIUM' || role === 'ADMIN' ? 'tier_upgrade' : 'tier_downgrade',
+      title: role === 'PREMIUM' ? '🎉 PREMIUM UPGRADE!' : role === 'ADMIN' ? '👑 ADMIN ACCESS GRANTED!' : 'Account Updated',
+      message: role === 'PREMIUM' 
+        ? 'Congratulations! Your account has been upgraded to PREMIUM. Enjoy unlimited scans, advanced analytics, and priority support!'
+        : role === 'ADMIN'
+        ? 'You have been granted administrative access to TokenGuard. Welcome to the team!'
+        : 'Your account tier has been updated by an administrator.',
+      read: false,
+      createdAt: new Date().toISOString(),
+    })
+
+    console.log(`✅ User ${targetUid} role set to ${role}. Notification sent.`)
 
     return NextResponse.json({
       success: true,
       uid: targetUid,
       role,
+      notificationSent: true,
       message: `User role updated to ${role}. User must refresh their token to see changes.`
     })
 
