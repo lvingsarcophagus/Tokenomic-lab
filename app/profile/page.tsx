@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { theme } from "@/lib/theme"
 import Navbar from "@/components/navbar"
+import { Download, Trash2, Shield } from "lucide-react"
 
 export default function ProfilePage() {
   const { user, userData, updateProfile, loading } = useAuth()
@@ -17,6 +18,10 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [walletAddress, setWalletAddress] = useState("")
   const [connectingWallet, setConnectingWallet] = useState(false)
+  const [exportingData, setExportingData] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
+  const [deletingAccount, setDeletingAccount] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -70,6 +75,64 @@ export default function ProfilePage() {
     setWalletAddress("")
     await updateProfile({ walletAddress: "" })
     alert("Wallet disconnected")
+  }
+
+  const handleExportData = async () => {
+    setExportingData(true)
+    try {
+      const response = await fetch('/api/user/export-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to export data')
+      }
+
+      const data = await response.json()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `tokenguard-data-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      alert("Your data has been exported successfully!")
+    } catch (error) {
+      console.error('Error exporting data:', error)
+      alert("Failed to export data. Please try again.")
+    } finally {
+      setExportingData(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE MY ACCOUNT") {
+      alert("Please type 'DELETE MY ACCOUNT' to confirm")
+      return
+    }
+
+    setDeletingAccount(true)
+    try {
+      const response = await fetch('/api/user/delete-account', {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete account')
+      }
+
+      alert("Your account has been deleted. You will be redirected to the home page.")
+      router.push('/')
+    } catch (error) {
+      console.error('Error deleting account:', error)
+      alert("Failed to delete account. Please try again or contact support.")
+      setDeletingAccount(false)
+    }
   }
 
   if (loading) {
@@ -219,8 +282,112 @@ export default function ProfilePage() {
               )}
             </CardContent>
           </Card>
+
+          <Card className={`${theme.backgrounds.card} border ${theme.borders.default}`}>
+            <CardHeader>
+              <CardTitle className={`${theme.text.primary} ${theme.fonts.mono} ${theme.fonts.tracking} flex items-center gap-2`}>
+                <Shield className="w-5 h-5" />
+                PRIVACY & DATA RIGHTS
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <div className="flex items-start gap-3 mb-4">
+                  <Download className="w-5 h-5 text-white mt-1" />
+                  <div className="flex-1">
+                    <h3 className={`${theme.text.primary} ${theme.fonts.mono} ${theme.text.base} ${theme.fonts.bold} mb-2 uppercase`}>
+                      EXPORT YOUR DATA
+                    </h3>
+                    <p className={`${theme.text.secondary} ${theme.text.small} ${theme.fonts.mono} mb-3`}>
+                      Download a complete copy of your data in JSON format. Includes your profile, scan history, watchlist, and all analytics.
+                    </p>
+                    <Button
+                      onClick={handleExportData}
+                      disabled={exportingData}
+                      className={`${theme.buttons.primary} uppercase`}
+                    >
+                      {exportingData ? "EXPORTING..." : "DOWNLOAD MY DATA"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className={`pt-6 border-t ${theme.borders.default}`}>
+                <div className="flex items-start gap-3 mb-4">
+                  <Trash2 className="w-5 h-5 text-red-500 mt-1" />
+                  <div className="flex-1">
+                    <h3 className={`${theme.text.primary} ${theme.fonts.mono} ${theme.text.base} ${theme.fonts.bold} mb-2 uppercase`}>
+                      DELETE YOUR ACCOUNT
+                    </h3>
+                    <p className={`${theme.text.secondary} ${theme.text.small} ${theme.fonts.mono} mb-3`}>
+                      Permanently delete your account and all associated data. This action cannot be undone.
+                    </p>
+                    <Button
+                      onClick={() => setShowDeleteModal(true)}
+                      className="border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all font-mono text-sm uppercase"
+                    >
+                      DELETE MY ACCOUNT
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className={`pt-6 border-t ${theme.borders.default}`}>
+                <p className={`${theme.text.secondary} ${theme.text.tiny} ${theme.fonts.mono}`}>
+                  For more information about how we handle your data, please review our{" "}
+                  <Link href="/privacy" className={`${theme.text.primary} hover:underline`}>
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className={`${theme.backgrounds.card} border-2 ${theme.borders.default} p-8 max-w-md w-full`}>
+            <h2 className={`${theme.text.xlarge} ${theme.fonts.bold} ${theme.text.primary} mb-4 ${theme.fonts.mono} ${theme.fonts.tracking} uppercase`}>
+              CONFIRM ACCOUNT DELETION
+            </h2>
+            <p className={`${theme.text.secondary} ${theme.text.small} ${theme.fonts.mono} mb-6`}>
+              This action is permanent and cannot be undone. All your data, including scan history, watchlist, and settings will be permanently deleted.
+            </p>
+            <p className={`${theme.text.primary} ${theme.text.small} ${theme.fonts.mono} mb-4`}>
+              Type <span className="font-bold">DELETE MY ACCOUNT</span> to confirm:
+            </p>
+            <Input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className={`mb-6 ${theme.inputs.boxed}`}
+              placeholder="DELETE MY ACCOUNT"
+            />
+            <div className="flex gap-4">
+              <Button
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setDeleteConfirmText("")
+                }}
+                disabled={deletingAccount}
+                className={`flex-1 ${theme.buttons.primary} uppercase`}
+              >
+                CANCEL
+              </Button>
+              <Button
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount || deleteConfirmText !== "DELETE MY ACCOUNT"}
+                className="flex-1 border-2 border-red-500 bg-red-500 text-white hover:bg-red-600 hover:border-red-600 transition-all font-mono text-sm uppercase"
+              >
+                {deletingAccount ? "DELETING..." : "DELETE FOREVER"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .stars-bg {
