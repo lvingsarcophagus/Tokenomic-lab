@@ -263,7 +263,10 @@ export default function PremiumDashboard() {
     setLoadingSuggestions(true)
     try {
       // Use CoinMarketCap search (faster and supports Solana)
-      const response = await fetch(`/api/search-token?query=${encodeURIComponent(query)}`)
+  // Pass selectedChain to the search endpoint so results can be filtered
+  // to the chain the user selected (prevents returning Ethereum tokens
+  // when the user explicitly chose Solana).
+  const response = await fetch(`/api/search-token?query=${encodeURIComponent(query)}&chain=${encodeURIComponent(selectedChain)}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -312,21 +315,24 @@ export default function PremiumDashboard() {
     setShowSuggestions(false)
     setTokenSuggestions([])
     
-    // Set the correct chain based on token data
+    // Determine the correct chain from token data
+    let chainToUse: 'ethereum' | 'bsc' | 'polygon' | 'avalanche' | 'solana' = 'ethereum'
     if (token.chainName) {
       const chainLower = token.chainName.toLowerCase()
-      if (chainLower.includes('ethereum')) setSelectedChain('ethereum')
-      else if (chainLower.includes('bsc') || chainLower.includes('binance')) setSelectedChain('bsc')
-      else if (chainLower.includes('polygon')) setSelectedChain('polygon')
-      else if (chainLower.includes('avalanche')) setSelectedChain('avalanche')
-      else if (chainLower.includes('solana')) setSelectedChain('solana')
+      if (chainLower.includes('ethereum')) chainToUse = 'ethereum'
+      else if (chainLower.includes('bsc') || chainLower.includes('binance')) chainToUse = 'bsc'
+      else if (chainLower.includes('polygon')) chainToUse = 'polygon'
+      else if (chainLower.includes('avalanche')) chainToUse = 'avalanche'
+      else if (chainLower.includes('solana')) chainToUse = 'solana'
       
-      console.log(`[Dashboard] Selected chain: ${chainLower} -> ${selectedChain}`)
+      console.log(`[Dashboard] Selected chain from suggestion: ${chainLower} -> ${chainToUse}`)
     }
     
-    // Automatically trigger scan
+    setSelectedChain(chainToUse)
+    
+    // Automatically trigger scan with the correct chain
     setTimeout(() => {
-      handleScan()
+      handleScan(chainToUse)
     }, 100)
   }
 
@@ -338,21 +344,25 @@ export default function PremiumDashboard() {
     // Set the search query to the address
     setSearchQuery(address)
     
-    // Set the chain based on CMC data
+    // Determine the chain to use
+    let chainToScan: 'ethereum' | 'bsc' | 'polygon' | 'avalanche' | 'solana' = 'ethereum';
     const chainLower = chain.toLowerCase()
-    if (chainLower.includes('ethereum')) setSelectedChain('ethereum')
-    else if (chainLower.includes('bsc') || chainLower.includes('binance')) setSelectedChain('bsc')
-    else if (chainLower.includes('polygon')) setSelectedChain('polygon')
-    else if (chainLower.includes('avalanche')) setSelectedChain('avalanche')
-    else if (chainLower.includes('solana')) setSelectedChain('solana')
+    if (chainLower.includes('ethereum')) chainToScan = 'ethereum';
+    else if (chainLower.includes('bsc') || chainLower.includes('binance')) chainToScan = 'bsc';
+    else if (chainLower.includes('polygon')) chainToScan = 'polygon';
+    else if (chainLower.includes('avalanche')) chainToScan = 'avalanche';
+    else if (chainLower.includes('solana')) chainToScan = 'solana';
     
-    // Automatically trigger scan
+    // Set the state for the UI, but use the direct value for the scan
+    setSelectedChain(chainToScan);
+    
+    // Automatically trigger scan with the correct chain
     setTimeout(() => {
-      handleScan()
+      handleScan(chainToScan)
     }, 100)
   }
 
-  const handleScan = async () => {
+  const handleScan = async (chainOverride?: 'ethereum' | 'bsc' | 'polygon' | 'avalanche' | 'solana') => {
     if (!searchQuery.trim()) return
     
     if (!user) {
@@ -366,9 +376,22 @@ export default function PremiumDashboard() {
       return
     }
     
+    // Prioritize chainOverride. If no override, use selectedChain. If the query itself is a Solana address, force solana.
+    let chainToUse = chainOverride || selectedChain
+    
+    // Force chain detection based on address format
+    const isEVMAddress = searchQuery.startsWith('0x') && searchQuery.length === 42
+    const isSolanaAddress = searchQuery.length >= 32 && searchQuery.length <= 44 && !searchQuery.startsWith('0x')
+    
+    if (isSolanaAddress && !chainOverride) {
+      chainToUse = 'solana'
+      console.log('[Scanner] Solana address detected from query, forcing chain to solana')
+    }
+    
     console.log(`[Scanner] ========== NEW SCAN ==========`)
     console.log(`[Scanner] Query: ${searchQuery}`)
-    console.log(`[Scanner] Chain: ${selectedChain}`)
+    console.log(`[Scanner] Chain: ${chainToUse}`)
+    console.log(`[Scanner] Chain Override: ${chainOverride || 'NONE'}`)
     console.log(`[Scanner] Manual Classification: ${manualTokenType || 'AUTO DETECT'}`)
     
     setScanning(true)
@@ -383,15 +406,15 @@ export default function PremiumDashboard() {
       
       // Check if input is an address (supports both EVM and Solana)
       let addressToScan = searchQuery
-      const isEVMAddress = searchQuery.startsWith('0x') && searchQuery.length === 42
-      const isSolanaAddress = searchQuery.length >= 32 && searchQuery.length <= 44 && !searchQuery.startsWith('0x')
       const isAddress = isEVMAddress || isSolanaAddress
       
       if (!isAddress) {
         console.log('[Scanner] Not an address, searching for token:', searchQuery)
         try {
           // Use faster CoinMarketCap search
-          const searchRes = await fetch(`/api/search-token?query=${encodeURIComponent(searchQuery)}`)
+          // When resolving a symbol to an address, include the selectedChain so
+          // the search prefers tokens on the chosen network.
+          const searchRes = await fetch(`/api/search-token?query=${encodeURIComponent(searchQuery)}&chain=${encodeURIComponent(chainToUse)}`)
           if (searchRes.ok) {
             const searchData = await searchRes.json()
             if (searchData.results && searchData.results.length > 0) {
@@ -417,7 +440,9 @@ export default function PremiumDashboard() {
         }
       }
       
-      const data = await TokenScanService.scanToken(addressToScan)
+  // Pass user's selected chain preference to the scanner so chain detection
+  // prefers the explicit selection (prevents defaulting to Ethereum for symbols)
+  const data = await TokenScanService.scanToken(addressToScan, chainToUse)
       console.log('[Scanner] Scan complete:', data)
       
       setScannedToken(data)
@@ -443,23 +468,97 @@ export default function PremiumDashboard() {
         
         console.log('[Scanner] Token metadata:', { symbol: tokenSymbol, name: tokenName })
         
+        // Ensure we send a canonical chainId value to the analyze API. Some
+        // downstream services expect numeric/GoPlus-compatible chain IDs; if
+        // the user explicitly selected Solana, force the numeric chainId used
+        // elsewhere (1399811149). Otherwise prefer the scanned data.chainInfo
+        // value and fall back to chainToUse mapping.
+        const computeChainIdToSend = (): string => {
+          // If a chain override is present, prioritize it.
+          if (chainOverride) {
+            const overrideLower = chainOverride.toLowerCase();
+            if (overrideLower.includes('sol')) return String(1399811149);
+            if (overrideLower.includes('bsc')) return '56';
+            if (overrideLower.includes('polygon')) return '137';
+            if (overrideLower.includes('avalanche')) return '43114';
+            if (overrideLower.includes('ethereum')) return '1';
+          }
+
+          // If the computed chainToUse is set, use that
+          const sel = String(chainToUse || '').toLowerCase()
+          if (sel.includes('sol')) return String(1399811149)
+          if (sel.includes('bsc')) return '56'
+          if (sel.includes('polygon') || sel.includes('matic')) return '137'
+          if (sel.includes('avalanche') || sel.includes('avax')) return '43114'
+          if (sel.includes('arbitrum')) return '42161'
+          if (sel.includes('optimism')) return '10'
+          if (sel.includes('base')) return '8453'
+
+          // If scanner returned a chainInfo with a numeric-looking chainId, use it
+          const returned = data.chainInfo?.chainId
+          if (returned && String(returned).match(/^\d+$/)) return String(returned)
+
+          // Last resort default to Ethereum
+          return '1'
+        }
+
+        const chainIdToSend = computeChainIdToSend()
+
         // Use the full multi-API analyze endpoint
+        // Debug: log the chain information we will send to the analyze API
+        console.log('[Scanner] Sending analyze request with chainId:', chainIdToSend)
+        console.log('[Scanner] Sending analyze metadata.chain:', {
+          computed: (() => {
+            const name = String(data.chainInfo?.chainName || '').toLowerCase()
+            if (name.includes('solana')) return 'SOLANA'
+            if (name.includes('ethereum')) return 'ETHEREUM'
+            if (name.includes('bsc') || name.includes('binance')) return 'BSC'
+            if (name.includes('polygon')) return 'POLYGON'
+            if (name.includes('avalanche') || name.includes('avax')) return 'AVALANCHE'
+            if (name.includes('arbitrum')) return 'ARBITRUM'
+            if (name.includes('optimism')) return 'OPTIMISM'
+            if (name.includes('base')) return 'BASE'
+            const sel2 = String(chainToUse || '').toLowerCase()
+            if (sel2.includes('sol')) return 'SOLANA'
+            return 'ETHEREUM'
+          })(),
+          selectedChain
+        })
+
         const res = await fetch('/api/analyze-token', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             tokenAddress: data.address,
-            chainId: String(data.chainInfo.chainId),
+            chainId: String(chainIdToSend),
             plan: 'PREMIUM', // Use PREMIUM plan for full behavioral data
             userId: user?.uid, // Pass user ID for rate limiting
             metadata: {
               tokenSymbol,
               tokenName,
-              chain: data.chainInfo.chainName === 'Ethereum' ? 'ETHEREUM' : 
-                     data.chainInfo.chainName === 'BSC' ? 'BSC' : 
-                     data.chainInfo.chainName === 'Polygon' ? 'POLYGON' : 'ETHEREUM',
+              chain: (() => {
+                const name = String(data.chainInfo?.chainName || '').toLowerCase()
+                if (name.includes('solana')) return 'SOLANA'
+                if (name.includes('ethereum')) return 'ETHEREUM'
+                if (name.includes('bsc') || name.includes('binance')) return 'BSC'
+                if (name.includes('polygon')) return 'POLYGON'
+                if (name.includes('avalanche') || name.includes('avax')) return 'AVALANCHE'
+                if (name.includes('arbitrum')) return 'ARBITRUM'
+                if (name.includes('optimism')) return 'OPTIMISM'
+                if (name.includes('base')) return 'BASE'
+                // Fallback to chainToUse
+                const sel2 = String(chainToUse || '').toLowerCase()
+                if (sel2.includes('sol')) return 'SOLANA'
+                if (sel2.includes('bsc')) return 'BSC'
+                if (sel2.includes('polygon') || sel2.includes('matic')) return 'POLYGON'
+                if (sel2.includes('avalanche') || sel2.includes('avax')) return 'AVALANCHE'
+                if (sel2.includes('arbitrum')) return 'ARBITRUM'
+                if (sel2.includes('optimism')) return 'OPTIMISM'
+                if (sel2.includes('base')) return 'BASE'
+                return 'ETHEREUM'
+              })(),
               manualClassification: manualTokenType // Send user's manual override if set
             }
           })
@@ -520,7 +619,7 @@ export default function PremiumDashboard() {
         }
       } else {
         // Symbol search (BTC, ETH, etc.) - no contract address available
-        console.log('[Scanner] Symbol search - showing market data only')
+        console.log('[Scanner] Symbol search - no contract address available')
         const tokenName = data.priceData?.name || searchQuery.toUpperCase()
         const tokenSymbol = data.priceData?.symbol || searchQuery.toUpperCase()
         const isWellKnown = ['BTC', 'ETH', 'BNB', 'SOL', 'USDT', 'USDC', 'ADA', 'XRP', 'DOT', 'DOGE', 'MATIC', 'AVAX'].includes(searchQuery.toUpperCase())
@@ -545,7 +644,7 @@ export default function PremiumDashboard() {
             burnMechanics: 0, // N/A for most native assets
             tokenAge: isWellKnown ? 3 : 10
           },
-          redFlags: isWellKnown ? [] : ['⚠️ Use contract address for detailed smart contract analysis'],
+          redFlags: isWellKnown ? [] : ['! Use contract address for detailed smart contract analysis'],
           positiveSignals: isWellKnown ? [
             `✓ ${tokenSymbol} is a well-established cryptocurrency`,
             '✓ High liquidity and market presence',
@@ -1061,9 +1160,9 @@ export default function PremiumDashboard() {
         )}
 
         {/* Token Scanner - Glassmorphism */}
-        <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl">
+        <div className="relative border border-white/10 bg-black/40 p-6 mb-8 shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-          <div className="relative z-10">
+          <div className="relative">
             <h2 className="text-white font-mono text-xs tracking-wider mb-4 flex items-center gap-2">
               <Search className="w-4 h-4" />
               SCAN TOKEN
@@ -1086,11 +1185,11 @@ export default function PremiumDashboard() {
                 paddingRight: '2.5rem'
               }}
             >
-              <option value="ethereum">⟠ ETHEREUM</option>
-              <option value="bsc">🔶 BSC (BNB CHAIN)</option>
-              <option value="polygon">🟣 POLYGON</option>
-              <option value="avalanche">🔺 AVALANCHE</option>
-              <option value="solana">🌟 SOLANA</option>
+              <option value="ethereum">◆ ETHEREUM</option>
+              <option value="bsc">◇ BSC (BNB CHAIN)</option>
+              <option value="polygon">▲ POLYGON</option>
+              <option value="avalanche">△ AVALANCHE</option>
+              <option value="solana">● SOLANA</option>
             </select>
           </div>
 
@@ -1113,15 +1212,15 @@ export default function PremiumDashboard() {
                 paddingRight: '2.5rem'
               }}
             >
-              <option value="auto">🤖 AUTO DETECT (AI Classification)</option>
-              <option value="MEME_TOKEN">🎭 MEME TOKEN (Speculative, +15 risk)</option>
-              <option value="UTILITY_TOKEN">🏢 UTILITY TOKEN (Functional)</option>
+              <option value="auto">⊕ AUTO DETECT (AI Classification)</option>
+              <option value="MEME_TOKEN">◐ MEME TOKEN (Speculative, +15 risk)</option>
+              <option value="UTILITY_TOKEN">◧ UTILITY TOKEN (Functional)</option>
             </select>
             <p className={`font-mono text-[9px] mt-2 ${
               manualTokenType === 'MEME_TOKEN' ? 'text-yellow-400' : 'text-white/40'
             }`}>
               {manualTokenType === 'MEME_TOKEN' ? (
-                <span>⚠️ MEME TOKEN SELECTED - Adding +15 risk points to next scan</span>
+                <span>! MEME TOKEN SELECTED - Adding +15 risk points to next scan</span>
               ) : (
                 <span>Override AI classification. Meme tokens get +15 risk points added.</span>
               )}
@@ -1143,18 +1242,40 @@ export default function PremiumDashboard() {
                 onClick={() => setShowTokenSearch(!showTokenSearch)}
                 className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-mono text-[10px] border border-white/30 transition-colors tracking-wider"
               >
-                {showTokenSearch ? '📝 MANUAL INPUT' : '🔍 SEARCH BY NAME'}
+                {showTokenSearch ? '⊞ MANUAL INPUT' : '⊡ SEARCH BY NAME'}
               </button>
             </div>
           </div>
 
-          <div className="relative z-50 token-search-container">
+          <div className="token-search-container">
             {showTokenSearch ? (
               /* Token Search by Name/Symbol */
               <div className="space-y-3">
-                <TokenSearchComponent onTokenSelect={handleTokenSelectFromSearch} />
-                <div className="text-[10px] font-mono text-white/40 tracking-wider">
-                  💡 SEARCH FOR TOKENS BY NAME OR SYMBOL (E.G., BONK, DOGWIFHAT)
+                <div className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <TokenSearchComponent onTokenSelect={handleTokenSelectFromSearch} onQueryChange={(q) => setSearchQuery(q)} chain={selectedChain} />
+                    <div className="text-[10px] font-mono text-white/40 tracking-wider mt-2">
+                      ⓘ SEARCH FOR TOKENS BY NAME OR SYMBOL (E.G., BONK, DOGWIFHAT)
+                    </div>
+                  </div>
+
+                  {/* Keep a visible SCAN button while in search mode so users can scan typed queries */}
+                  <div className="pt-1">
+                    <button
+                      onClick={() => handleScan()}
+                      disabled={scanning || !searchQuery.trim()}
+                      className="px-6 py-3 bg-white text-black font-mono text-xs tracking-wider hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {scanning ? (
+                        <>
+                          <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
+                          SCANNING...
+                        </>
+                      ) : (
+                        'SCAN'
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1178,7 +1299,7 @@ export default function PremiumDashboard() {
                   disabled={scanning}
                 />
                 <button
-                  onClick={handleScan}
+                  onClick={() => handleScan()}
                   disabled={scanning || !searchQuery.trim()}
                   className="px-6 py-3 bg-white text-black font-mono text-xs tracking-wider hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -1431,20 +1552,20 @@ export default function PremiumDashboard() {
             {selectedToken.chain && (
               <div className="border border-white/10 bg-white/5 p-4 mb-6">
                 <h3 className="text-white font-mono text-xs tracking-wider mb-3 flex items-center gap-2">
-                  🔗 {selectedToken.chain.toUpperCase()} CHAIN ANALYSIS
+                  ⬡ {selectedToken.chain.toUpperCase()} CHAIN ANALYSIS
                 </h3>
                 {selectedToken.chain.toLowerCase() === 'solana' ? (
                   <div className="grid grid-cols-2 gap-3 text-xs font-mono">
                     <div>
                       <span className="text-white/60">Freeze Authority:</span>
                       <span className={`ml-2 font-bold ${selectedToken.securityData?.freezeAuthority ? 'text-red-400' : 'text-green-400'}`}>
-                        {selectedToken.securityData?.freezeAuthority ? 'ACTIVE ⚠️' : 'REVOKED ✓'}
+                        {selectedToken.securityData?.freezeAuthority ? 'ACTIVE !' : 'REVOKED ✓'}
                       </span>
                     </div>
                     <div>
                       <span className="text-white/60">Mint Authority:</span>
                       <span className={`ml-2 font-bold ${selectedToken.securityData?.mintAuthority ? 'text-red-400' : 'text-green-400'}`}>
-                        {selectedToken.securityData?.mintAuthority ? 'ACTIVE ⚠️' : 'REVOKED ✓'}
+                        {selectedToken.securityData?.mintAuthority ? 'ACTIVE !' : 'REVOKED ✓'}
                       </span>
                     </div>
                     <div>
@@ -1461,19 +1582,19 @@ export default function PremiumDashboard() {
                     <div>
                       <span className="text-white/60">Contract Verified:</span>
                       <span className={`ml-2 font-bold ${selectedToken.securityData?.isVerified ? 'text-green-400' : 'text-yellow-400'}`}>
-                        {selectedToken.securityData?.isVerified ? 'YES ✓' : 'NO ⚠️'}
+                        {selectedToken.securityData?.isVerified ? 'YES ✓' : 'NO !'}
                       </span>
                     </div>
                     <div>
                       <span className="text-white/60">Ownership:</span>
                       <span className={`ml-2 font-bold ${selectedToken.securityData?.ownershipRenounced ? 'text-green-400' : 'text-yellow-400'}`}>
-                        {selectedToken.securityData?.ownershipRenounced ? 'RENOUNCED ✓' : 'ACTIVE ⚠️'}
+                        {selectedToken.securityData?.ownershipRenounced ? 'RENOUNCED ✓' : 'ACTIVE !'}
                       </span>
                     </div>
                     <div>
                       <span className="text-white/60">Proxy Contract:</span>
                       <span className={`ml-2 font-bold ${selectedToken.securityData?.isProxy ? 'text-yellow-400' : 'text-green-400'}`}>
-                        {selectedToken.securityData?.isProxy ? 'YES ⚠️' : 'NO ✓'}
+                        {selectedToken.securityData?.isProxy ? 'YES !' : 'NO ✓'}
                       </span>
                     </div>
                     <div>
@@ -1521,7 +1642,7 @@ export default function PremiumDashboard() {
             {!selectedToken.ai_summary && selectedToken.ai_insights && (
               <div className="border border-gray-700/50 bg-gray-900/30 p-4 mb-4 rounded-lg">
                 <h3 className="text-gray-300 font-mono text-xs tracking-wider mb-3 flex items-center gap-2">
-                  <span className="text-lg">🤖</span>
+                  <span className="text-lg">⊕</span>
                   AI CLASSIFICATION
                 </h3>
                 <div className="space-y-2">
@@ -1530,7 +1651,7 @@ export default function PremiumDashboard() {
                     <span className={`font-mono text-xs font-bold ${
                       selectedToken.ai_insights.classification === 'MEME_TOKEN' ? 'text-yellow-400' : 'text-blue-400'
                     }`}>
-                      {selectedToken.ai_insights.classification === 'MEME_TOKEN' ? '🎭 MEME TOKEN' : '🏢 UTILITY TOKEN'}
+                      {selectedToken.ai_insights.classification === 'MEME_TOKEN' ? '◐ MEME TOKEN' : '◧ UTILITY TOKEN'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -1968,7 +2089,7 @@ export default function PremiumDashboard() {
           {/* Market Sentiment */}
           <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-            <div className="relative z-10">
+            <div className="relative">
               <h3 className="text-white font-mono text-xs tracking-wider mb-4 flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
                 MARKET SENTIMENT
@@ -2031,7 +2152,7 @@ export default function PremiumDashboard() {
           {/* Security Metrics */}
           <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-            <div className="relative z-10">
+            <div className="relative">
               <h3 className="text-white font-mono text-xs tracking-wider mb-4 flex items-center gap-2">
                 <BadgeCheck className="w-4 h-4" />
                 SECURITY METRICS
@@ -2101,7 +2222,7 @@ export default function PremiumDashboard() {
           {/* Top Holders Distribution */}
           <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-            <div className="relative z-10">
+            <div className="relative">
               <h3 className="text-white font-mono text-xs tracking-wider mb-4 flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 TOP HOLDERS SHARE
@@ -2168,7 +2289,7 @@ export default function PremiumDashboard() {
         {/* Recent Activity Feed - Glassmorphism */}
         <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-          <div className="relative z-10">
+          <div className="relative">
             <h3 className="text-white font-mono text-xs tracking-wider mb-4 flex items-center gap-2">
               <Clock className="w-4 h-4" />
               RECENT ACTIVITY FEED
@@ -2187,7 +2308,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode, label: string
   return (
     <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 hover:border-white/30 transition-all shadow-2xl">
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-      <div className="relative z-10">
+      <div className="relative">
         <div className="flex items-center justify-between mb-4">
           <div className="text-white">{icon}</div>
           <span className="text-white/40 font-mono text-[10px]">LIVE</span>

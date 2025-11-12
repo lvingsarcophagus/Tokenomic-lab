@@ -4,6 +4,7 @@ import { Inter, JetBrains_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/contexts/auth-context"
 import CookieConsentBanner from "@/components/cookie-consent"
+import { ToastProvider } from "@/components/toast-provider"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-black text-white`}>
         <AuthProvider>
+          <ToastProvider />
           <main>
             {children}
           </main>
@@ -31,6 +33,7 @@ export default function RootLayout({
 
         <CookieConsentBanner />
         <Analytics />
+        <div id="tg-portal-root"></div>
       </body>
     </html>
   )

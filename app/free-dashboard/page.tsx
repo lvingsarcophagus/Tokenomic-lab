@@ -312,7 +312,7 @@ export default function FreeDashboard() {
             burnMechanics: isWellKnown ? 15 : 20,    // Varies by token
             tokenAge: isWellKnown ? 3 : 8            // Well established
           },
-          redFlags: ['⚠️ Symbol-based search - Use token contract address for full security analysis'],
+          redFlags: ['! Symbol-based search - Use token contract address for full security analysis'],
           positiveSignals: [
             '✓ Price data available', 
             '✓ Market cap tracked',

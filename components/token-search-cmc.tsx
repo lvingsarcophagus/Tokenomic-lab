@@ -1,10 +1,8 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Search, Loader2 } from 'lucide-react'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Card } from './ui/card'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { Loader2 } from 'lucide-react'
 
 interface TokenSearchResult {
   name: string
@@ -18,64 +16,115 @@ interface TokenSearchResult {
 
 interface TokenSearchProps {
   onTokenSelect: (address: string, chain: string, symbol: string, name: string) => void
+  // notify parent about query changes so the page can keep an external searchQuery in sync
+  onQueryChange?: (q: string) => void
+  // optional chain hint to prefer results from a specific network (e.g., 'solana')
+  chain?: string
 }
 
-export default function TokenSearchComponent({ onTokenSelect }: TokenSearchProps) {
+export default function TokenSearchComponent({ onTokenSelect, onQueryChange, chain }: TokenSearchProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TokenSearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showDropdown, setShowDropdown] = useState(false)
 
-  const handleSearch = async () => {
-    if (!query.trim()) {
-      setError('Please enter a token name or symbol')
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number; maxHeight?: number } | null>(null)
+
+  // Debounced search effect
+  useEffect(() => {
+    if (!query.trim() || query.length < 2) {
+      setResults([])
+      setError(null)
+      setShowDropdown(false)
       return
     }
 
-    setLoading(true)
-    setError(null)
-    setResults([])
+    const searchTimer = setTimeout(async () => {
+      setLoading(true)
+      setError(null)
 
-    try {
-      // First try simple symbol search
-      const response = await fetch(`/api/search-token?query=${encodeURIComponent(query)}`)
-      
-      if (!response.ok) {
-        throw new Error('Search failed')
+      try {
+        const chainParam = chain ? `&chain=${encodeURIComponent(chain)}` : ''
+        const response = await fetch(`/api/search-token?query=${encodeURIComponent(query)}${chainParam}`)
+        if (!response.ok) throw new Error('Search failed')
+        const data = await response.json()
+        console.log('[TokenSearch] fetched results', { query, chain, count: data.results?.length })
+        if (data.results && data.results.length > 0) {
+          setResults(data.results)
+          setShowDropdown(true)
+          console.log('[TokenSearch] showing dropdown - results set')
+        } else {
+          setResults([])
+          setError(`No tokens found for "${query}"`)
+          console.log('[TokenSearch] no results')
+        }
+      } catch (err: any) {
+        setError(err.message || 'Search failed')
+        setResults([])
+        console.error('Token search error:', err)
+      } finally {
+        setLoading(false)
       }
+    }, 300)
 
-      const data = await response.json()
+    return () => clearTimeout(searchTimer)
+  }, [query])
 
-      let searchResults = []
-      
-      if (data.results && data.results.length > 0) {
-        searchResults = data.results
-        setResults(data.results)
-      } else {
-        // If no results, try advanced search (name matching)
-        const advancedResponse = await fetch('/api/search-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, limit: 10 })
-        })
+  // Update dropdown position when dropdown is shown, or when window resizes/scrolls
+  useEffect(() => {
+    const updatePos = () => {
+      if (inputRef.current && showDropdown) {
+        const r = inputRef.current.getBoundingClientRect()
 
-        if (advancedResponse.ok) {
-          const advancedData = await advancedResponse.json()
-          searchResults = advancedData.results || []
-          setResults(advancedData.results || [])
+        // Compute available space below and above the input
+        const margin = 12
+        const availableBelow = Math.max(0, window.innerHeight - r.bottom - margin)
+        const availableAbove = Math.max(0, r.top - margin)
+
+        // Preferred max dropdown height
+        const preferredMax = 500
+
+        console.log('[TokenSearch] updatePos', { availableBelow, availableAbove, innerH: window.innerHeight, rTop: r.top, rBottom: r.bottom })
+
+        if (availableBelow < 180 && availableAbove > 80) {
+          // Render above the input. Ensure we don't position off-screen.
+          let maxHeight = Math.min(preferredMax, availableAbove)
+          // Clamp so top won't be negative
+          const tentativeTop = Math.round(r.top - maxHeight)
+          const minTop = margin
+          if (tentativeTop < minTop) {
+            // Reduce maxHeight to fit
+            maxHeight = Math.max(80, r.top - minTop)
+          }
+          const top = Math.round(r.top - maxHeight)
+          const pos = { top: Math.max(minTop, top), left: Math.round(r.left), width: Math.round(r.width), maxHeight }
+          console.log('[TokenSearch] set dropdownPos (above)', pos)
+          setDropdownPos(pos)
+        } else {
+          // Default: render below and cap height to available space
+          let maxHeight = Math.min(preferredMax, Math.max(120, availableBelow))
+          const top = Math.round(r.bottom)
+          // Ensure dropdown doesn't overflow viewport bottom
+          if (top + maxHeight > window.innerHeight - margin) {
+            maxHeight = Math.max(80, window.innerHeight - margin - top)
+          }
+          const pos = { top, left: Math.round(r.left), width: Math.round(r.width), maxHeight }
+          console.log('[TokenSearch] set dropdownPos (below)', pos)
+          setDropdownPos(pos)
         }
       }
-
-      if (searchResults.length === 0) {
-        setError(`No tokens found for "${query}"`)
-      }
-    } catch (err: any) {
-      setError(err.message || 'Search failed')
-      console.error('Token search error:', err)
-    } finally {
-      setLoading(false)
     }
-  }
+
+    updatePos()
+    window.addEventListener('resize', updatePos)
+    window.addEventListener('scroll', updatePos, true)
+    return () => {
+      window.removeEventListener('resize', updatePos)
+      window.removeEventListener('scroll', updatePos, true)
+    }
+  }, [showDropdown, results])
 
   const handleSelectToken = (token: TokenSearchResult) => {
     if (!token.address) {
@@ -86,106 +135,92 @@ export default function TokenSearchComponent({ onTokenSelect }: TokenSearchProps
     onTokenSelect(token.address, token.chain || 'Unknown', token.symbol, token.name)
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Search Input */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Search by token name or symbol (e.g., BONK, Dogwifhat)"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="pl-10"
-          />
-        </div>
-        <Button 
-          onClick={handleSearch} 
-          disabled={loading}
-          className="min-w-[100px]"
+  // Dropdown portal — rendered into document.body to avoid stacking context clipping
+  const dropdownPortal =
+    showDropdown && results.length > 0 && dropdownPos ? (
+      createPortal(
+        <div
+          id="tg-search-dropdown"
+          role="listbox"
+          style={{
+            position: 'fixed',
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            width: dropdownPos.width,
+            maxHeight: dropdownPos.maxHeight,
+            overflowY: 'auto',
+            pointerEvents: 'auto',
+            zIndex: 2147483647,
+            transform: 'none',
+          }}
+          className="bg-black border border-white/30 rounded shadow-2xl"
         >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Searching
-            </>
-          ) : (
-            'Search'
-          )}
-        </Button>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200">
-          {error}
-        </div>
-      )}
-
-      {/* Results */}
-      {results.length > 0 && (
-        <div className="relative z-[100] space-y-2">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="p-2 border-b border-white/20 text-white/60 text-xs font-mono">
             Found {results.length} token{results.length > 1 ? 's' : ''}
-          </p>
-          <div className="grid gap-2 max-h-[400px] overflow-y-auto shadow-2xl">
-            {results.map((token) => (
-              <Card
-                key={token.cmcId}
-                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                onClick={() => handleSelectToken(token)}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">{token.name}</h3>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {token.symbol}
-                      </span>
-                      {token.rank && (
-                        <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded">
-                          #{token.rank}
-                        </span>
-                      )}
-                    </div>
-                    
-                    {token.chain && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Chain: {token.chain}
-                      </p>
-                    )}
-                    
-                    {token.address ? (
-                      <p className="text-xs font-mono text-gray-500 dark:text-gray-500 truncate">
-                        {token.address}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-orange-600 dark:text-orange-400">
-                        No contract address (native token)
-                      </p>
-                    )}
-                  </div>
+          </div>
 
-                  {token.address && (
-                    <Button size="sm" variant="outline">
-                      Analyze
-                    </Button>
+          {results.map((token) => (
+            <button
+              key={`${token.cmcId}-${token.chain}`}
+              onClick={() => {
+                handleSelectToken(token)
+                setShowDropdown(false)
+              }}
+              className="w-full p-3 text-left hover:bg-white/10 transition-all border-b border-white/10 last:border-b-0"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-white font-mono text-sm font-bold">{token.symbol}</span>
+                    <span className="text-white/60 font-mono text-xs">{token.name}</span>
+                  </div>
+                  {token.address ? (
+                    <div className="text-white/40 font-mono text-[10px] truncate">{token.address}</div>
+                  ) : (
+                    <div className="text-orange-400 font-mono text-[10px]">⚠ No contract address (native token)</div>
                   )}
                 </div>
-              </Card>
-            ))}
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <span className="px-2 py-1 bg-white/10 text-white font-mono text-[9px] tracking-wider whitespace-nowrap">{token.chain || 'UNKNOWN'}</span>
+                  {token.rank && <span className="text-white/60 font-mono text-[9px]">Rank #{token.rank}</span>}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>,
+        document.getElementById('tg-portal-root')!
+      )
+    ) : null
+
+  return (
+    <div className="w-full">
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Search token by name or symbol (e.g., PEPE, BONK, DOGE)..."
+          value={query}
+          onChange={(e: any) => {
+            const v = e.target.value
+            setQuery(v)
+            if (onQueryChange) onQueryChange(v)
+          }}
+          onFocus={() => showDropdown && setShowDropdown(true)}
+          className="w-full bg-black border border-white/30 text-white px-4 py-3 font-mono text-xs tracking-wider focus:outline-none focus:border-white placeholder:text-white/40 rounded"
+        />
+
+        {loading && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <Loader2 className="w-4 h-4 animate-spin text-white/60" />
           </div>
-        </div>
+        )}
+      </div>
+
+      {error && !results.length && (
+        <div className="mt-2 p-3 bg-red-500/20 border border-red-500/50 rounded text-red-300 text-xs font-mono">{error}</div>
       )}
 
-      {/* Help Text */}
-      <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-        <p>💡 <strong>Tip:</strong> Search by token symbol for fastest results</p>
-        <p>🔍 Supports both exact symbol match and name search</p>
-        <p>📍 Returns contract addresses for blockchain analysis</p>
-      </div>
+      {dropdownPortal}
     </div>
   )
 }

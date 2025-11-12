@@ -48,7 +48,31 @@ export class TokenScanService {
    */
   static async scanToken(addressOrSymbol: string, chain?: string): Promise<CompleteTokenData> {
     // Detect chain from address format
-    const chainInfo = detectChain(addressOrSymbol)
+    let chainInfo = detectChain(addressOrSymbol)
+
+    // If the caller passed an explicit chain preference (from the UI), prefer
+    // that and construct/override a ChainInfo so downstream logic (and UI)
+    // correctly treat Solana and other non-EVM chains instead of defaulting
+    // to Ethereum.
+    if (chain) {
+      const sel = String(chain).toLowerCase()
+      if (sel.includes('sol')) {
+        chainInfo = { chainId: 'solana', chainName: 'Solana', isEVM: false, addressFormat: 'base58' }
+      } else if (sel.includes('bsc') || sel.includes('binance')) {
+        chainInfo = { chainId: '56', chainName: 'BSC', isEVM: true, addressFormat: '0x' }
+      } else if (sel.includes('polygon') || sel.includes('matic')) {
+        chainInfo = { chainId: '137', chainName: 'Polygon', isEVM: true, addressFormat: '0x' }
+      } else if (sel.includes('avalanche') || sel.includes('avax')) {
+        chainInfo = { chainId: '43114', chainName: 'Avalanche', isEVM: true, addressFormat: '0x' }
+      } else if (sel.includes('arbitrum')) {
+        chainInfo = { chainId: '42161', chainName: 'Arbitrum', isEVM: true, addressFormat: '0x' }
+      } else if (sel.includes('optimism')) {
+        chainInfo = { chainId: '10', chainName: 'Optimism', isEVM: true, addressFormat: '0x' }
+      } else if (sel.includes('base')) {
+        chainInfo = { chainId: '8453', chainName: 'Base', isEVM: true, addressFormat: '0x' }
+      }
+    }
+
     const detectedChain = chain || chainInfo?.chainId || '1'
     
     // Determine if input is an address or symbol

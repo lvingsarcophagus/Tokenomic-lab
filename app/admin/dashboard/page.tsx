@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserRole } from '@/hooks/use-user-role'
 import { auth } from '@/lib/firebase'
+import { notifySuccess, notifyError } from '@/lib/notifications'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -241,13 +242,26 @@ export default function EnhancedAdminDashboard() {
       })
 
       if (response.ok) {
+        const data = await response.json()
         await loadAdminData()
         setEditingUser(null)
-        alert(`✅ User role updated to ${newRole}`)
+        
+        // Use notification system instead of alert
+        const roleLabel = newRole === 'ADMIN' ? 'Administrator' : newRole === 'PREMIUM' ? 'Premium' : 'Free'
+        notifySuccess(`✓ User role updated to ${roleLabel}`, {
+          duration: 4000,
+          action: data.notificationSent ? {
+            label: 'Notification Sent',
+            onClick: () => {}
+          } : undefined
+        })
+      } else {
+        const errorData = await response.json()
+        notifyError(`❌ Failed to update role: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Failed to update role:', error)
-      alert('❌ Failed to update user role')
+      notifyError('❌ Failed to update user role')
     }
   }
 
@@ -1113,6 +1127,18 @@ export default function EnhancedAdminDashboard() {
             </h2>
             
             <div className="space-y-6">
+              <Link href="/admin/notification-settings">
+                <div className="p-4 bg-blue-500/10 border-2 border-blue-500/30 rounded backdrop-blur-md hover:border-blue-500/50 transition-all cursor-pointer group">
+                  <h3 className="text-blue-400 font-mono tracking-wider font-bold mb-2 group-hover:text-blue-300 transition-colors">🔔 NOTIFICATION SETTINGS</h3>
+                  <p className="text-white/60 text-sm font-mono tracking-wider mb-4">
+                    Configure email notifications, in-app alerts, and notification types
+                  </p>
+                  <div className="text-blue-400 font-mono text-xs tracking-wider group-hover:translate-x-1 transition-transform">
+                    CLICK TO CONFIGURE →
+                  </div>
+                </div>
+              </Link>
+
               <div className="p-4 bg-yellow-500/10 border-2 border-yellow-500/30 rounded backdrop-blur-md hover:border-yellow-500/50 transition-all">
                 <h3 className="text-yellow-400 font-mono tracking-wider font-bold mb-2">⚠️ MAINTENANCE MODE</h3>
                 <p className="text-white/60 text-sm font-mono tracking-wider mb-4">

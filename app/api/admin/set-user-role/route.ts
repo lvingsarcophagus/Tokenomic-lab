@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
 import { isDevMode } from '@/lib/dev-mode'
+import { sendTierUpgradeEmail, sendTierDowngradeEmail } from '@/lib/email-notifications'
 
 export async function POST(request: NextRequest) {
   try {
@@ -107,13 +108,29 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     })
 
-    console.log(`✅ User ${targetUid} role set to ${role}. Notification sent.`)
+    // Send email notification if email is provided
+    let emailSent = false
+    if (email) {
+      try {
+        if (role === 'PREMIUM' || role === 'ADMIN') {
+          emailSent = await sendTierUpgradeEmail(email)
+        } else if (role === 'FREE') {
+          emailSent = await sendTierDowngradeEmail(email)
+        }
+      } catch (emailError) {
+        console.error('Failed to send email notification:', emailError)
+        // Don't fail the request if email fails
+      }
+    }
+
+    console.log(`✅ User ${targetUid} role set to ${role}. Notification sent. Email sent: ${emailSent}`)
 
     return NextResponse.json({
       success: true,
       uid: targetUid,
       role,
       notificationSent: true,
+      emailSent,
       message: `User role updated to ${role}. User must refresh their token to see changes.`
     })
 

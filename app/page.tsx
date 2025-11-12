@@ -133,7 +133,7 @@ export default function LandingPage() {
             </h1>
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="px-3 py-1 bg-gray-500/20 border border-gray-500/50 backdrop-blur-sm">
-                <span className="text-gray-300 text-xs font-mono tracking-wider">🎭 MEME DETECTION</span>
+                <span className="text-gray-300 text-xs font-mono tracking-wider">◐ MEME DETECTION</span>
               </div>
               <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
                 <span className="text-white text-xs font-mono tracking-wider">MULTI-CHAIN</span>
@@ -208,7 +208,7 @@ export default function LandingPage() {
               <button className="relative px-10 py-5 bg-transparent border-2 border-gray-500 text-gray-300 font-mono text-base lg:text-lg hover:bg-gray-500/10 transition-all duration-200 group">
                 <span className="flex items-center gap-2 justify-center">
                   TRY AI DETECTION FREE
-                  <span className="text-xl">🎭</span>
+                  <span className="text-xl">◐</span>
                 </span>
               </button>
             </Link>
@@ -230,7 +230,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
             <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-gray-500/10 border border-gray-500/30 backdrop-blur-sm">
-              <span className="text-gray-300 text-2xl">🎭</span>
+              <span className="text-gray-300 text-2xl">◐</span>
               <span className="text-gray-300 text-xs font-mono tracking-wider">MEME COIN SPECIALIST</span>
             </div>
             <h2 className="text-3xl lg:text-5xl font-bold text-white font-mono tracking-wider mb-6">
@@ -247,7 +247,7 @@ export default function LandingPage() {
             <Card className="bg-black/60 backdrop-blur-lg border border-gray-500/30 hover:border-gray-500/50 transition-all group">
               <CardContent className="p-6">
                 <div className="w-12 h-12 bg-gray-500/20 border border-gray-500/40 flex items-center justify-center mb-4 text-2xl">
-                  🤖
+                  ⊕
                 </div>
                 <h4 className="text-lg font-bold text-gray-300 font-mono tracking-wider mb-3">AI CLASSIFICATION</h4>
                 <p className="text-white/60 text-sm font-mono leading-relaxed mb-4">
@@ -323,7 +323,7 @@ export default function LandingPage() {
                   3
                 </div>
                 <p className="text-white/70 text-xs font-mono leading-relaxed">
-                  Classification: Meme Token 🎭 or Utility Token 🏢
+                  Classification: Meme Token ◐ or Utility Token ◧
                 </p>
               </div>
               <div className="text-center">
@@ -477,7 +477,7 @@ export default function LandingPage() {
             <Card className="bg-gradient-to-br from-white/10 to-transparent backdrop-blur-lg border border-white/30 hover:border-white/50 transition-all group">
               <CardContent className="p-6">
                 <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mb-4 text-2xl">
-                  🎭
+                  ◐
                 </div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-px bg-white/50"></div>
@@ -902,6 +902,7 @@ export default function LandingPage() {
               <h4 className="text-white font-mono font-bold text-sm mb-4 uppercase tracking-wider">RESOURCES</h4>
               <ul className="space-y-2">
                 <li><Link href="/profile" className="text-white/60 hover:text-white font-mono text-xs transition">Profile</Link></li>
+                <li><Link href="/contact" className="text-white/60 hover:text-white font-mono text-xs transition">Contact</Link></li>
                 <li><Link href="/privacy-settings" className="text-white/60 hover:text-white font-mono text-xs transition">Privacy Settings</Link></li>
               </ul>
             </div>

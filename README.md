@@ -4,11 +4,67 @@ A comprehensive **multi-chain** token risk analysis platform with AI-powered sec
 
 ## � Recent Updates (Latest)
 
+### Advanced Notification System (Latest Implementation)
+- **Enhanced Notification Bell Component**: ✅ `components/notification-bell.tsx` with full Firestore integration
+  - Real-time notification listening with `onSnapshot` from top-level Firestore collection
+  - Unread count display with animated pulse effect
+  - Full CRUD: Mark individual/all as read, delete individual/all notifications
+  - Color-coded by type: 🟢 upgrade, 🟠 downgrade, 🔴 warning, 🔵 info
+  - Responsive dropdown menu integrated in navbar with max-height scrolling
+- **Email Notifications Service**: ✅ `lib/email-notifications.ts` with nodemailer integration
+  - Installed: `nodemailer 7.0.10`, `@types/nodemailer 7.0.3` 
+  - HTML email templates for tier changes with branded styling
+  - Gmail SMTP configured (requires EMAIL_USER, EMAIL_PASSWORD in `.env.local`)
+  - Exports: `sendTierUpgradeEmail()`, `sendTierDowngradeEmail()`, `sendAdminNotificationEmail()`
+  - Graceful error handling (logs errors, doesn't block operation)
+- **Email Notifications on Tier Changes**: ✅ Both API endpoints send transactional emails
+  - `app/api/user/upgrade-premium/route.ts`: Sends upgrade email + creates in-app notification
+  - `app/api/admin/set-user-role/route.ts`: Sends email based on tier change (upgrade/downgrade/none)
+  - Returns `emailSent` flag in response for confirmation
+- **Admin Notification Preferences**: ✅ Fully configurable notification control
+  - `lib/admin-notification-preferences.ts`: TypeScript interface + default preferences
+  - `app/api/admin/notification-preferences/route.ts`: GET/PUT endpoints with admin auth
+  - Stored in Firestore `admin_notification_preferences` collection (keyed by userId)
+  - Preferences: emailNotifications toggle, inAppNotifications toggle, emailFrequency (immediate/daily/weekly/never), 4 notification types
+- **Admin Notification Settings Page**: ✅ `app/admin/notification-settings/page.tsx`
+  - Three setting sections: Email Notifications, In-App Notifications, Notification Types
+  - Email frequency dropdown selector (immediate, daily, weekly, never)
+  - Toggle switches for: tier changes, user activity, system alerts, security events
+  - Save/Cancel buttons with loading state
+  - Admin-only access with redirect for non-admins
+  - Glassmorphism styling with professional layout
+  - Integrated in admin dashboard Settings tab with blue-themed card
+
+### User Notifications & Contact System
+- **Toast Notification System**: ✅ Implemented `sonner` library for modern toast notifications
+  - Created `lib/notifications.ts` with `notifySuccess()`, `notifyError()`, `notifyWarning()`, `notifyInfo()` utilities
+  - Created `components/toast-provider.tsx` for global toast configuration
+  - Added `ToastProvider` to root layout for app-wide notification support
+- **User Tier Change Notifications**: ✅ Admin actions now trigger notifications
+  - `app/api/admin/set-user-role/route.ts`: Saves notifications to Firestore collection
+  - `app/api/user/upgrade-premium/route.ts`: Creates notification when users upgrade
+  - Notifications include `userId`, `type`, `title`, `message`, `read`, `createdAt` fields
+- **Contact Page with Formspree**: ✅ New public contact form at `/contact`
+  - Integrated `@formspree/react 3.0.0` for email form handling
+  - Form ID: `meovqnpq` routing to `nayanjoshymaniyathjoshy@gmail.com`
+  - Client-side validation for all required fields
+  - Professional design with contact info cards
+- **Contact Page Navigation**: ✅ Added `/contact` link to footer RESOURCES section
+- **TypeScript Build**: ✅ Updated `tsconfig.json` to only include app folders for build
+
 ### UI & AI Improvements (Current)
 - **Glassmorphism UI**: ✅ Applied modern glass-effect styling to all dashboard sections (scanner, results, watchlist, analytics, insights)
 - **Groq AI Integration**: ✅ Switched from Gemini to Groq AI using Llama 3.3 70B for 2-3x faster inference
 - **Fixed Z-Index Issues**: ✅ Token search dropdowns now properly layer above other content (`z-[100]`)
 - **CoinMarketCap Integration**: ✅ Fast token search by name/symbol - tested with PEPE search, 32 results found
+- **Monotone Icons Throughout**: ✅ Replaced all colorful emojis with monotone symbols across **ALL pages** for consistent aesthetic:
+  - **Blockchains**: ◆ Ethereum, ◇ BSC, ▲ Polygon, △ Avalanche, ● Solana
+  - **Token Types**: ⊕ Auto Detect, ◐ Meme Token, ◧ Utility Token
+  - **Actions**: ⊡ Search, ⊞ Manual Input
+  - **Status**: ✓ Success/Yes, ! Warning/Alert
+  - **Info**: ⓘ Info, ▸ Details, ⬡ Chain Analysis
+  - **Landing Page**: Updated hero section, feature cards, CTA buttons with monotone symbols
+  - **Components**: Token search help text updated with monotone icons
 - **Enhanced Logging**: ✅ Added comprehensive debug logging for AI summary generation:
   - GROQ_API_KEY existence check
   - User plan verification
