@@ -9,8 +9,6 @@ import {
   CheckCircle,
   XCircle,
   BarChart3,
-  ChevronDown,
-  ChevronUp,
   Droplet,
   Users,
   TrendingUp,
@@ -49,7 +47,6 @@ interface DetailedTokenCardProps {
 }
 
 export default function DetailedTokenCard({ token, isPremium = false }: DetailedTokenCardProps) {
-  const [showRawData, setShowRawData] = useState(false)
 
   const getRiskColor = (score: number) => {
     if (score <= 30) return 'bg-green-500'
@@ -269,27 +266,7 @@ export default function DetailedTokenCard({ token, isPremium = false }: Detailed
         </div>
       )}
 
-      {/* Raw JSON Data */}
-      <div className="border border-white/20 bg-black/60">
-        <button
-          onClick={() => setShowRawData(!showRawData)}
-          className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
-        >
-          <span className="text-white font-mono text-sm tracking-wider">RAW JSON DATA</span>
-          {showRawData ? (
-            <ChevronUp className="w-4 h-4 text-white" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-white" />
-          )}
-        </button>
-        {showRawData && (
-          <div className="p-4 border-t border-white/20 bg-black/80 max-h-96 overflow-y-auto">
-            <pre className="text-white/80 font-mono text-[10px] overflow-x-auto">
-              {JSON.stringify(token.rawData, null, 2)}
-            </pre>
-          </div>
-        )}
-      </div>
+
     </div>
   )
 }

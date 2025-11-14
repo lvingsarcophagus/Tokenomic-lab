@@ -2,10 +2,11 @@
 
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
-import { Shield, Zap, Bell, TrendingUp, Lock, BarChart3, Search, Eye, Activity, Database, Globe, CheckCircle, ArrowRight, Flame, Target, Users, AlertTriangle, Menu, X } from "lucide-react"
+import { Shield, BarChart3, Search, Eye, Activity, Database, Globe, CheckCircle, ArrowRight, AlertTriangle, Menu, X, Cpu, Zap, Bell, Layers, GitBranch, Sparkles, Binary, Hexagon, Box } from "lucide-react"
 import dynamic from "next/dynamic"
 import { Suspense, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { GlowingEffect } from "@/components/ui/glowing-effect"
 
 // Dynamically import the 3D scene to avoid SSR issues
 const GenerativeArtScene = dynamic(
@@ -41,6 +42,11 @@ export default function LandingPage() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-2">
+              <Link href="/docs">
+                <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-white/10 border border-white/20 text-xs font-mono px-3 py-1.5 h-8">
+                  DOCS
+                </Button>
+              </Link>
               <Link href="/pricing">
                 <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-white/10 border border-white/20 text-xs font-mono px-3 py-1.5 h-8">
                   PRICING
@@ -75,6 +81,11 @@ export default function LandingPage() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-white/20 bg-black/40 backdrop-blur-xl animate-in slide-in-from-top-2">
             <div className="px-3 py-4 space-y-2">
+              <Link href="/docs" onClick={() => setMobileMenuOpen(false)}>
+                <button className="w-full text-left px-3 py-2.5 border-2 border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 font-mono text-[10px]">
+                  DOCS
+                </button>
+              </Link>
               <Link href="/pricing" onClick={() => setMobileMenuOpen(false)}>
                 <button className="w-full text-left px-3 py-2.5 border-2 border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 font-mono text-[10px]">
                   PRICING
@@ -129,11 +140,11 @@ export default function LandingPage() {
             <h1 className="text-4xl lg:text-6xl xl:text-8xl font-bold text-white mb-6 leading-tight font-mono tracking-wider">
               AI-POWERED
               <br />
-              <span className="text-white/80">MEME COIN</span> DETECTION
+              <span className="text-white/80">TOKEN</span> ANALYSIS
             </h1>
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="px-3 py-1 bg-gray-500/20 border border-gray-500/50 backdrop-blur-sm">
-                <span className="text-gray-300 text-xs font-mono tracking-wider">◐ MEME DETECTION</span>
+              <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
+                <span className="text-white text-xs font-mono tracking-wider">MEME + UTILITY</span>
               </div>
               <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
                 <span className="text-white text-xs font-mono tracking-wider">MULTI-CHAIN</span>
@@ -157,15 +168,27 @@ export default function LandingPage() {
           {/* Description - Enhanced */}
           <div className="relative max-w-3xl mb-10">
             <p className="text-base lg:text-lg text-white/90 mb-6 leading-relaxed font-mono">
-              MULTI-CHAIN TOKEN ANALYZER WITH SOLANA FOCUS. AI-POWERED MEME TOKEN DETECTION + REAL-TIME SECURITY AUDITS.
-              SUPPORTS ETHEREUM, BSC, POLYGON, ARBITRUM, AVALANCHE & SOLANA.
+              PROTECT YOUR INVESTMENTS WITH AI-POWERED TOKEN ANALYSIS. DETECT SCAMS, RUG PULLS & HONEYPOTS BEFORE YOU BUY.
             </p>
             <p className="text-sm lg:text-base text-white/70 mb-8 leading-relaxed font-mono">
-              Built with Next.js 16 + TypeScript. Integrates Groq AI (Llama 3.3 70B) for instant token classification,
-              CoinMarketCap for search, Mobula for market data, Moralis for on-chain analytics, Helius for Solana-specific 
-              security (freeze/mint authority), and GoPlus for EVM contract audits. Real-time 10-factor risk scoring with 
-              chain-adaptive algorithms. No dummy data - all metrics from live APIs.
+              Comprehensive 10-factor risk algorithm analyzes contract security, holder distribution, liquidity depth, and market behavior across 6+ blockchains. 
+              Powered by Groq AI (Llama 3.3 70B) for intelligent token classification (meme vs utility). Real-time data from Mobula, Moralis, GoPlus, and Helius APIs.
             </p>
+            
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2 text-white/60 text-xs font-mono">
+                <Binary className="w-4 h-4" />
+                <span>10 RISK FACTORS</span>
+              </div>
+              <div className="flex items-center gap-2 text-white/60 text-xs font-mono">
+                <GitBranch className="w-4 h-4" />
+                <span>6 BLOCKCHAINS</span>
+              </div>
+              <div className="flex items-center gap-2 text-white/60 text-xs font-mono">
+                <Hexagon className="w-4 h-4" />
+                <span>5 DATA SOURCES</span>
+              </div>
+            </div>
             
             <div className="hidden lg:block absolute -left-4 top-1/2 w-3 h-3 border border-white opacity-30" style={{ transform: 'translateY(-50%)' }}>
               <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-white" style={{ transform: 'translate(-50%, -50%)' }}></div>
@@ -197,7 +220,7 @@ export default function LandingPage() {
             <Link href="/dashboard">
               <button className="relative px-10 py-5 bg-white text-black font-mono text-base lg:text-lg border-2 border-white hover:bg-transparent hover:text-white transition-all duration-200 group overflow-hidden">
                 <span className="relative z-10 flex items-center gap-2 justify-center font-bold">
-                  SCAN MEME COINS NOW
+                  START ANALYZING TOKENS
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </span>
                 <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-200"></div>
@@ -205,10 +228,10 @@ export default function LandingPage() {
             </Link>
             
             <Link href="/signup">
-              <button className="relative px-10 py-5 bg-transparent border-2 border-gray-500 text-gray-300 font-mono text-base lg:text-lg hover:bg-gray-500/10 transition-all duration-200 group">
+              <button className="relative px-10 py-5 bg-transparent border-2 border-white/50 text-white font-mono text-base lg:text-lg hover:bg-white/10 hover:border-white transition-all duration-200 group">
                 <span className="flex items-center gap-2 justify-center">
-                  TRY AI DETECTION FREE
-                  <span className="text-xl">◐</span>
+                  CREATE FREE ACCOUNT
+                  <Sparkles className="w-5 h-5" />
                 </span>
               </button>
             </Link>
@@ -230,15 +253,15 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
             <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-gray-500/10 border border-gray-500/30 backdrop-blur-sm">
-              <span className="text-gray-300 text-2xl">◐</span>
+              <Sparkles className="w-5 h-5 text-gray-300" />
               <span className="text-gray-300 text-xs font-mono tracking-wider">MEME COIN SPECIALIST</span>
             </div>
             <h2 className="text-3xl lg:text-5xl font-bold text-white font-mono tracking-wider mb-6">
-              INTELLIGENT MEME DETECTION
+              INTELLIGENT TOKEN CLASSIFICATION
             </h2>
             <p className="text-white/70 text-sm lg:text-base font-mono max-w-3xl mx-auto leading-relaxed">
-              Our AI analyzes token metadata to instantly classify meme coins and apply appropriate risk assessment. 
-              Stay protected from speculative tokens with automated baseline scoring.
+              Our AI analyzes token metadata to instantly classify tokens as meme or utility, applying appropriate risk assessment. 
+              Meme tokens receive +15 risk penalty due to higher volatility, while utility tokens are evaluated on fundamentals.
             </p>
           </div>
 
@@ -246,12 +269,12 @@ export default function LandingPage() {
             {/* Feature 1 */}
             <Card className="bg-black/60 backdrop-blur-lg border border-gray-500/30 hover:border-gray-500/50 transition-all group">
               <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gray-500/20 border border-gray-500/40 flex items-center justify-center mb-4 text-2xl">
-                  ⊕
+                <div className="w-12 h-12 bg-gray-500/20 border border-gray-500/40 flex items-center justify-center mb-4 group-hover:bg-gray-500/30 transition-all">
+                  <Cpu className="w-6 h-6 text-gray-300" />
                 </div>
                 <h4 className="text-lg font-bold text-gray-300 font-mono tracking-wider mb-3">AI CLASSIFICATION</h4>
                 <p className="text-white/60 text-sm font-mono leading-relaxed mb-4">
-                  Advanced Gemini AI analyzes token names, symbols, and metadata patterns to identify meme coins with 80%+ accuracy.
+                  Advanced Groq AI (Llama 3.3 70B) analyzes token names, symbols, and metadata to classify as meme or utility with 80%+ accuracy.
                 </p>
                 <div className="flex items-center gap-2 text-gray-400/60 text-xs font-mono">
                   <CheckCircle className="w-3 h-3" />
@@ -263,8 +286,8 @@ export default function LandingPage() {
             {/* Feature 2 */}
             <Card className="bg-black/60 backdrop-blur-lg border border-gray-500/30 hover:border-gray-500/50 transition-all group">
               <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gray-500/20 border border-gray-500/40 flex items-center justify-center mb-4 text-2xl">
-                  ⚠️
+                <div className="w-12 h-12 bg-gray-500/20 border border-gray-500/40 flex items-center justify-center mb-4 group-hover:bg-gray-500/30 transition-all">
+                  <AlertTriangle className="w-6 h-6 text-gray-300" />
                 </div>
                 <h4 className="text-lg font-bold text-gray-300 font-mono tracking-wider mb-3">+15 RISK PENALTY</h4>
                 <p className="text-white/60 text-sm font-mono leading-relaxed mb-4">
@@ -280,12 +303,12 @@ export default function LandingPage() {
             {/* Feature 3 */}
             <Card className="bg-black/60 backdrop-blur-lg border border-gray-500/30 hover:border-gray-500/50 transition-all group">
               <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gray-500/20 border border-gray-500/40 flex items-center justify-center mb-4 text-2xl">
-                  🎯
+                <div className="w-12 h-12 bg-gray-500/20 border border-gray-500/40 flex items-center justify-center mb-4 group-hover:bg-gray-500/30 transition-all">
+                  <Layers className="w-6 h-6 text-gray-300" />
                 </div>
                 <h4 className="text-lg font-bold text-gray-300 font-mono tracking-wider mb-3">MANUAL OVERRIDE</h4>
                 <p className="text-white/60 text-sm font-mono leading-relaxed mb-4">
-                  Don't agree with AI classification? Override with manual selection: Auto Detect, Meme Token, or Utility Token.
+                  Override AI classification with manual selection: Auto Detect, Meme Token, or Utility Token for customized risk analysis.
                 </p>
                 <div className="flex items-center gap-2 text-gray-400/60 text-xs font-mono">
                   <CheckCircle className="w-3 h-3" />
@@ -298,8 +321,8 @@ export default function LandingPage() {
           {/* How It Works */}
           <div className="border border-gray-500/20 bg-black/40 backdrop-blur-lg p-8">
             <h3 className="text-xl font-bold text-gray-300 font-mono mb-6 flex items-center gap-3">
-              <span className="text-2xl">⚡</span>
-              HOW MEME DETECTION WORKS
+              <Zap className="w-6 h-6 text-gray-300" />
+              HOW TOKEN CLASSIFICATION WORKS
             </h3>
             <div className="grid md:grid-cols-4 gap-6">
               <div className="text-center">
@@ -323,7 +346,7 @@ export default function LandingPage() {
                   3
                 </div>
                 <p className="text-white/70 text-xs font-mono leading-relaxed">
-                  Classification: Meme Token ◐ or Utility Token ◧
+                  AI classifies as Meme Token or Utility Token
                 </p>
               </div>
               <div className="text-center">
@@ -331,7 +354,7 @@ export default function LandingPage() {
                   4
                 </div>
                 <p className="text-white/70 text-xs font-mono leading-relaxed">
-                  Meme tokens get +15 risk penalty + detailed warnings
+                  Apply appropriate risk scoring based on token type
                 </p>
               </div>
             </div>
@@ -359,14 +382,14 @@ export default function LandingPage() {
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <Database className="w-6 h-6 text-white" />
+                  <Shield className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
                   <h4 className="text-lg font-bold text-white font-mono">GOPLUS</h4>
                 </div>
                 <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
                   Smart contract security analysis, honeypot detection, and token safety verification.
                 </p>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  <Box className="w-3 h-3 text-white/40" />
                   <span className="text-[10px] text-white/40 font-mono">PRIMARY SECURITY</span>
                 </div>
               </CardContent>
@@ -375,14 +398,14 @@ export default function LandingPage() {
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <Activity className="w-6 h-6 text-white" />
-                  <h4 className="text-lg font-bold text-white font-mono">DEXSCREENER</h4>
+                  <Activity className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+                  <h4 className="text-lg font-bold text-white font-mono">MOBULA</h4>
                 </div>
                 <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
-                  Real-time DEX data aggregation, liquidity tracking, and price monitoring across chains.
+                  Real-time market data, liquidity tracking, and price monitoring across all chains.
                 </p>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  <Box className="w-3 h-3 text-white/40" />
                   <span className="text-[10px] text-white/40 font-mono">MARKET DATA</span>
                 </div>
               </CardContent>
@@ -391,30 +414,14 @@ export default function LandingPage() {
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <Globe className="w-6 h-6 text-white" />
-                  <h4 className="text-lg font-bold text-white font-mono">MOBULA</h4>
-                </div>
-                <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
-                  Multi-chain token search, metadata aggregation, and cross-chain discovery.
-                </p>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span className="text-[10px] text-white/40 font-mono">TOKEN SEARCH</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Target className="w-6 h-6 text-white" />
+                  <Database className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
                   <h4 className="text-lg font-bold text-white font-mono">MORALIS</h4>
                 </div>
                 <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
                   Blockchain indexing, token metadata, holder analytics, and transaction tracking.
                 </p>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  <Box className="w-3 h-3 text-white/40" />
                   <span className="text-[10px] text-white/40 font-mono">BLOCKCHAIN DATA</span>
                 </div>
               </CardContent>
@@ -423,15 +430,15 @@ export default function LandingPage() {
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                  <h4 className="text-lg font-bold text-white font-mono">COINGECKO</h4>
+                  <Globe className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+                  <h4 className="text-lg font-bold text-white font-mono">HELIUS</h4>
                 </div>
                 <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
-                  Historical price data, market metrics, volume tracking, and token rankings.
+                  Solana-specific data, freeze authority detection, and SPL token analysis.
                 </p>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span className="text-[10px] text-white/40 font-mono">PRICE HISTORY</span>
+                  <Box className="w-3 h-3 text-white/40" />
+                  <span className="text-[10px] text-white/40 font-mono">SOLANA FOCUS</span>
                 </div>
               </CardContent>
             </Card>
@@ -439,15 +446,31 @@ export default function LandingPage() {
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <Flame className="w-6 h-6 text-white" />
-                  <h4 className="text-lg font-bold text-white font-mono">CUSTOM AI</h4>
+                  <Search className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+                  <h4 className="text-lg font-bold text-white font-mono">COINMARKETCAP</h4>
                 </div>
                 <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
-                  Proprietary 7-factor risk algorithm with confidence scoring and behavioral analysis.
+                  Token search by name/symbol, market rankings, and comprehensive token discovery.
                 </p>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span className="text-[10px] text-white/40 font-mono">RISK ENGINE</span>
+                  <Box className="w-3 h-3 text-white/40" />
+                  <span className="text-[10px] text-white/40 font-mono">TOKEN SEARCH</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Cpu className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+                  <h4 className="text-lg font-bold text-white font-mono">GROQ AI</h4>
+                </div>
+                <p className="text-white/60 text-xs font-mono leading-relaxed mb-3">
+                  Llama 3.3 70B for meme token classification and comprehensive risk analysis.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Box className="w-3 h-3 text-white/40" />
+                  <span className="text-[10px] text-white/40 font-mono">AI ENGINE</span>
                 </div>
               </CardContent>
             </Card>
@@ -474,23 +497,25 @@ export default function LandingPage() {
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="bg-gradient-to-br from-white/10 to-transparent backdrop-blur-lg border border-white/30 hover:border-white/50 transition-all group">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mb-4 text-2xl">
-                  ◐
+            <Card className="relative bg-gradient-to-br from-white/10 to-transparent backdrop-blur-lg border border-white/30 hover:border-white/50 transition-all group overflow-hidden rounded-lg">
+              <GlowingEffect disabled={false} proximity={100} spread={30} blur={10} borderWidth={2} />
+              <CardContent className="p-6 relative z-10">
+                <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white/15 transition-all">
+                  <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-px bg-white/50"></div>
                   <h4 className="text-lg font-bold text-white/90 font-mono tracking-wider">AI MEME CLASSIFIER</h4>
                 </div>
                 <p className="text-white/60 text-sm font-mono leading-relaxed">
-                  Gemini AI instantly identifies meme coins by analyzing token metadata. Automatic 55 baseline risk score for all meme tokens.
+                  Groq AI (Llama 3.3 70B) classifies tokens as meme or utility by analyzing metadata. Applies appropriate risk scoring for each type.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
-              <CardContent className="p-6">
+            <Card className="relative bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group overflow-hidden rounded-lg">
+              <GlowingEffect disabled={false} proximity={100} spread={30} blur={10} borderWidth={2} />
+              <CardContent className="p-6 relative z-10">
                 <div className="w-12 h-12 border border-white/30 flex items-center justify-center mb-4 group-hover:bg-white transition-all duration-200">
                   <Search className="w-6 h-6 text-white group-hover:text-black transition-colors" />
                 </div>
@@ -901,6 +926,7 @@ export default function LandingPage() {
             <div>
               <h4 className="text-white font-mono font-bold text-sm mb-4 uppercase tracking-wider">RESOURCES</h4>
               <ul className="space-y-2">
+                <li><Link href="/docs" className="text-white/60 hover:text-white font-mono text-xs transition">Documentation</Link></li>
                 <li><Link href="/profile" className="text-white/60 hover:text-white font-mono text-xs transition">Profile</Link></li>
                 <li><Link href="/contact" className="text-white/60 hover:text-white font-mono text-xs transition">Contact</Link></li>
                 <li><Link href="/privacy-settings" className="text-white/60 hover:text-white font-mono text-xs transition">Privacy Settings</Link></li>

@@ -33,15 +33,25 @@ export default function NotificationBell() {
       orderBy('createdAt', 'desc')
     )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const notifs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Notification))
+    const unsubscribe = onSnapshot(
+      q, 
+      (snapshot) => {
+        const notifs = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Notification))
 
-      setNotifications(notifs)
-      setUnreadCount(notifs.filter(n => !n.read).length)
-    })
+        setNotifications(notifs)
+        setUnreadCount(notifs.filter(n => !n.read).length)
+      },
+      (error) => {
+        // Handle permission errors gracefully
+        console.warn('[Notifications] Permission denied or error:', error.code)
+        // Set empty state on permission error
+        setNotifications([])
+        setUnreadCount(0)
+      }
+    )
 
     return () => unsubscribe()
   }, [user])
@@ -124,12 +134,12 @@ export default function NotificationBell() {
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 z-40" 
+            className="fixed inset-0 z-[60]" 
             onClick={() => setShowDropdown(false)}
           />
           
           {/* Notification Panel */}
-          <div className="absolute right-0 top-full mt-2 w-96 bg-black/95 backdrop-blur-xl border border-white/20 rounded-lg shadow-2xl z-50 max-h-[500px] overflow-y-auto">
+          <div className="absolute right-0 top-full mt-2 w-96 bg-black/95 backdrop-blur-xl border border-white/20 rounded-lg shadow-2xl z-[70] max-h-[500px] overflow-y-auto">
             {/* Header */}
             <div className="sticky top-0 bg-black/80 border-b border-white/20 px-4 py-3 flex items-center justify-between">
               <h3 className="text-white font-mono text-sm font-bold tracking-wider">

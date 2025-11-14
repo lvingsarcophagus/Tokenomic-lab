@@ -87,7 +87,6 @@ export default function PremiumDashboard() {
   const [scannedToken, setScannedToken] = useState<CompleteTokenData | null>(null)
   const [riskResult, setRiskResult] = useState<RiskResult | null>(null)
   const [selectedToken, setSelectedToken] = useState<any>(null)
-  const [showRawData, setShowRawData] = useState(false)
   const [isInWatchlistState, setIsInWatchlistState] = useState(false)
   const [watchlistLoading, setWatchlistLoading] = useState(false)
   
@@ -96,6 +95,7 @@ export default function PremiumDashboard() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [showTokenSearch, setShowTokenSearch] = useState(false)
+  const [showSearchModal, setShowSearchModal] = useState(false)
   
   // Historical data states
   const [timeframe, setTimeframe] = useState('30D')
@@ -145,12 +145,15 @@ export default function PremiumDashboard() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
   
-  // Check authentication (allow both FREE and PREMIUM)
+  // Check authentication and redirect FREE users to free dashboard
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login')
+    } else if (!authLoading && userProfile && userProfile.plan !== 'PREMIUM') {
+      // Redirect FREE users to the free dashboard
+      router.push('/free-dashboard')
     }
-  }, [user, authLoading, router])
+  }, [user, userProfile, authLoading, router])
   
   // Determine if user has premium features
   const isPremium = userProfile?.plan === 'PREMIUM'
@@ -370,9 +373,9 @@ export default function PremiumDashboard() {
       return
     }
     
-    // Check scan limit for FREE users (10 scans per day)
-    if (!isPremium && portfolioStats && portfolioStats.totalScans >= 10) {
-      setScanError('DAILY LIMIT REACHED (10/10). UPGRADE TO PREMIUM FOR UNLIMITED SCANS.')
+    // Check scan limit for FREE users (20 scans per day)
+    if (!isPremium && portfolioStats && portfolioStats.totalScans >= 20) {
+      setScanError('DAILY LIMIT REACHED (20/20). UPGRADE TO PREMIUM FOR UNLIMITED SCANS.')
       return
     }
     
@@ -984,7 +987,7 @@ export default function PremiumDashboard() {
                 </p>
                 {!isPremium && (
                   <p className="text-yellow-400 font-mono text-xs">
-                    {portfolioStats?.totalScans || 0}/10 SCANS TODAY
+                    {portfolioStats?.totalScans || 0}/20 SCANS TODAY
                   </p>
                 )}
               </div>
@@ -1011,51 +1014,68 @@ export default function PremiumDashboard() {
 
 
 
-        {/* Alerts Section - NEW ADDITION AT TOP */}
+        {/* Alerts Section - Enhanced */}
         {alerts.length > 0 && (
-          <div className="border border-yellow-500/50 bg-yellow-500/10 p-6 mb-8">
-            <h2 className="text-yellow-500 font-mono text-xs tracking-wider mb-4 flex items-center gap-2">
-              <Bell className="w-4 h-4" />
-              ACTIVE ALERTS ({alerts.length})
-            </h2>
-            <div className="space-y-2">
-              {alerts.map((alert) => (
-                <div key={alert.id} className={`border p-3 ${
-                  alert.severity === 'critical' ? 'border-red-500/50 bg-red-500/10' :
-                  alert.severity === 'warning' ? 'border-yellow-500/50 bg-yellow-500/10' :
-                  'border-blue-500/50 bg-blue-500/10'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className={`font-mono text-xs ${
-                        alert.severity === 'critical' ? 'text-red-500' :
-                        alert.severity === 'warning' ? 'text-yellow-500' :
-                        'text-blue-500'
-                      }`}>
-                        {alert.message}
-                      </p>
-                      <p className="text-white/40 font-mono text-[10px] mt-1">
-                        {new Date(alert.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                    {!alert.read && (
-                      <span className="px-2 py-1 bg-white/20 text-white font-mono text-[10px]">NEW</span>
-                    )}
-                  </div>
+          <div className="relative border border-yellow-500/30 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/[0.05] to-transparent pointer-events-none"></div>
+            <div className="relative z-10">
+              <h2 className="text-yellow-400 font-mono text-xs tracking-wider mb-4 flex items-center gap-2">
+                <div className="p-1.5 border border-yellow-500/30 bg-yellow-500/10">
+                  <Bell className="w-4 h-4 animate-pulse" />
                 </div>
-              ))}
+                ACTIVE ALERTS ({alerts.length})
+              </h2>
+              <div className="space-y-3">
+                {alerts.map((alert) => (
+                  <div key={alert.id} className={`group relative border backdrop-blur-md p-4 hover:scale-[1.01] transition-all duration-300 overflow-hidden ${
+                    alert.severity === 'critical' ? 'border-red-500/30 bg-red-500/5 hover:border-red-500/50 hover:bg-red-500/10' :
+                    alert.severity === 'warning' ? 'border-yellow-500/30 bg-yellow-500/5 hover:border-yellow-500/50 hover:bg-yellow-500/10' :
+                    'border-blue-500/30 bg-blue-500/5 hover:border-blue-500/50 hover:bg-blue-500/10'
+                  }`}>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none"></div>
+                    <div className="relative flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`w-2 h-2 rounded-full ${
+                            alert.severity === 'critical' ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50' :
+                            alert.severity === 'warning' ? 'bg-yellow-500 animate-pulse shadow-lg shadow-yellow-500/50' :
+                            'bg-blue-500 animate-pulse shadow-lg shadow-blue-500/50'
+                          }`}></div>
+                          <p className={`font-mono text-xs font-bold ${
+                            alert.severity === 'critical' ? 'text-red-400' :
+                            alert.severity === 'warning' ? 'text-yellow-400' :
+                            'text-blue-400'
+                          }`}>
+                            {alert.message}
+                          </p>
+                        </div>
+                        <p className="text-white/40 font-mono text-[10px] ml-4">
+                          {new Date(alert.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                      {!alert.read && (
+                        <span className="px-2 py-1 bg-white/20 border border-white/30 text-white font-mono text-[10px] tracking-wider animate-pulse">NEW</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Wallet Analysis Section */}
+        {/* Wallet Analysis Section - Enhanced */}
         {user && (
-          <div className="border border-white/20 bg-black/60 p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-white font-mono text-xs tracking-wider flex items-center gap-2">
-                <User className="w-4 h-4" />
-                CONNECTED WALLET ANALYSIS
-              </h2>
+          <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-white font-mono text-xs tracking-wider flex items-center gap-2">
+                  <div className="p-1.5 border border-white/30 bg-black/40">
+                    <User className="w-4 h-4" />
+                  </div>
+                  CONNECTED WALLET ANALYSIS
+                </h2>
               <button
                 onClick={async () => {
                   if (!user) return
@@ -1078,7 +1098,7 @@ export default function PremiumDashboard() {
                   }
                 }}
                 disabled={loadingWallet}
-                className="px-4 py-2 bg-transparent border border-white/30 text-white font-mono text-[10px] hover:bg-white hover:text-black transition-all disabled:opacity-50"
+                className="px-4 py-2 bg-transparent border-2 border-white/30 text-white font-mono text-[10px] hover:bg-white hover:text-black hover:border-white transition-all disabled:opacity-50 tracking-wider"
               >
                 {loadingWallet ? (
                   <>
@@ -1097,23 +1117,36 @@ export default function PremiumDashboard() {
             {walletData ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="border border-white/10 p-4">
-                    <p className="text-white/60 font-mono text-[10px] mb-2">TOTAL HOLDINGS</p>
-                    <p className="text-white font-mono text-2xl">${walletData.totalValue?.toFixed(2) || '0.00'}</p>
+                  <div className="group relative border border-white/10 bg-black/40 backdrop-blur-md p-5 hover:border-white/30 hover:bg-black/50 transition-all duration-300 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                    <div className="relative">
+                      <p className="text-white/60 font-mono text-[10px] mb-2 tracking-wider group-hover:text-white/80 transition-colors">TOTAL HOLDINGS</p>
+                      <p className="text-white font-mono text-2xl font-bold drop-shadow-lg">${walletData.totalValue?.toFixed(2) || '0.00'}</p>
+                    </div>
                   </div>
-                  <div className="border border-white/10 p-4">
-                    <p className="text-white/60 font-mono text-[10px] mb-2">TOKENS</p>
-                    <p className="text-white font-mono text-2xl">{walletData.tokenCount || 0}</p>
+                  <div className="group relative border border-white/10 bg-black/40 backdrop-blur-md p-5 hover:border-white/30 hover:bg-black/50 transition-all duration-300 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                    <div className="relative">
+                      <p className="text-white/60 font-mono text-[10px] mb-2 tracking-wider group-hover:text-white/80 transition-colors">TOKENS</p>
+                      <p className="text-white font-mono text-2xl font-bold drop-shadow-lg">{walletData.tokenCount || 0}</p>
+                    </div>
                   </div>
-                  <div className="border border-white/10 p-4">
-                    <p className="text-white/60 font-mono text-[10px] mb-2">AVG RISK SCORE</p>
-                    <p className={`font-mono text-2xl ${
-                      (walletData.avgRiskScore || 0) < 30 ? 'text-green-500' :
-                      (walletData.avgRiskScore || 0) < 60 ? 'text-yellow-500' :
-                      'text-red-500'
-                    }`}>
-                      {walletData.avgRiskScore || 0}/100
-                    </p>
+                  <div className="group relative border border-white/10 bg-black/40 backdrop-blur-md p-5 hover:border-white/30 hover:bg-black/50 transition-all duration-300 overflow-hidden">
+                    <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ${
+                      (walletData.avgRiskScore || 0) < 30 ? 'from-green-500/[0.02]' :
+                      (walletData.avgRiskScore || 0) < 60 ? 'from-yellow-500/[0.02]' :
+                      'from-red-500/[0.02]'
+                    } to-transparent`}></div>
+                    <div className="relative">
+                      <p className="text-white/60 font-mono text-[10px] mb-2 tracking-wider group-hover:text-white/80 transition-colors">AVG RISK SCORE</p>
+                      <p className={`font-mono text-2xl font-bold drop-shadow-lg ${
+                        (walletData.avgRiskScore || 0) < 30 ? 'text-green-400' :
+                        (walletData.avgRiskScore || 0) < 60 ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}>
+                        {walletData.avgRiskScore || 0}/100
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1156,17 +1189,72 @@ export default function PremiumDashboard() {
                 </p>
               </div>
             )}
+            </div>
           </div>
         )}
 
-        {/* Token Scanner - Glassmorphism */}
-        <div className="relative border border-white/10 bg-black/40 p-6 mb-8 shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-          <div className="relative">
-            <h2 className="text-white font-mono text-xs tracking-wider mb-4 flex items-center gap-2">
-              <Search className="w-4 h-4" />
-              SCAN TOKEN
-            </h2>
+        {/* Token Scanner - Click to Open Modal */}
+        <button
+          onClick={() => setShowSearchModal(true)}
+          className="w-full relative border-2 border-white/20 bg-black/40 backdrop-blur-xl p-8 mb-8 shadow-2xl hover:border-white/40 hover:bg-black/50 transition-all duration-300 group"
+        >
+          {/* Decorative elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-cyan-500/[0.01] to-transparent"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl"></div>
+          </div>
+          
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            <div className="p-4 border-2 border-white/30 bg-black/40 group-hover:border-white/50 group-hover:scale-110 transition-all duration-300">
+              <Search className="w-8 h-8 text-white" />
+            </div>
+            <div className="text-center">
+              <h2 className="text-white font-mono text-lg tracking-wider mb-2 group-hover:text-white/90 transition-colors">
+                CLICK TO SCAN TOKEN
+              </h2>
+              <p className="text-white/60 font-mono text-xs tracking-wider">
+                Search by name, symbol, or contract address
+              </p>
+            </div>
+          </div>
+        </button>
+
+        {/* Search Modal */}
+        {showSearchModal && (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] animate-in fade-in duration-200"
+              onClick={() => setShowSearchModal(false)}
+            />
+            
+            {/* Modal */}
+            <div className="fixed inset-0 z-[101] flex items-start justify-center pt-20 px-4 animate-in slide-in-from-top-4 duration-300 overflow-y-auto">
+              <div className="relative w-full max-w-4xl bg-black/95 backdrop-blur-xl border-2 border-white/20 shadow-2xl rounded-lg mb-20">
+                {/* Decorative elements container with overflow hidden */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.05] via-purple-500/[0.03] to-transparent"></div>
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl"></div>
+                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
+                </div>
+                
+                <div className="relative z-10 p-6">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-white font-mono text-xl tracking-wider flex items-center gap-3">
+                      <div className="p-2 border border-white/30 bg-black/40">
+                        <Search className="w-5 h-5" />
+                      </div>
+                      SCAN TOKEN
+                    </h2>
+                    <button
+                      onClick={() => setShowSearchModal(false)}
+                      className="p-2 border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all"
+                      title="Close"
+                    >
+                      <X className="w-5 h-5 text-white hover:text-red-400 transition-colors" />
+                    </button>
+                  </div>
 
           {/* Chain Selector Dropdown */}
           <div className="mb-4">
@@ -1247,7 +1335,7 @@ export default function PremiumDashboard() {
             </div>
           </div>
 
-          <div className="token-search-container">
+          <div className="token-search-container relative">
             {showTokenSearch ? (
               /* Token Search by Name/Symbol */
               <div className="space-y-3">
@@ -1280,93 +1368,110 @@ export default function PremiumDashboard() {
               </div>
             ) : (
               /* Traditional Address/Symbol Input */
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value)
-                    searchTokenSuggestions(e.target.value)
-                  }}
-                  onKeyPress={(e) => e.key === 'Enter' && handleScan()}
-                  onFocus={() => {
-                    if (tokenSuggestions.length > 0) {
-                      setShowSuggestions(true)
-                    }
-                  }}
-                  placeholder="ENTER CONTRACT ADDRESS OR SYMBOL..."
-                  className="flex-1 bg-black border border-white/30 text-white px-4 py-3 font-mono text-xs tracking-wider focus:outline-none focus:border-white placeholder:text-white/40"
-                  disabled={scanning}
-                />
-                <button
-                  onClick={() => handleScan()}
-                  disabled={scanning || !searchQuery.trim()}
-                  className="px-6 py-3 bg-white text-black font-mono text-xs tracking-wider hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {scanning ? (
-                    <>
-                      <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
-                      SCANNING...
-                    </>
-                  ) : (
-                    'SCAN'
-                  )}
-                </button>
+              <div className="relative">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      searchTokenSuggestions(e.target.value)
+                    }}
+                    onKeyPress={(e) => e.key === 'Enter' && handleScan()}
+                    onFocus={() => {
+                      if (tokenSuggestions.length > 0) {
+                        setShowSuggestions(true)
+                      }
+                    }}
+                    placeholder="ENTER CONTRACT ADDRESS OR SYMBOL..."
+                    className="flex-1 bg-black border border-white/30 text-white px-4 py-3 font-mono text-xs tracking-wider focus:outline-none focus:border-white placeholder:text-white/40 rounded"
+                    disabled={scanning}
+                  />
+                  <button
+                    onClick={() => handleScan()}
+                    disabled={scanning || !searchQuery.trim()}
+                    className="px-6 py-3 bg-white text-black font-mono text-xs tracking-wider hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                  >
+                    {scanning ? (
+                      <>
+                        <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
+                        SCANNING...
+                      </>
+                    ) : (
+                      'SCAN'
+                    )}
+                  </button>
+                </div>
+                
+                {/* Token Suggestions Dropdown - Positioned relative to input */}
+                {showSuggestions && tokenSuggestions.length > 0 && (
+                  <>
+                    {/* Backdrop to close dropdown */}
+                    <div 
+                      className="fixed inset-0 z-[9998]" 
+                      onClick={() => setShowSuggestions(false)}
+                    />
+                    
+                    {/* Dropdown - Absolute positioning relative to input */}
+                    <div 
+                      className="absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-xl border border-white/30 z-[9999] max-h-[400px] overflow-y-auto shadow-2xl rounded-lg"
+                    >
+                      {loadingSuggestions && (
+                        <div className="p-4 text-center">
+                          <Loader2 className="w-4 h-4 inline animate-spin text-white/60" />
+                        </div>
+                      )}
+                      {tokenSuggestions.map((token, index) => (
+                        <button
+                          key={`${token.address}-${token.chainId}-${index}`}
+                          onClick={() => handleSelectSuggestion(token)}
+                          className="w-full p-3 text-left hover:bg-white/10 transition-all border-b border-white/10 last:border-b-0"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-white font-mono text-sm font-bold">
+                                  {token.symbol}
+                                </span>
+                                <span className="text-white/60 font-mono text-xs">
+                                  {token.name}
+                                </span>
+                              </div>
+                              <div className="text-white/40 font-mono text-[10px] truncate">
+                                {token.address}
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="px-2 py-1 bg-white/10 text-white font-mono text-[9px] tracking-wider whitespace-nowrap">
+                                {token.chainName || `CHAIN ${token.chainId}`}
+                              </span>
+                              {token.marketCap && (
+                                <span className="text-white/60 font-mono text-[10px]">
+                                  ${(token.marketCap / 1000000).toFixed(2)}M
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
-            {/* Token Suggestions Dropdown */}
-            {showSuggestions && tokenSuggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-black border border-white/30 z-[100] max-h-[400px] overflow-y-auto shadow-2xl">
-                {loadingSuggestions && (
-                  <div className="p-4 text-center">
-                    <Loader2 className="w-4 h-4 inline animate-spin text-white/60" />
-                  </div>
-                )}
-                {tokenSuggestions.map((token, index) => (
-                  <button
-                    key={`${token.address}-${token.chainId}-${index}`}
-                    onClick={() => handleSelectSuggestion(token)}
-                    className="w-full p-3 text-left hover:bg-white/10 transition-all border-b border-white/10 last:border-b-0"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-white font-mono text-sm font-bold">
-                            {token.symbol}
-                          </span>
-                          <span className="text-white/60 font-mono text-xs">
-                            {token.name}
-                          </span>
-                        </div>
-                        <div className="text-white/40 font-mono text-[10px] truncate">
-                          {token.address}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="px-2 py-1 bg-white/10 text-white font-mono text-[9px] tracking-wider whitespace-nowrap">
-                          {token.chainName || `CHAIN ${token.chainId}`}
-                        </span>
-                        {token.marketCap && (
-                          <span className="text-white/60 font-mono text-[10px]">
-                            ${(token.marketCap / 1000000).toFixed(2)}M
-                          </span>
-                        )}
-                      </div>
+          </div>
+                  
+                  {scanError && (
+                    <div className="mt-4 border border-red-500/50 bg-red-500/10 p-4 rounded">
+                      <p className="text-red-500 font-mono text-xs">{scanError}</p>
                     </div>
-                  </button>
-                ))}
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-          
-          {scanError && (
-            <div className="mt-4 border border-red-500/50 bg-red-500/10 p-4">
-              <p className="text-red-500 font-mono text-xs">{scanError}</p>
             </div>
-          )}
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Scan Results - Glassmorphism */}
         {selectedToken && (
@@ -1747,13 +1852,16 @@ export default function PremiumDashboard() {
           </div>
         )}
 
-        {/* Watchlist - Glassmorphism */}
-        <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
+        {/* Watchlist - Enhanced Glassmorphism */}
+        <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-purple-500/[0.01] to-transparent pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
           <div className="relative z-10">
             <h2 className="text-white font-mono text-xs tracking-wider mb-4 flex items-center gap-2">
-              <Eye className="w-4 h-4" />
-              WATCHLIST
+              <div className="p-1.5 border border-white/30 bg-black/40">
+                <Eye className="w-4 h-4" />
+              </div>
+              WATCHLIST ({watchlist.length})
             </h2>
           
           {watchlist.length === 0 ? (
@@ -1767,14 +1875,15 @@ export default function PremiumDashboard() {
               {watchlist.map((token) => (
                 <div
                   key={token.address}
-                  className="group relative w-full border border-white/10 hover:border-white/30 transition-all"
+                  className="group relative w-full border border-white/10 bg-black/30 backdrop-blur-md hover:border-white/30 hover:bg-black/40 transition-all duration-300 overflow-hidden"
                 >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none"></div>
                   <button
                     onClick={() => {
                       setSearchQuery(token.address)
                       handleScan()
                     }}
-                    className="w-full p-4 text-left"
+                    className="relative w-full p-4 text-left z-10"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -2306,15 +2415,29 @@ export default function PremiumDashboard() {
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode, label: string, value: number }) {
   return (
-    <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 hover:border-white/30 transition-all shadow-2xl">
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-      <div className="relative">
+    <div className="group relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 hover:border-white/30 hover:bg-black/50 transition-all duration-300 shadow-2xl hover:shadow-white/5 overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-white/[0.01] to-transparent pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.02] to-white/[0.05] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+      
+      {/* Shimmer effect on hover */}
+      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"></div>
+      
+      <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">
-          <div className="text-white">{icon}</div>
-          <span className="text-white/40 font-mono text-[10px]">LIVE</span>
+          <div className="p-2 border border-white/20 bg-black/40 group-hover:border-white/40 group-hover:bg-white/10 transition-all duration-300">
+            <div className="text-white group-hover:scale-110 transition-transform duration-300">{icon}</div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-400/50"></div>
+            <span className="text-white/40 font-mono text-[10px] tracking-wider group-hover:text-white/60 transition-colors">LIVE</span>
+          </div>
         </div>
-        <p className="text-white/60 font-mono text-[10px] tracking-wider mb-1">{label}</p>
-        <p className="text-3xl font-bold text-white font-mono">{value}</p>
+        <p className="text-white/60 font-mono text-[10px] tracking-wider mb-2 group-hover:text-white/80 transition-colors">{label}</p>
+        <p className="text-3xl font-bold text-white font-mono group-hover:text-white drop-shadow-lg">{value}</p>
+        
+        {/* Bottom accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </div>
     </div>
   )

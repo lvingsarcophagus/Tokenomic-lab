@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Shield, Home, Search, TrendingUp, Settings, LogOut, Menu, X, User, Zap, Bell, RefreshCw } from "lucide-react"
+import { Shield, Home, Search, TrendingUp, LogOut, User, Bell } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
@@ -59,6 +59,12 @@ export default function Navbar() {
     } else {
       navLinks.push({ href: "/free-dashboard", label: "Dashboard", icon: Home })
     }
+    
+    // Add Docs link
+    navLinks.push({ href: "/docs", label: "Docs", icon: Search })
+    
+    // Add Contact link
+    navLinks.push({ href: "/contact", label: "Contact", icon: Bell })
     
     // Hide pricing button on dashboards for premium users
     const isPremiumUser = userData?.tier === "pro"
@@ -116,18 +122,27 @@ export default function Navbar() {
       
       <div className="relative max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between h-12 sm:h-14">
-          {/* Logo with Dynamic Hover */}
+          {/* Logo with Enhanced Effects */}
           <Link href={user ? (userData?.tier === "pro" ? "/premium/dashboard" : "/free-dashboard") : "/"} className="flex items-center gap-2 sm:gap-3 group relative">
-            <img 
-              src="/Logo.png" 
-              alt="Tokenomics Lab" 
-              className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain transition-all duration-300 group-hover:scale-110 group-hover:brightness-110 group-hover:drop-shadow-[0_0_12px_rgba(255,255,255,0.6)] group-hover:rotate-[5deg]" 
-            />
-            <div className="hidden sm:block">
-              <span className="text-sm sm:text-base lg:text-lg font-bold text-white font-mono tracking-widest group-hover:text-white/90 transition-colors drop-shadow-lg">
+            {/* Glow effect behind logo */}
+            <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            
+            {/* Logo container with border */}
+            <div className="relative p-1.5 border-2 border-white/20 bg-black/40 backdrop-blur-sm group-hover:border-white/40 group-hover:bg-white/10 transition-all duration-300 rounded-lg">
+              <img 
+                src="/Logo.png" 
+                alt="Tokenomics Lab" 
+                className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 object-contain transition-all duration-500 group-hover:scale-110 group-hover:brightness-125 group-hover:drop-shadow-[0_0_16px_rgba(255,255,255,0.8)] group-hover:rotate-[8deg] group-hover:saturate-150" 
+              />
+              {/* Shine effect */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 rounded-lg"></div>
+            </div>
+            
+            <div className="hidden sm:block relative">
+              <span className="text-sm sm:text-base lg:text-lg font-bold text-white font-mono tracking-widest group-hover:text-white transition-colors drop-shadow-lg group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
                 TOKENOMICS LAB
               </span>
-              <div className="text-[7px] sm:text-[8px] text-white/60 font-mono -mt-0.5 tracking-wider group-hover:text-white/80 transition-colors">ANALYTICS.PLATFORM</div>
+              <div className="text-[7px] sm:text-[8px] text-white/60 font-mono -mt-0.5 tracking-wider group-hover:text-white/90 transition-colors">ANALYTICS.PLATFORM</div>
             </div>
           </Link>
 
@@ -192,15 +207,36 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Mobile Menu Button with Animation & Glassmorphism */}
+          {/* Mobile Menu Button - Animated Hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-md transition-all duration-300 group hover:shadow-lg hover:shadow-white/5 h-9 w-9 flex items-center justify-center"
+            className="md:hidden relative p-2 border-2 border-white/30 hover:border-white/50 bg-black/40 hover:bg-white/10 backdrop-blur-md transition-all duration-300 group hover:shadow-lg hover:shadow-white/10 h-10 w-10 flex items-center justify-center"
+            aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? 
-              <X className="w-4 h-4 text-white group-hover:rotate-90 transition-transform duration-300" /> : 
-              <Menu className="w-4 h-4 text-white group-hover:scale-110 transition-transform duration-300" />
-            }
+            {/* Animated Hamburger Bars Container */}
+            <div className="relative w-5 h-4 flex flex-col justify-between">
+              <span 
+                className={`block h-0.5 w-full bg-white rounded-full transition-all duration-300 ease-in-out ${
+                  mobileMenuOpen 
+                    ? 'rotate-45 translate-y-[7px]' 
+                    : 'rotate-0 translate-y-0'
+                }`}
+              ></span>
+              <span 
+                className={`block h-0.5 w-full bg-white rounded-full transition-all duration-300 ease-in-out ${
+                  mobileMenuOpen 
+                    ? 'opacity-0 scale-0' 
+                    : 'opacity-100 scale-100'
+                }`}
+              ></span>
+              <span 
+                className={`block h-0.5 w-full bg-white rounded-full transition-all duration-300 ease-in-out ${
+                  mobileMenuOpen 
+                    ? '-rotate-45 -translate-y-[7px]' 
+                    : 'rotate-0 translate-y-0'
+                }`}
+              ></span>
+            </div>
           </button>
         </div>
       </div>

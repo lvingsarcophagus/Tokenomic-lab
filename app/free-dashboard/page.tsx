@@ -30,13 +30,12 @@ import {
   Unlock,
   Droplet,
   Flame,
-  ChevronDown,
-  ChevronUp,
   XCircle,
   TrendingDown,
   Users,
   BadgeCheck,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react'
 import { TokenScanService, CompleteTokenData } from '@/lib/token-scan-service'
 import type { RiskResult } from '@/lib/types/token-data'
@@ -68,7 +67,6 @@ export default function FreeDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loadingData, setLoadingData] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [showRawData, setShowRawData] = useState(false)
 
   // Scan integration states
   const [searchQuery, setSearchQuery] = useState('')
@@ -76,7 +74,7 @@ export default function FreeDashboard() {
   const [scanError, setScanError] = useState('')
   const [scannedToken, setScannedToken] = useState<CompleteTokenData | null>(null)
   const [riskResult, setRiskResult] = useState<RiskResult | null>(null)
-  const [showTokenSearch, setShowTokenSearch] = useState(false)
+  const [showTokenSearch, setShowTokenSearch] = useState(true)
 
   // Watchlist states
   const [watchlist, setWatchlist] = useState<WatchlistToken[]>([])
@@ -171,9 +169,9 @@ export default function FreeDashboard() {
       return
     }
 
-    // Check scan limit for free users
-    if (userProfile?.plan === 'FREE' && (stats?.tokensAnalyzed || 0) >= 10) {
-      setScanError('DAILY LIMIT REACHED. UPGRADE TO PREMIUM FOR UNLIMITED SCANS.')
+    // Check scan limit for free users (20 scans per day)
+    if (userProfile?.plan === 'FREE' && (stats?.tokensAnalyzed || 0) >= 20) {
+      setScanError('DAILY LIMIT REACHED (20/20). UPGRADE TO PREMIUM FOR UNLIMITED SCANS.')
       return
     }
 
@@ -638,8 +636,8 @@ export default function FreeDashboard() {
     )
   }
 
-  const usagePercent = ((stats?.tokensAnalyzed || 0) / 10) * 100
-  const remainingScans = 10 - (stats?.tokensAnalyzed || 0)
+  const usagePercent = ((stats?.tokensAnalyzed || 0) / 20) * 100
+  const remainingScans = 20 - (stats?.tokensAnalyzed || 0)
 
   return (
     <div className="min-h-screen bg-black">
@@ -751,10 +749,12 @@ export default function FreeDashboard() {
         
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-2 mb-4 opacity-60">
-            <div className="w-8 h-px bg-white"></div>
-            <span className="text-white text-[10px] font-mono tracking-wider">FREE TIER</span>
-            <div className="flex-1 h-px bg-white"></div>
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-8 h-px bg-white/40"></div>
+            <div className="px-4 py-2 bg-white/10 border border-white/30 backdrop-blur-sm">
+              <span className="text-white text-xs font-mono tracking-wider font-bold">⚡ FREE TIER</span>
+            </div>
+            <div className="flex-1 h-px bg-white/40"></div>
           </div>
           
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -780,21 +780,21 @@ export default function FreeDashboard() {
         {/* Stats Grid - At the very top */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Tokens Analyzed */}
-          <div className="border border-white/20 bg-black/60 p-6 hover:border-white/40 transition-all">
+          <div className="border border-white/20 bg-black/60 backdrop-blur-xl p-6 hover:border-white/40 transition-all group">
             <div className="flex items-center justify-between mb-4">
-              <BarChart3 className="w-6 h-6 text-white" />
+              <BarChart3 className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
               <span className="text-white/40 font-mono text-[10px]">TODAY</span>
             </div>
             <p className="text-3xl font-bold text-white font-mono mb-1">
-              {stats?.tokensAnalyzed || 0}/10
+              {stats?.tokensAnalyzed || 0}/20
             </p>
             <p className="text-white/60 font-mono text-xs tracking-wider">SCANS USED</p>
           </div>
 
           {/* Watchlist */}
-          <div className="border border-white/20 bg-black/60 p-6 hover:border-white/40 transition-all">
+          <div className="border border-white/20 bg-black/60 backdrop-blur-xl p-6 hover:border-white/40 transition-all group">
             <div className="flex items-center justify-between mb-4">
-              <Target className="w-6 h-6 text-white" />
+              <Target className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
               <span className="text-white/40 font-mono text-[10px]">MAX 5</span>
             </div>
             <p className="text-3xl font-bold text-white font-mono mb-1">
@@ -804,9 +804,9 @@ export default function FreeDashboard() {
           </div>
 
           {/* Active Alerts */}
-          <div className="border border-white/20 bg-black/60 p-6 hover:border-white/40 transition-all">
+          <div className="border border-white/20 bg-black/60 backdrop-blur-xl p-6 hover:border-white/40 transition-all group">
             <div className="flex items-center justify-between mb-4">
-              <AlertCircle className="w-6 h-6 text-white" />
+              <AlertCircle className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
               <span className="text-white/40 font-mono text-[10px]">BASIC</span>
             </div>
             <p className="text-3xl font-bold text-white font-mono mb-1">
@@ -816,9 +816,9 @@ export default function FreeDashboard() {
           </div>
 
           {/* Avg Risk Score */}
-          <div className="border border-white/20 bg-black/60 p-6 hover:border-white/40 transition-all">
+          <div className="border border-white/20 bg-black/60 backdrop-blur-xl p-6 hover:border-white/40 transition-all group">
             <div className="flex items-center justify-between mb-4">
-              <Activity className="w-6 h-6 text-white" />
+              <Activity className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
               <span className="text-white/40 font-mono text-[10px]">AVG</span>
             </div>
             <p className="text-3xl font-bold text-white font-mono mb-1">
@@ -833,34 +833,37 @@ export default function FreeDashboard() {
           <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-white" />
-                  <h2 className="text-white font-mono text-lg tracking-wider">QUICK SCAN</h2>
-                </div>
-              <button
-                onClick={() => setShowTokenSearch(!showTokenSearch)}
-                className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white font-mono text-xs border border-white/30 transition-colors"
-              >
-                {showTokenSearch ? 'MANUAL INPUT' : 'SEARCH BY NAME'}
-              </button>
+              <div className="flex items-center gap-2 mb-6">
+              <Zap className="w-5 h-5 text-white" />
+              <h2 className="text-white font-mono text-lg tracking-wider">QUICK SCAN</h2>
             </div>
             
-            {showTokenSearch ? (
-              /* Token Search by Name/Symbol */
-              <div className="space-y-4">
+            {/* Token Search by Name/Symbol - Always Visible */}
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-white/80 font-mono text-xs mb-2 block">SEARCH BY NAME OR SYMBOL</label>
                 <TokenSearchComponent onTokenSelect={handleTokenSelectFromSearch} />
-                <div className="text-xs font-mono text-white/60">
-                  💡 Search for tokens by name or symbol (e.g., BONK, Solana)
-                </div>
+                <p className="text-white/40 font-mono text-xs mt-2">
+                  Search for tokens like PEPE, BONK, Solana, etc.
+                </p>
               </div>
-            ) : (
-              /* Traditional Address/Symbol Input */
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-1 h-px bg-white/20"></div>
+              <span className="text-white/40 font-mono text-xs">OR</span>
+              <div className="flex-1 h-px bg-white/20"></div>
+            </div>
+            
+            {/* Manual Address Input - Always Visible */}
+            <div className="space-y-4">
+              <label className="text-white/80 font-mono text-xs block">PASTE CONTRACT ADDRESS</label>
               <div className="flex flex-col lg:flex-row gap-3">
                 <div className="flex-1">
                   <input
                     type="text"
-                    placeholder="ENTER TOKEN ADDRESS OR SYMBOL..."
+                    placeholder="0x... or Solana address"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleScan()}
@@ -871,7 +874,7 @@ export default function FreeDashboard() {
                 <button
                   onClick={handleScan}
                   disabled={scanning || !searchQuery.trim()}
-                  className="px-8 py-3 bg-white text-black font-mono text-sm hover:bg-black hover:text-white border-2 border-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
+                  className="px-8 py-3 bg-white text-black font-mono text-sm hover:bg-black hover:text-white border-2 border-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap font-bold"
                 >
                   {scanning ? (
                     <>
@@ -881,12 +884,12 @@ export default function FreeDashboard() {
                   ) : (
                     <>
                       <Search className="w-4 h-4" />
-                      SCAN NOW
+                      ANALYZE TOKEN
                     </>
                   )}
                 </button>
               </div>
-            )}
+            </div>
 
             {scanError && (
               <div className="mt-4 p-3 border border-red-500/50 bg-red-500/10">
@@ -899,7 +902,7 @@ export default function FreeDashboard() {
 
             <div className="mt-4 flex items-center justify-between text-xs font-mono">
               <span className="text-white/60">
-                {stats?.tokensAnalyzed || 0}/10 SCANS USED TODAY
+                {stats?.tokensAnalyzed || 0}/20 SCANS USED TODAY
               </span>
               {userProfile?.plan === 'FREE' && (
                 <Link href="/pricing" className="text-white hover:underline">
@@ -952,8 +955,10 @@ export default function FreeDashboard() {
               <div className="flex-1 h-px bg-white"></div>
             </div>
 
-            {/* Token Analysis Card - Clean Design */}
-            <div className="border border-white/20 bg-black/60 p-6 mb-8">
+            {/* Token Analysis Card - Enhanced Glassmorphism */}
+            <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
+              <div className="relative z-10">
               {/* Top Section: Token Info + Stats + Risk Score */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 {/* Token Info */}
@@ -1027,54 +1032,69 @@ export default function FreeDashboard() {
 
               <div className="border-t border-white/10 mb-6"></div>
 
-              {/* Action Buttons */}
-              <button
-                onClick={isInWatchlistState ? handleRemoveFromWatchlist : handleAddToWatchlist}
-                disabled={watchlistLoading}
-                className="flex items-center gap-2 px-5 py-3 bg-white/10 border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white hover:text-black hover:border-white transition-all disabled:opacity-50 backdrop-blur-md"
-              >
-                {watchlistLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    LOADING...
-                  </>
-                ) : isInWatchlistState ? (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    IN WATCHLIST
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    ADD TO WATCHLIST
-                  </>
-                )}
-              </button>
-
-              {selectedToken.address && selectedToken.chain && (
-                <a
-                  href={`https://${selectedToken.chain === 'Ethereum' ? 'etherscan.io' : 'bscscan.com'}/token/${selectedToken.address}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-5 py-3 bg-white/10 border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white/20 hover:border-white/50 hover:text-white transition-all backdrop-blur-md"
+              {/* Action Buttons - Enhanced Layout */}
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={isInWatchlistState ? handleRemoveFromWatchlist : handleAddToWatchlist}
+                  disabled={watchlistLoading}
+                  className={`flex items-center gap-2 px-5 py-3 border-2 font-mono text-xs tracking-wider transition-all disabled:opacity-50 backdrop-blur-md ${
+                    isInWatchlistState
+                      ? 'bg-black border-white text-white hover:bg-white hover:text-black'
+                      : 'bg-white/10 border-white/30 text-white hover:bg-white hover:text-black hover:border-white'
+                  }`}
                 >
-                  <Search className="w-4 h-4" />
-                  VIEW ON EXPLORER
-                  <ArrowRight className="w-3 h-3" />
-                </a>
-              )}
+                  {watchlistLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      UPDATING...
+                    </>
+                  ) : isInWatchlistState ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 fill-current" />
+                      IN WATCHLIST
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      ADD TO WATCHLIST
+                    </>
+                  )}
+                </button>
 
-              <button
-                onClick={() => {
-                  setSelectedToken(null)
-                  setScannedToken(null)
-                  setJustScanned(false)
-                }}
-                className="flex items-center gap-2 px-5 py-3 bg-transparent border border-red-500/30 text-red-400 font-mono text-xs tracking-wider hover:bg-red-500 hover:border-red-500 hover:text-white transition-all ml-auto"
-              >
-                <X className="w-4 h-4" />
-                CLOSE
-              </button>
+                {selectedToken.address && selectedToken.chain && (
+                  <a
+                    href={`https://${selectedToken.chain === 'Ethereum' ? 'etherscan.io' : 'bscscan.com'}/token/${selectedToken.address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-5 py-3 bg-white/10 border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-cyan-500 hover:border-cyan-500 hover:text-white transition-all backdrop-blur-md"
+                  >
+                    <Search className="w-4 h-4" />
+                    VIEW ON EXPLORER
+                    <ArrowRight className="w-3 h-3" />
+                  </a>
+                )}
+
+                <button
+                  onClick={() => handleScan()}
+                  className="flex items-center gap-2 px-5 py-3 bg-white/10 border border-white/30 text-white font-mono text-xs tracking-wider hover:bg-white/20 hover:border-white/50 transition-all backdrop-blur-md"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  REFRESH ANALYSIS
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSelectedToken(null)
+                    setScannedToken(null)
+                    setJustScanned(false)
+                  }}
+                  className="flex items-center gap-2 px-5 py-3 bg-transparent border border-red-500/30 text-red-400 font-mono text-xs tracking-wider hover:bg-red-500 hover:border-red-500 hover:text-white transition-all ml-auto"
+                >
+                  <X className="w-4 h-4" />
+                  CLOSE
+                </button>
+              </div>
+              </div>
             </div>
 
             {/* Risk Factors Grid */}
@@ -1188,27 +1208,7 @@ export default function FreeDashboard() {
               </div>
             )}
 
-            {/* Raw JSON Data */}
-            <div className="border border-white/20 bg-black/60">
-              <button
-                onClick={() => setShowRawData(!showRawData)}
-                className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
-              >
-                <span className="text-white font-mono text-sm tracking-wider">RAW JSON DATA</span>
-                {showRawData ? (
-                  <ChevronUp className="w-4 h-4 text-white" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-white" />
-                )}
-              </button>
-              {showRawData && (
-                <div className="p-4 border-t border-white/20 bg-black/80">
-                  <pre className="text-white/80 font-mono text-[10px] overflow-x-auto">
-                    {JSON.stringify(selectedToken.rawData, null, 2)}
-                  </pre>
-                </div>
-              )}
-            </div>
+
           </div>
         )}
 
@@ -1216,7 +1216,7 @@ export default function FreeDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           
           {/* Weekly Usage Chart */}
-          <div className="border border-white/20 bg-black/60 p-6">
+          <div className="border border-white/20 bg-black/60 backdrop-blur-xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-white font-mono text-sm tracking-wider">WEEKLY USAGE</h3>
               <TrendingUp className="w-4 h-4 text-white/40" />
@@ -1260,7 +1260,7 @@ export default function FreeDashboard() {
           </div>
 
           {/* Recent Analysis Chart */}
-          <div className="border border-white/20 bg-black/60 p-6">
+          <div className="border border-white/20 bg-black/60 backdrop-blur-xl p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <h3 className="text-white font-mono text-sm tracking-wider">RECENT SCANS</h3>
@@ -1435,12 +1435,12 @@ export default function FreeDashboard() {
         )}
 
         {/* Usage Progress Bar */}
-        <div className="border border-white/20 bg-black/60 p-6 mb-8">
+        <div className="border border-white/20 bg-black/60 backdrop-blur-xl p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-white font-mono text-sm tracking-wider mb-1">DAILY LIMIT</h3>
               <p className="text-white/60 font-mono text-xs">
-                {stats?.tokensAnalyzed || 0} OF 10 SCANS USED
+                {stats?.tokensAnalyzed || 0} OF 20 SCANS USED
               </p>
             </div>
             <span className="text-white font-mono text-lg">{usagePercent.toFixed(0)}%</span>
