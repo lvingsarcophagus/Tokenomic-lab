@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Shield, Zap, Search, TrendingUp, Lock, BarChart3, Eye, Activity, Database, Globe, CheckCircle, ArrowRight, AlertTriangle, Users, Target, Flame, Bell, Settings } from "lucide-react"
+import { Shield, Zap, Search, TrendingUp, Lock, BarChart3, Eye, Activity, Database, Globe, CheckCircle, ArrowRight, AlertTriangle, Users, Target, Flame, Bell, Settings, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function DocsPage() {
@@ -11,6 +11,17 @@ export default function DocsPage() {
       {/* Hero Section */}
       <section className="relative px-6 py-20 border-b border-white/10">
         <div className="max-w-5xl mx-auto">
+          {/* Back Button */}
+          <Link href="/dashboard">
+            <Button 
+              variant="outline" 
+              className="mb-8 border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 font-mono tracking-wider transition-all group"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              BACK TO DASHBOARD
+            </Button>
+          </Link>
+
           <div className="flex items-center gap-2 mb-6 opacity-60">
             <div className="w-8 h-px bg-white"></div>
             <span className="text-white text-[10px] font-mono tracking-wider">DOCUMENTATION</span>

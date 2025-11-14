@@ -20,6 +20,7 @@ import {
   CheckCircle, XCircle, Zap, Globe, Code, Lock, Unlock
 } from 'lucide-react'
 import Link from 'next/link'
+import TwoFactorSetup from '@/components/two-factor-setup'
 
 interface User {
   uid: string
@@ -1127,6 +1128,15 @@ export default function EnhancedAdminDashboard() {
             </h2>
             
             <div className="space-y-6">
+              {/* 2FA Security Section */}
+              <div className="p-4 bg-green-500/10 border-2 border-green-500/30 rounded backdrop-blur-md hover:border-green-500/50 transition-all">
+                <h3 className="text-green-400 font-mono tracking-wider font-bold mb-2">🔐 TWO-FACTOR AUTHENTICATION</h3>
+                <p className="text-white/60 text-sm font-mono tracking-wider mb-4">
+                  Protect your admin account with enterprise-grade 2FA security
+                </p>
+                <TwoFactorSetup />
+              </div>
+
               <Link href="/admin/notification-settings">
                 <div className="p-4 bg-blue-500/10 border-2 border-blue-500/30 rounded backdrop-blur-md hover:border-blue-500/50 transition-all cursor-pointer group">
                   <h3 className="text-blue-400 font-mono tracking-wider font-bold mb-2 group-hover:text-blue-300 transition-colors">🔔 NOTIFICATION SETTINGS</h3>

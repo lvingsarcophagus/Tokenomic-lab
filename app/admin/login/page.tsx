@@ -3,6 +3,7 @@
 /**
  * Admin Login Page
  * Separate login for admin users with elevated privileges
+ * Includes 2FA verification for enhanced security
  */
 
 import { useState } from 'react'
@@ -14,6 +15,9 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Shield, Lock, Mail } from 'lucide-react'
 import Link from 'next/link'
+import TwoFactorVerify from '@/components/two-factor-verify'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -21,6 +25,8 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [show2FA, setShow2FA] = useState(false)
+  const [tempUserId, setTempUserId] = useState<string | null>(null)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,8 +48,19 @@ export default function AdminLoginPage() {
         return
       }
 
-      // Redirect to admin dashboard
-      router.push('/admin/dashboard')
+      // Check if 2FA is enabled
+      const userDoc = await getDoc(doc(db, 'users', user.uid))
+      const userData = userDoc.data()
+      
+      if (userData?.twoFactorEnabled) {
+        // Show 2FA verification modal
+        setTempUserId(user.uid)
+        setShow2FA(true)
+        setLoading(false)
+      } else {
+        // No 2FA, proceed to dashboard
+        router.push('/admin/dashboard')
+      }
     } catch (err: any) {
       console.error('Login error:', err)
       
@@ -58,6 +75,18 @@ export default function AdminLoginPage() {
       }
       setLoading(false)
     }
+  }
+
+  const handle2FASuccess = () => {
+    setShow2FA(false)
+    router.push('/admin/dashboard')
+  }
+
+  const handle2FACancel = async () => {
+    setShow2FA(false)
+    setTempUserId(null)
+    await auth.signOut()
+    setError('2FA verification cancelled. Please login again.')
   }
 
   return (
@@ -142,6 +171,15 @@ export default function AdminLoginPage() {
           </p>
         </div>
       </Card>
+
+      {/* 2FA Verification Modal */}
+      {show2FA && tempUserId && (
+        <TwoFactorVerify
+          userId={tempUserId}
+          onSuccess={handle2FASuccess}
+          onCancel={handle2FACancel}
+        />
+      )}
     </div>
   )
 }

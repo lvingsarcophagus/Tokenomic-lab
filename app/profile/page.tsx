@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { theme } from "@/lib/theme"
 import Navbar from "@/components/navbar"
 import { Download, Trash2, Shield } from "lucide-react"
+import TwoFactorSetup from "@/components/two-factor-setup"
 
 export default function ProfilePage() {
   const { user, userData, updateProfile, loading } = useAuth()
@@ -280,6 +281,19 @@ export default function ProfilePage() {
                   </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Two-Factor Authentication Section */}
+          <Card className={`${theme.backgrounds.card} border ${theme.borders.default}`}>
+            <CardHeader>
+              <CardTitle className={`${theme.text.primary} ${theme.fonts.mono} ${theme.fonts.tracking} flex items-center gap-2`}>
+                <Shield className="w-5 h-5" />
+                SECURITY & TWO-FACTOR AUTHENTICATION
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TwoFactorSetup />
             </CardContent>
           </Card>
 

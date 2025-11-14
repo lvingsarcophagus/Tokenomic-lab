@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth"
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth"
 import { doc, setDoc, getDoc } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
 import { useAuth } from "@/contexts/auth-context"
@@ -15,12 +15,16 @@ import { Label } from "@/components/ui/label"
 import { Shield } from "lucide-react"
 import { theme } from "@/lib/theme"
 import { analyticsEvents } from "@/lib/firebase-analytics"
+import { has2FAEnabled } from "@/lib/totp"
+import TwoFactorVerify from "@/components/two-factor-verify"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [show2FA, setShow2FA] = useState(false)
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null)
   const router = useRouter()
   const { user, userProfile, loading: authLoading } = useAuth()
 
@@ -42,11 +46,23 @@ export default function LoginPage() {
     setError("")
 
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      // Wait a bit for auth context to update
-      setTimeout(() => {
-        router.push("/premium/dashboard") // Will auto-redirect FREE users to free-dashboard
-      }, 500)
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const userId = userCredential.user.uid
+      
+      // Check if user has 2FA enabled
+      const needs2FA = await has2FAEnabled(userId)
+      
+      if (needs2FA) {
+        // Show 2FA verification modal
+        setPendingUserId(userId)
+        setShow2FA(true)
+        setLoading(false)
+      } else {
+        // No 2FA, proceed with login
+        setTimeout(() => {
+          router.push("/premium/dashboard") // Will auto-redirect FREE users to free-dashboard
+        }, 500)
+      }
     } catch (error: unknown) {
       console.error("Login failed:", error)
       const err = error as { code?: string; message?: string }
@@ -142,8 +158,34 @@ export default function LoginPage() {
     }
   }
 
+  const handle2FASuccess = () => {
+    setShow2FA(false)
+    setPendingUserId(null)
+    // Proceed with login
+    setTimeout(() => {
+      router.push("/premium/dashboard")
+    }, 500)
+  }
+
+  const handle2FACancel = async () => {
+    // Sign out the user since they cancelled 2FA
+    await signOut(auth)
+    setShow2FA(false)
+    setPendingUserId(null)
+    setError("2FA verification cancelled. Please login again.")
+  }
+
   return (
-    <div className={`relative min-h-screen flex items-center justify-center ${theme.backgrounds.main} overflow-hidden p-4`}>
+    <>
+      {show2FA && pendingUserId && (
+        <TwoFactorVerify
+          userId={pendingUserId}
+          onSuccess={handle2FASuccess}
+          onCancel={handle2FACancel}
+        />
+      )}
+      
+      <div className={`relative min-h-screen flex items-center justify-center ${theme.backgrounds.main} overflow-hidden p-4`}>
       {/* Stars background */}
       <div className="fixed inset-0 stars-bg pointer-events-none"></div>
 
@@ -289,6 +331,7 @@ export default function LoginPage() {
           opacity: 0.3;
         }
       `}</style>
-    </div>
+      </div>
+    </>
   )
 }
