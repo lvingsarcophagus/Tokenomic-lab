@@ -90,12 +90,20 @@ export default function EnhancedAdminDashboard() {
   const [selectedUserDetails, setSelectedUserDetails] = useState<any>(null)
   const [showUserDetailsModal, setShowUserDetailsModal] = useState(false)
   const [banningUser, setBanningUser] = useState(false)
+  const [autoPremiumEnabled, setAutoPremiumEnabled] = useState(false)
+  const [loadingAutoPremium, setLoadingAutoPremium] = useState(false)
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
       router.push('/admin/login')
     }
   }, [roleLoading, isAdmin, router])
+
+  useEffect(() => {
+    if (isAdmin && activeTab === 'settings') {
+      loadAutoPremiumSetting()
+    }
+  }, [isAdmin, activeTab])
 
   useEffect(() => {
     if (isAdmin) {
@@ -434,6 +442,64 @@ export default function EnhancedAdminDashboard() {
     router.push('/admin/login')
   }
 
+  const loadAutoPremiumSetting = async () => {
+    try {
+      const user = auth.currentUser
+      if (!user) return
+
+      const token = await user.getIdToken()
+      const response = await fetch('/api/admin/auto-premium', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setAutoPremiumEnabled(data.autoPremiumEnabled)
+      }
+    } catch (error) {
+      console.error('Failed to load auto-premium setting:', error)
+    }
+  }
+
+  const handleToggleAutoPremium = async () => {
+    setLoadingAutoPremium(true)
+    try {
+      const user = auth.currentUser
+      if (!user) {
+        notifyError('Not authenticated')
+        return
+      }
+
+      const token = await user.getIdToken()
+      const newValue = !autoPremiumEnabled
+
+      const response = await fetch('/api/admin/auto-premium', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ enabled: newValue })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setAutoPremiumEnabled(data.autoPremiumEnabled)
+        notifySuccess(data.message)
+      } else {
+        const error = await response.json()
+        notifyError(error.error || 'Failed to update setting')
+      }
+    } catch (error) {
+      console.error('Failed to toggle auto-premium:', error)
+      notifyError('Failed to update auto-premium setting')
+    } finally {
+      setLoadingAutoPremium(false)
+    }
+  }
+
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -464,7 +530,7 @@ export default function EnhancedAdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
-              src="/Logo.png" 
+              src="/Tokenomicslab.ico" 
               alt="Tokenomics Lab" 
               className="w-10 h-10 object-contain transition-all duration-300 hover:scale-110 hover:brightness-110" 
             />
@@ -1128,6 +1194,42 @@ export default function EnhancedAdminDashboard() {
             </h2>
             
             <div className="space-y-6">
+              {/* Auto-Premium Toggle */}
+              <div className="p-4 bg-purple-500/10 border-2 border-purple-500/30 rounded backdrop-blur-md hover:border-purple-500/50 transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-purple-400 font-mono tracking-wider font-bold">👑 AUTO-PREMIUM FOR NEW SIGNUPS</h3>
+                  <button
+                    onClick={handleToggleAutoPremium}
+                    disabled={loadingAutoPremium}
+                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black ${
+                      autoPremiumEnabled ? 'bg-purple-500' : 'bg-white/20'
+                    } ${loadingAutoPremium ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                        autoPremiumEnabled ? 'translate-x-7' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <p className="text-white/60 text-sm font-mono tracking-wider mb-3">
+                  {autoPremiumEnabled 
+                    ? '✅ ENABLED - All new signups automatically get PREMIUM tier' 
+                    : '❌ DISABLED - New signups get FREE tier (normal behavior)'}
+                </p>
+                <div className="flex items-center gap-2 text-xs font-mono tracking-wider">
+                  {autoPremiumEnabled ? (
+                    <span className="px-2 py-1 bg-purple-500/20 border border-purple-500/50 text-purple-300 rounded">
+                      STATUS: ACTIVE
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 bg-white/10 border border-white/30 text-white/60 rounded">
+                      STATUS: INACTIVE
+                    </span>
+                  )}
+                </div>
+              </div>
+
               {/* 2FA Security Section */}
               <div className="p-4 bg-green-500/10 border-2 border-green-500/30 rounded backdrop-blur-md hover:border-green-500/50 transition-all">
                 <h3 className="text-green-400 font-mono tracking-wider font-bold mb-2">🔐 TWO-FACTOR AUTHENTICATION</h3>

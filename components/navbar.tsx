@@ -60,9 +60,6 @@ export default function Navbar() {
       navLinks.push({ href: "/free-dashboard", label: "Dashboard", icon: Home })
     }
     
-    // Add Docs link
-    navLinks.push({ href: "/docs", label: "Docs", icon: Search })
-    
     // Add Contact link
     navLinks.push({ href: "/contact", label: "Contact", icon: Bell })
     
@@ -85,7 +82,7 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-12 sm:h-14">
             <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
               <img 
-                src="/Logo.png" 
+                src="/Tokenomicslab.ico" 
                 alt="Tokenomics Lab" 
                 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain transition-all duration-300 group-hover:scale-110 group-hover:brightness-110 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" 
               />
@@ -130,7 +127,7 @@ export default function Navbar() {
             {/* Logo container with border */}
             <div className="relative p-1.5 border-2 border-white/20 bg-black/40 backdrop-blur-sm group-hover:border-white/40 group-hover:bg-white/10 transition-all duration-300 rounded-lg">
               <img 
-                src="/Logo.png" 
+                src="/Tokenomicslab.ico" 
                 alt="Tokenomics Lab" 
                 className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 object-contain transition-all duration-500 group-hover:scale-110 group-hover:brightness-125 group-hover:drop-shadow-[0_0_16px_rgba(255,255,255,0.8)] group-hover:rotate-[8deg] group-hover:saturate-150" 
               />

@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
         rightToAccess: 'Exercised by this data export',
         rightToRectification: 'Update data in your account settings',
         rightToErasure: 'Delete account in privacy settings',
-        rightToRestriction: 'Contact support@tokenomicslab.com',
+        rightToRestriction: 'Contact nayanjoshymaniyathjoshy@gmail.com',
         rightToDataPortability: 'This export file (JSON format)',
         rightToObject: 'Unsubscribe from emails or contact support',
       }

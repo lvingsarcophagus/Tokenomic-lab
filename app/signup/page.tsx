@@ -54,6 +54,26 @@ export default function SignUpPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
+      // Check if auto-premium is enabled
+      let userTier = "FREE"
+      let userPlan = "FREE"
+      let redirectPath = "/free-dashboard"
+      
+      try {
+        const settingsDoc = await getDoc(doc(db, "system", "platform_settings"))
+        const settings = settingsDoc.data()
+        
+        if (settings?.autoPremiumEnabled === true) {
+          userTier = "PREMIUM"
+          userPlan = "PREMIUM"
+          redirectPath = "/premium/dashboard"
+          console.log('[Signup] Auto-premium enabled - assigning PREMIUM tier')
+        }
+      } catch (settingsError) {
+        console.error('[Signup] Failed to check auto-premium setting:', settingsError)
+        // Continue with FREE tier if settings check fails
+      }
+
       // Create user profile in Firestore with enhanced data
       await setDoc(doc(db, "users", userCredential.user.uid), {
         uid: userCredential.user.uid,
@@ -61,12 +81,12 @@ export default function SignUpPage() {
         name,
         company: company || null,
         country: country || null,
-        tier: "FREE",
-        plan: "FREE",
+        tier: userTier,
+        plan: userPlan,
         usage: {
           tokensAnalyzed: 0,
           lastResetDate: new Date(),
-          dailyLimit: 10
+          dailyLimit: userTier === "PREMIUM" ? 999999 : 10
         },
         dailyAnalyses: 0,
         totalAnalyses: 0,
@@ -80,7 +100,8 @@ export default function SignUpPage() {
         metadata: {
           signupSource: "web",
           userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'unknown',
-          signupIp: null // Can be populated via server-side API
+          signupIp: null, // Can be populated via server-side API
+          autoPremiumGranted: userTier === "PREMIUM"
         },
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
@@ -90,8 +111,8 @@ export default function SignUpPage() {
       // Track signup event
       analyticsEvents.signup('email')
       
-      // Redirect to free dashboard
-      router.push("/free-dashboard")
+      // Redirect based on tier
+      router.push(redirectPath)
     } catch (error: unknown) {
       console.error("Sign up failed:", error)
       const err = error as { code?: string; message?: string }

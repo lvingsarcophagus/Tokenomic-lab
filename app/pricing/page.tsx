@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { theme } from "@/lib/theme"
+import { ArrowLeft } from "lucide-react"
 
 export default function PricingPage() {
   return (
@@ -20,6 +21,17 @@ export default function PricingPage() {
       {/* Page Content */}
       <div className="relative px-6 py-20">
         <div className="max-w-4xl mx-auto">
+          {/* Back Button */}
+          <Link href="/">
+            <Button 
+              variant="outline" 
+              className="mb-8 border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 font-mono tracking-wider transition-all group"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              BACK TO HOME
+            </Button>
+          </Link>
+
           {/* Section Header */}
           <div className="mb-12">
             <div className="flex items-center gap-2 mb-4 opacity-60">

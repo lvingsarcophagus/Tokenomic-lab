@@ -12,13 +12,13 @@ export default function DocsPage() {
       <section className="relative px-6 py-20 border-b border-white/10">
         <div className="max-w-5xl mx-auto">
           {/* Back Button */}
-          <Link href="/dashboard">
+          <Link href="/">
             <Button 
               variant="outline" 
               className="mb-8 border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 font-mono tracking-wider transition-all group"
             >
               <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              BACK TO DASHBOARD
+              BACK TO HOME
             </Button>
           </Link>
 

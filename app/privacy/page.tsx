@@ -364,10 +364,10 @@ export default function PrivacyPolicyPage() {
 
             <div className={`${theme.text.small} ${theme.text.secondary} ${theme.fonts.mono} space-y-2 ml-4`}>
               <p>
-                <span className={theme.text.primary}>Email:</span> privacy@tokenguard.io
+                <span className={theme.text.primary}>Email:</span> nayanjoshymaniyathjoshy@gmail.com
               </p>
               <p>
-                <span className={theme.text.primary}>Data Protection Officer:</span> dpo@tokenguard.io
+                <span className={theme.text.primary}>Data Protection Officer:</span> nayanjoshymaniyathjoshy@gmail.com
               </p>
             </div>
           </section>

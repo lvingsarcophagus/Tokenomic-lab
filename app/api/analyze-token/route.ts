@@ -224,7 +224,8 @@ async function fetchBehavioralData(
 
 export async function POST(req: NextRequest) {
   try {
-    const { tokenAddress, chainId, userId, plan, metadata } = await req.json()
+    const body = await req.json()
+    const { tokenAddress, chainId, userId, plan, metadata, bypassCache, forceFresh } = body
 
     // Validate inputs (userId is optional for testing)
     if (!tokenAddress || !chainId || !plan) {
@@ -236,19 +237,27 @@ export async function POST(req: NextRequest) {
     
     console.log(`[API] Received metadata:`, metadata)
 
-    // Check cache first
-    const cachedData = await getCachedTokenData(tokenAddress)
-    if (cachedData && cachedData.priceData && cachedData.securityData) {
-      console.log(`✅ Returning cached data for ${tokenAddress}`)
-      return NextResponse.json({
-        success: true,
-        cached: true,
-        data: {
-          ...cachedData.priceData,
-          ...cachedData.securityData,
-          tokenomics: cachedData.tokenomics,
-        }
-      })
+    // Check if user wants to bypass cache (force fresh scan)
+    const shouldBypassCache = bypassCache === true || forceFresh === true
+    console.log(`[API] Bypass cache: ${shouldBypassCache}`)
+
+    // Check cache first (unless bypassed by user scan)
+    if (!shouldBypassCache) {
+      const cachedData = await getCachedTokenData(tokenAddress)
+      if (cachedData && cachedData.priceData && cachedData.securityData) {
+        console.log(`✅ Returning cached data for ${tokenAddress}`)
+        return NextResponse.json({
+          success: true,
+          cached: true,
+          data: {
+            ...cachedData.priceData,
+            ...cachedData.securityData,
+            tokenomics: cachedData.tokenomics,
+          }
+        })
+      }
+    } else {
+      console.log(`🔄 Cache bypassed - performing fresh scan`)
     }
 
     // Check rate limits for FREE users
@@ -369,10 +378,9 @@ export async function POST(req: NextRequest) {
         // Increment usage counter
         await incrementTokenAnalyzedAdmin(userId)
 
-        // Extract token name and symbol from cache
-        const cachedInfo = await getCachedTokenData(tokenAddress)
-        const tokenName = cachedInfo?.name || tokenAddress.substring(0, 8) + '...'
-        const tokenSymbol = cachedInfo?.symbol || 'TOKEN'
+        // Extract token name and symbol from metadata
+        const tokenName = metadata?.tokenName || tokenAddress.substring(0, 8) + '...'
+        const tokenSymbol = metadata?.tokenSymbol || 'TOKEN'
 
         // Save analysis history
         const analysisHistory: Omit<AnalysisHistoryDocument, 'id'> = {
@@ -405,7 +413,7 @@ export async function POST(req: NextRequest) {
         // Don't fail the request if Firestore fails
       }
 
-      // Cache AI summary if available
+      // Cache the results for future automatic refreshes
       try {
         if (result.ai_summary) {
           await setCachedTokenData(tokenAddress, {

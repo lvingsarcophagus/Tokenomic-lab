@@ -132,6 +132,11 @@ export default function TokenSearchComponent({ onTokenSelect, onQueryChange, cha
       return
     }
 
+    // Clear the search and close dropdown
+    setQuery('')
+    setResults([])
+    setShowDropdown(false)
+    
     onTokenSelect(token.address, token.chain || 'Unknown', token.symbol, token.name)
   }
 
@@ -153,36 +158,50 @@ export default function TokenSearchComponent({ onTokenSelect, onQueryChange, cha
             zIndex: 2147483647,
             transform: 'none',
           }}
-          className="bg-black border border-white/30 rounded shadow-2xl"
+          className="bg-black/95 backdrop-blur-xl border-2 border-white/20 rounded-lg shadow-2xl shadow-black/50"
         >
-          <div className="p-2 border-b border-white/20 text-white/60 text-xs font-mono">
-            Found {results.length} token{results.length > 1 ? 's' : ''}
+          <div className="p-3 border-b border-white/10 text-white/50 text-[10px] font-mono tracking-wider">
+            {results.length} RESULT{results.length > 1 ? 'S' : ''} FOUND
           </div>
 
-          {results.map((token) => (
+          {results.map((token, index) => (
             <button
               key={`${token.cmcId}-${token.chain}`}
               onClick={() => {
                 handleSelectToken(token)
                 setShowDropdown(false)
               }}
-              className="w-full p-3 text-left hover:bg-white/10 transition-all border-b border-white/10 last:border-b-0"
+              className="w-full p-4 text-left hover:bg-white/5 transition-all border-b border-white/5 last:border-b-0 group"
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-4">
+                {/* Token Icon Placeholder */}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:border-white/40 transition-all">
+                  <span className="text-white font-mono text-xs font-bold">{token.symbol.substring(0, 2)}</span>
+                </div>
+
+                {/* Token Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-white font-mono text-sm font-bold">{token.symbol}</span>
-                    <span className="text-white/60 font-mono text-xs">{token.name}</span>
+                    <span className="text-white font-mono text-sm font-bold tracking-wider">{token.symbol}</span>
+                    <span className="text-white/50 font-mono text-xs truncate">{token.name}</span>
                   </div>
                   {token.address ? (
-                    <div className="text-white/40 font-mono text-[10px] truncate">{token.address}</div>
+                    <div className="text-white/30 font-mono text-[10px] truncate tracking-wider">{token.address}</div>
                   ) : (
-                    <div className="text-orange-400 font-mono text-[10px]">⚠ No contract address (native token)</div>
+                    <div className="text-orange-400/80 font-mono text-[10px] tracking-wider">⚠ NATIVE TOKEN</div>
                   )}
                 </div>
-                <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <span className="px-2 py-1 bg-white/10 text-white font-mono text-[9px] tracking-wider whitespace-nowrap">{token.chain || 'UNKNOWN'}</span>
-                  {token.rank && <span className="text-white/60 font-mono text-[9px]">Rank #{token.rank}</span>}
+
+                {/* Chain & Rank */}
+                <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                  <span className="px-2.5 py-1 bg-white/10 text-white font-mono text-[9px] tracking-widest whitespace-nowrap border border-white/20 group-hover:bg-white/20 transition-all">
+                    {token.chain || 'UNKNOWN'}
+                  </span>
+                  {token.rank && (
+                    <span className="text-white/40 font-mono text-[9px] tracking-wider">
+                      #{token.rank}
+                    </span>
+                  )}
                 </div>
               </div>
             </button>

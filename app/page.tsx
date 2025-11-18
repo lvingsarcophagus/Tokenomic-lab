@@ -28,7 +28,7 @@ export default function LandingPage() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
               <img 
-                src="/Logo.png" 
+                src="/Tokenomicslab.ico" 
                 alt="Tokenomics Lab" 
                 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain transition-all duration-300 group-hover:scale-110 group-hover:brightness-110 group-hover:drop-shadow-[0_0_12px_rgba(255,255,255,0.6)] group-hover:rotate-[5deg]" 
               />

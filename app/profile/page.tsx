@@ -119,19 +119,32 @@ export default function ProfilePage() {
 
     setDeletingAccount(true)
     try {
+      // Get the current user's ID token
+      if (!user) {
+        throw new Error('No authenticated user')
+      }
+
+      const token = await user.getIdToken()
+
       const response = await fetch('/api/user/delete-account', {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       })
 
       if (!response.ok) {
-        throw new Error('Failed to delete account')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete account')
       }
 
-      alert("Your account has been deleted. You will be redirected to the home page.")
+      alert("✅ Your account has been permanently deleted. You will be redirected to the home page.")
+      
+      // Redirect to home (user will be automatically signed out by the API)
       router.push('/')
     } catch (error) {
       console.error('Error deleting account:', error)
-      alert("Failed to delete account. Please try again or contact support.")
+      alert("❌ Failed to delete account. Please try again or contact support.")
       setDeletingAccount(false)
     }
   }

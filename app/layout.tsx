@@ -14,6 +14,11 @@ export const metadata: Metadata = {
   title: "Tokenomics Lab - Advanced Token Analytics & Risk Analysis",
   description: "Professional tokenomics analysis with real-time risk assessment, security audits, and market intelligence",
   generator: "v0.app",
+  icons: {
+    icon: '/Tokenomicslab.ico',
+    shortcut: '/Tokenomicslab.ico',
+    apple: '/Tokenomicslab.ico',
+  },
 }
 
 export default function RootLayout({

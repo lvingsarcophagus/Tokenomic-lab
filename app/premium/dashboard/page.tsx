@@ -9,6 +9,9 @@ import Navbar from '@/components/navbar'
 import AIAnalysisAccordion from '@/components/ai-analysis-accordion'
 import { MorphingSquare } from '@/components/ui/morphing-square'
 import TokenSearchComponent from '@/components/token-search-cmc'
+import SolanaHeliusPanel from '@/components/solana-helius-panel'
+import ScanLoader from '@/components/scan-loader'
+import AIExplanationPanel from '@/components/ai-explanation-panel'
 import { 
   Shield, TrendingUp, TrendingDown, Activity, Users, Droplet,
   Zap, Crown, AlertCircle, CheckCircle, Sparkles, BarChart3,
@@ -344,9 +347,6 @@ export default function PremiumDashboard() {
     console.log(`[Premium Dashboard] Token selected from search: ${name} (${symbol}) on ${chain}`)
     console.log(`[Premium Dashboard] Address: ${address}`)
     
-    // Set the search query to the address
-    setSearchQuery(address)
-    
     // Determine the chain to use
     let chainToScan: 'ethereum' | 'bsc' | 'polygon' | 'avalanche' | 'solana' = 'ethereum';
     const chainLower = chain.toLowerCase()
@@ -356,17 +356,22 @@ export default function PremiumDashboard() {
     else if (chainLower.includes('avalanche')) chainToScan = 'avalanche';
     else if (chainLower.includes('solana')) chainToScan = 'solana';
     
-    // Set the state for the UI, but use the direct value for the scan
+    // Set the state for the UI
     setSelectedChain(chainToScan);
+    setSearchQuery(address)
     
-    // Automatically trigger scan with the correct chain
-    setTimeout(() => {
-      handleScan(chainToScan)
-    }, 100)
+    // Close the search popup and modal immediately
+    setShowSuggestions(false)
+    setShowSearchModal(false)
+    
+    // Trigger scan with the address passed directly (fixes race condition)
+    handleScan(chainToScan, address)
   }
 
-  const handleScan = async (chainOverride?: 'ethereum' | 'bsc' | 'polygon' | 'avalanche' | 'solana') => {
-    if (!searchQuery.trim()) return
+  const handleScan = async (chainOverride?: 'ethereum' | 'bsc' | 'polygon' | 'avalanche' | 'solana', addressOverride?: string) => {
+    // Use addressOverride if provided, otherwise use searchQuery
+    const queryToUse = addressOverride || searchQuery
+    if (!queryToUse.trim()) return
     
     if (!user) {
       setScanError('USER NOT AUTHENTICATED. PLEASE LOGIN AGAIN.')
@@ -383,8 +388,8 @@ export default function PremiumDashboard() {
     let chainToUse = chainOverride || selectedChain
     
     // Force chain detection based on address format
-    const isEVMAddress = searchQuery.startsWith('0x') && searchQuery.length === 42
-    const isSolanaAddress = searchQuery.length >= 32 && searchQuery.length <= 44 && !searchQuery.startsWith('0x')
+    const isEVMAddress = queryToUse.startsWith('0x') && queryToUse.length === 42
+    const isSolanaAddress = queryToUse.length >= 32 && queryToUse.length <= 44 && !queryToUse.startsWith('0x')
     
     if (isSolanaAddress && !chainOverride) {
       chainToUse = 'solana'
@@ -392,9 +397,10 @@ export default function PremiumDashboard() {
     }
     
     console.log(`[Scanner] ========== NEW SCAN ==========`)
-    console.log(`[Scanner] Query: ${searchQuery}`)
+    console.log(`[Scanner] Query: ${queryToUse}`)
     console.log(`[Scanner] Chain: ${chainToUse}`)
     console.log(`[Scanner] Chain Override: ${chainOverride || 'NONE'}`)
+    console.log(`[Scanner] Address Override: ${addressOverride || 'NONE'}`)
     console.log(`[Scanner] Manual Classification: ${manualTokenType || 'AUTO DETECT'}`)
     
     setScanning(true)
@@ -403,21 +409,22 @@ export default function PremiumDashboard() {
     setScannedToken(null)
     setRiskResult(null)
     setShowSuggestions(false)
+    setShowSearchModal(false) // Close the modal when scan starts
     
     try {
-      console.log('[Scanner] Starting scan for:', searchQuery)
+      console.log('[Scanner] Starting scan for:', queryToUse)
       
       // Check if input is an address (supports both EVM and Solana)
-      let addressToScan = searchQuery
+      let addressToScan = queryToUse
       const isAddress = isEVMAddress || isSolanaAddress
       
       if (!isAddress) {
-        console.log('[Scanner] Not an address, searching for token:', searchQuery)
+        console.log('[Scanner] Not an address, searching for token:', queryToUse)
         try {
           // Use faster CoinMarketCap search
           // When resolving a symbol to an address, include the selectedChain so
           // the search prefers tokens on the chosen network.
-          const searchRes = await fetch(`/api/search-token?query=${encodeURIComponent(searchQuery)}&chain=${encodeURIComponent(chainToUse)}`)
+          const searchRes = await fetch(`/api/search-token?query=${encodeURIComponent(queryToUse)}&chain=${encodeURIComponent(chainToUse)}`)
           if (searchRes.ok) {
             const searchData = await searchRes.json()
             if (searchData.results && searchData.results.length > 0) {
@@ -538,6 +545,8 @@ export default function PremiumDashboard() {
             chainId: String(chainIdToSend),
             plan: 'PREMIUM', // Use PREMIUM plan for full behavioral data
             userId: user?.uid, // Pass user ID for rate limiting
+            bypassCache: true, // Always bypass cache for user-initiated scans
+            forceFresh: true, // Force fresh data fetch
             metadata: {
               tokenSymbol,
               tokenName,
@@ -594,6 +603,7 @@ export default function PremiumDashboard() {
             confidence: result.confidence_score || 90,
             lastUpdated: 'just now',
             factors: {
+              contractControl: breakdown.contractControl || 0,
               contractSecurity: breakdown.contractControl || 0,
               supplyRisk: breakdown.supplyDilution || 0,
               whaleConcentration: breakdown.holderConcentration || 0,
@@ -889,8 +899,8 @@ export default function PremiumDashboard() {
   
   const loadInsightData = async (address: string) => {
     // Skip loading insights for symbols without valid contract addresses
-    if (!address || address === 'N/A (Native Asset)' || address === 'N/A' || !address.startsWith('0x')) {
-      console.log('[Insights] Skipping insights for symbol search')
+    if (!address || address === 'N/A (Native Asset)' || address === 'N/A') {
+      console.log('[Insights] Skipping insights for invalid address')
       setLoadingInsights(false)
       setInsightData({
         sentiment: null,
@@ -900,16 +910,41 @@ export default function PremiumDashboard() {
       return
     }
     
+    // Check if it's a valid address (EVM or Solana)
+    const isEVMAddress = address.startsWith('0x') && address.length === 42
+    const isSolanaAddress = address.length >= 32 && address.length <= 44 && !address.startsWith('0x')
+    
+    if (!isEVMAddress && !isSolanaAddress) {
+      console.log('[Insights] Invalid address format, skipping insights')
+      setLoadingInsights(false)
+      setInsightData({
+        sentiment: null,
+        security: null,
+        holders: null
+      })
+      return
+    }
+    
+    console.log('[Insights] Loading insights for address:', address, isEVMAddress ? '(EVM)' : '(Solana)')
+    
     setLoadingInsights(true)
     try {
       const types = ['sentiment', 'security', 'holders']
+      
+      console.log('[Insights] Fetching insights for types:', types)
       
       // Fetch all insight types in parallel
       const results = await Promise.allSettled(
         types.map(type =>
           fetch(`/api/token/insights?address=${address}&type=${type}`)
-            .then(res => res.json())
-            .then(data => ({ type, data: data.success ? data.data : null }))
+            .then(res => {
+              console.log(`[Insights] ${type} response status:`, res.status)
+              return res.json()
+            })
+            .then(data => {
+              console.log(`[Insights] ${type} data:`, data)
+              return { type, data: data.success ? data.data : null }
+            })
         )
       )
       
@@ -955,6 +990,9 @@ export default function PremiumDashboard() {
   
   return (
     <div className="min-h-screen bg-black">
+      {/* Scan Loader */}
+      {scanning && <ScanLoader />}
+      
       {/* Global Navbar */}
       <Navbar />
 
@@ -1224,42 +1262,34 @@ export default function PremiumDashboard() {
           <>
             {/* Backdrop */}
             <div 
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] animate-in fade-in duration-200"
+              className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] animate-in fade-in duration-200"
               onClick={() => setShowSearchModal(false)}
             />
             
             {/* Modal */}
-            <div className="fixed inset-0 z-[101] flex items-start justify-center pt-20 px-4 animate-in slide-in-from-top-4 duration-300 overflow-y-auto">
-              <div className="relative w-full max-w-4xl bg-black/95 backdrop-blur-xl border-2 border-white/20 shadow-2xl rounded-lg mb-20">
-                {/* Decorative elements container with overflow hidden */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.05] via-purple-500/[0.03] to-transparent"></div>
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl"></div>
-                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
-                </div>
+            <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+              <div className="relative w-full max-w-2xl bg-black border border-white/20 shadow-2xl animate-in zoom-in-95 duration-200">
                 
-                <div className="relative z-10 p-6">
+                <div className="relative z-10 p-8">
                   {/* Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-white font-mono text-xl tracking-wider flex items-center gap-3">
-                      <div className="p-2 border border-white/30 bg-black/40">
-                        <Search className="w-5 h-5" />
-                      </div>
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-white font-mono text-lg tracking-wider flex items-center gap-3">
+                      <Search className="w-5 h-5" />
                       SCAN TOKEN
                     </h2>
                     <button
                       onClick={() => setShowSearchModal(false)}
-                      className="p-2 border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all"
+                      className="p-2 text-white/60 hover:text-white transition-colors"
                       title="Close"
                     >
-                      <X className="w-5 h-5 text-white hover:text-red-400 transition-colors" />
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
 
           {/* Chain Selector Dropdown */}
-          <div className="mb-4">
-            <label className="text-white/60 font-mono text-[10px] tracking-wider mb-2 block">
-              SELECT BLOCKCHAIN
+          <div className="mb-6">
+            <label className="text-white/60 font-mono text-[10px] tracking-wider mb-2 block uppercase">
+              Select Blockchain
             </label>
             <select
               value={selectedChain}
@@ -1282,9 +1312,9 @@ export default function PremiumDashboard() {
           </div>
 
           {/* Token Classification Dropdown */}
-          <div className="mb-4">
-            <label className="text-white/60 font-mono text-[10px] tracking-wider mb-2 block">
-              TOKEN CLASSIFICATION (OPTIONAL)
+          <div className="mb-6">
+            <label className="text-white/60 font-mono text-[10px] tracking-wider mb-2 block uppercase">
+              Token Classification (Optional)
             </label>
             <select
               value={manualTokenType || 'auto'}
@@ -1304,31 +1334,27 @@ export default function PremiumDashboard() {
               <option value="MEME_TOKEN">◐ MEME TOKEN (Speculative, +15 risk)</option>
               <option value="UTILITY_TOKEN">◧ UTILITY TOKEN (Functional)</option>
             </select>
-            <p className={`font-mono text-[9px] mt-2 ${
-              manualTokenType === 'MEME_TOKEN' ? 'text-yellow-400' : 'text-white/40'
-            }`}>
-              {manualTokenType === 'MEME_TOKEN' ? (
-                <span>! MEME TOKEN SELECTED - Adding +15 risk points to next scan</span>
-              ) : (
-                <span>Override AI classification. Meme tokens get +15 risk points added.</span>
-              )}
-            </p>
+            {manualTokenType === 'MEME_TOKEN' && (
+              <p className="font-mono text-[9px] mt-2 text-yellow-400">
+                ! MEME TOKEN SELECTED - Adding +15 risk points to next scan
+              </p>
+            )}
           </div>
           
-          {/* Toggle Button and Reset */}
-          <div className="flex justify-between items-center mb-3">
+          {/* Search Mode Toggle */}
+          <div className="flex justify-between items-center mb-4">
             {manualTokenType && (
               <button
                 onClick={() => setManualTokenType(null)}
                 className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 font-mono text-[10px] border border-yellow-500/30 transition-colors tracking-wider"
               >
-                ↺ RESET CLASSIFICATION
+                ↺ RESET
               </button>
             )}
             <div className={manualTokenType ? '' : 'ml-auto'}>
               <button
                 onClick={() => setShowTokenSearch(!showTokenSearch)}
-                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-mono text-[10px] border border-white/30 transition-colors tracking-wider"
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-mono text-[10px] border border-white/20 hover:border-white/30 transition-all tracking-wider"
               >
                 {showTokenSearch ? '⊞ MANUAL INPUT' : '⊡ SEARCH BY NAME'}
               </button>
@@ -1338,38 +1364,16 @@ export default function PremiumDashboard() {
           <div className="token-search-container relative">
             {showTokenSearch ? (
               /* Token Search by Name/Symbol */
-              <div className="space-y-3">
-                <div className="flex gap-2 items-start">
-                  <div className="flex-1">
-                    <TokenSearchComponent onTokenSelect={handleTokenSelectFromSearch} onQueryChange={(q) => setSearchQuery(q)} chain={selectedChain} />
-                    <div className="text-[10px] font-mono text-white/40 tracking-wider mt-2">
-                      ⓘ SEARCH FOR TOKENS BY NAME OR SYMBOL (E.G., BONK, DOGWIFHAT)
-                    </div>
-                  </div>
-
-                  {/* Keep a visible SCAN button while in search mode so users can scan typed queries */}
-                  <div className="pt-1">
-                    <button
-                      onClick={() => handleScan()}
-                      disabled={scanning || !searchQuery.trim()}
-                      className="px-6 py-3 bg-white text-black font-mono text-xs tracking-wider hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {scanning ? (
-                        <>
-                          <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
-                          SCANNING...
-                        </>
-                      ) : (
-                        'SCAN'
-                      )}
-                    </button>
-                  </div>
+              <div>
+                <TokenSearchComponent onTokenSelect={handleTokenSelectFromSearch} onQueryChange={(q) => setSearchQuery(q)} chain={selectedChain} />
+                <div className="text-[10px] font-mono text-white/40 tracking-wider mt-3">
+                  ⓘ Search for tokens by name or symbol (e.g., BONK, DOGWIFHAT)
                 </div>
               </div>
             ) : (
               /* Traditional Address/Symbol Input */
               <div className="relative">
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <input
                     type="text"
                     value={searchQuery}
@@ -1383,14 +1387,14 @@ export default function PremiumDashboard() {
                         setShowSuggestions(true)
                       }
                     }}
-                    placeholder="ENTER CONTRACT ADDRESS OR SYMBOL..."
-                    className="flex-1 bg-black border border-white/30 text-white px-4 py-3 font-mono text-xs tracking-wider focus:outline-none focus:border-white placeholder:text-white/40 rounded"
+                    placeholder="0xW1Lzb...or1wBNbmD0nt...or BONK"
+                    className="flex-1 bg-black border border-white/30 text-white px-4 py-3 font-mono text-sm tracking-wider focus:outline-none focus:border-white placeholder:text-white/30"
                     disabled={scanning}
                   />
                   <button
                     onClick={() => handleScan()}
                     disabled={scanning || !searchQuery.trim()}
-                    className="px-6 py-3 bg-white text-black font-mono text-xs tracking-wider hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                    className="px-8 py-3 bg-white text-black font-mono text-sm tracking-wider hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {scanning ? (
                       <>
@@ -1564,6 +1568,15 @@ export default function PremiumDashboard() {
             {/* Divider */}
             <div className="border-t border-white/10 mb-6"></div>
 
+            {/* AI Explanation Panel - Prominent Display */}
+            {selectedToken.ai_summary && (
+              <AIExplanationPanel 
+                aiSummary={selectedToken.ai_summary}
+                riskScore={selectedToken.overallRisk}
+                riskLevel={selectedToken.overallRisk < 30 ? 'LOW' : selectedToken.overallRisk < 60 ? 'MEDIUM' : selectedToken.overallRisk < 80 ? 'HIGH' : 'CRITICAL'}
+              />
+            )}
+
             {/* Quick Action Buttons */}
             <div className="flex flex-wrap gap-3 mb-6">
               {/* Watchlist Button - Only show for valid contract addresses */}
@@ -1653,61 +1666,48 @@ export default function PremiumDashboard() {
               </button>
             </div>
 
-            {/* Chain-Specific Security Info */}
-            {selectedToken.chain && (
+            {/* Chain-Specific Security Info - Only for non-Solana chains */}
+            {selectedToken.chain && !selectedToken.chain.toLowerCase().includes('solana') && (
               <div className="border border-white/10 bg-white/5 p-4 mb-6">
                 <h3 className="text-white font-mono text-xs tracking-wider mb-3 flex items-center gap-2">
                   ⬡ {selectedToken.chain.toUpperCase()} CHAIN ANALYSIS
                 </h3>
-                {selectedToken.chain.toLowerCase() === 'solana' ? (
-                  <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-                    <div>
-                      <span className="text-white/60">Freeze Authority:</span>
-                      <span className={`ml-2 font-bold ${selectedToken.securityData?.freezeAuthority ? 'text-red-400' : 'text-green-400'}`}>
-                        {selectedToken.securityData?.freezeAuthority ? 'ACTIVE !' : 'REVOKED ✓'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-white/60">Mint Authority:</span>
-                      <span className={`ml-2 font-bold ${selectedToken.securityData?.mintAuthority ? 'text-red-400' : 'text-green-400'}`}>
-                        {selectedToken.securityData?.mintAuthority ? 'ACTIVE !' : 'REVOKED ✓'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-white/60">SPL Token:</span>
-                      <span className="ml-2 text-white">YES</span>
-                    </div>
-                    <div>
-                      <span className="text-white/60">Data Source:</span>
-                      <span className="ml-2 text-cyan-400">Helius + Moralis</span>
-                    </div>
+                <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                  <div>
+                    <span className="text-white/60">Contract Verified:</span>
+                    <span className={`ml-2 font-bold ${selectedToken.securityData?.isVerified ? 'text-green-400' : 'text-yellow-400'}`}>
+                      {selectedToken.securityData?.isVerified ? 'YES ✓' : 'NO !'}
+                    </span>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-                    <div>
-                      <span className="text-white/60">Contract Verified:</span>
-                      <span className={`ml-2 font-bold ${selectedToken.securityData?.isVerified ? 'text-green-400' : 'text-yellow-400'}`}>
-                        {selectedToken.securityData?.isVerified ? 'YES ✓' : 'NO !'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-white/60">Ownership:</span>
-                      <span className={`ml-2 font-bold ${selectedToken.securityData?.ownershipRenounced ? 'text-green-400' : 'text-yellow-400'}`}>
-                        {selectedToken.securityData?.ownershipRenounced ? 'RENOUNCED ✓' : 'ACTIVE !'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-white/60">Proxy Contract:</span>
-                      <span className={`ml-2 font-bold ${selectedToken.securityData?.isProxy ? 'text-yellow-400' : 'text-green-400'}`}>
-                        {selectedToken.securityData?.isProxy ? 'YES !' : 'NO ✓'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-white/60">Data Source:</span>
-                      <span className="ml-2 text-cyan-400">GoPlus + Moralis</span>
-                    </div>
+                  <div>
+                    <span className="text-white/60">Ownership:</span>
+                    <span className={`ml-2 font-bold ${selectedToken.securityData?.ownershipRenounced ? 'text-green-400' : 'text-yellow-400'}`}>
+                      {selectedToken.securityData?.ownershipRenounced ? 'RENOUNCED ✓' : 'ACTIVE !'}
+                    </span>
                   </div>
-                )}
+                  <div>
+                    <span className="text-white/60">Proxy Contract:</span>
+                    <span className={`ml-2 font-bold ${selectedToken.securityData?.isProxy ? 'text-yellow-400' : 'text-green-400'}`}>
+                      {selectedToken.securityData?.isProxy ? 'YES !' : 'NO ✓'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-white/60">Data Source:</span>
+                    <span className="ml-2 text-cyan-400">GoPlus + Moralis</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Helius Solana Data Panel - Only for Solana tokens */}
+            {selectedToken.chain && selectedToken.chain.toLowerCase().includes('solana') && selectedToken.address && selectedToken.address.length >= 32 && (
+              <div className="mb-6">
+                <SolanaHeliusPanel 
+                  tokenAddress={selectedToken.address}
+                  onDataLoaded={(heliusData) => {
+                    console.log('[Dashboard] Helius data loaded:', heliusData)
+                  }}
+                />
               </div>
             )}
 
@@ -2250,8 +2250,8 @@ export default function PremiumDashboard() {
               </div>
             ) : (
               <div className="flex items-center justify-center h-32">
-                <p className="text-white/40 font-mono text-xs">
-                  {selectedToken ? 'No sentiment data available' : 'Scan a token to view sentiment'}
+                <p className="text-white/40 font-mono text-xs text-center px-4">
+                  {selectedToken ? 'No sentiment data yet. Insights populate after multiple scans over time.' : 'Scan a token to view sentiment'}
                 </p>
               </div>
             )}
@@ -2270,58 +2270,84 @@ export default function PremiumDashboard() {
               <div className="flex items-center justify-center h-32">
                 <Loader2 className="w-6 h-6 text-white/40 animate-spin" />
               </div>
-            ) : insightData.security ? (
+            ) : insightData.security || (selectedToken && selectedToken.factors) ? (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60 font-mono text-xs">CONTRACT SECURITY</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-2 bg-white/10 rounded">
-                      <div className="h-full bg-green-500 rounded" style={{ width: `${insightData.security.contractSecurity.score}%` }}></div>
-                    </div>
-                    <span className="text-green-500 font-mono text-xs">{insightData.security.contractSecurity.grade}</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60 font-mono text-xs">LIQUIDITY LOCK</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-2 bg-white/10 rounded">
-                      <div className="h-full bg-green-500 rounded" style={{ width: `${insightData.security.liquidityLock.percentage}%` }}></div>
-                    </div>
-                    <span className={`font-mono text-xs ${insightData.security.liquidityLock.locked ? 'text-green-500' : 'text-red-500'}`}>
-                      {insightData.security.liquidityLock.locked ? '✓' : '✗'}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60 font-mono text-xs">AUDIT STATUS</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-2 bg-white/10 rounded">
-                      <div className="h-full bg-green-500 rounded" style={{ width: `${insightData.security.auditStatus.score}%` }}></div>
-                    </div>
-                    <span className={`font-mono text-xs ${insightData.security.auditStatus.audited ? 'text-green-500' : 'text-yellow-500'}`}>
-                      {insightData.security.auditStatus.audited ? '✓' : '?'}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60 font-mono text-xs">OWNERSHIP</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-2 bg-white/10 rounded">
-                      <div className="h-full bg-green-500 rounded" style={{ width: `${insightData.security.ownership.score}%` }}></div>
-                    </div>
-                    <span className={`font-mono text-xs ${
-                      insightData.security.ownership.status === 'RENOUNCED' ? 'text-green-500' :
-                      insightData.security.ownership.status === 'DECENTRALIZED' ? 'text-blue-500' : 'text-yellow-500'
-                    }`}>
-                      {insightData.security.ownership.status}
-                    </span>
-                  </div>
-                </div>
+                {/* Use historical data if available, otherwise use current scan data */}
+                {(() => {
+                  const security = insightData.security || {
+                    contractSecurity: {
+                      score: selectedToken?.factors?.contractControl ? Math.max(0, 100 - selectedToken.factors.contractControl) : 0,
+                      grade: selectedToken?.factors?.contractControl < 20 ? 'A' : selectedToken?.factors?.contractControl < 40 ? 'B' : selectedToken?.factors?.contractControl < 60 ? 'C' : 'D'
+                    },
+                    liquidityLock: {
+                      locked: selectedToken?.factors?.liquidityDepth < 30,
+                      percentage: selectedToken?.factors?.liquidityDepth ? Math.max(0, 100 - selectedToken.factors.liquidityDepth) : 0
+                    },
+                    auditStatus: {
+                      audited: selectedToken?.factors?.tokenAge < 20,
+                      score: selectedToken?.factors?.tokenAge ? Math.max(0, 100 - selectedToken.factors.tokenAge) : 0
+                    },
+                    ownership: {
+                      status: selectedToken?.factors?.whaleConcentration < 20 ? 'DECENTRALIZED' : selectedToken?.factors?.whaleConcentration < 50 ? 'CENTRALIZED' : 'CENTRALIZED',
+                      score: selectedToken?.factors?.whaleConcentration ? Math.max(0, 100 - selectedToken.factors.whaleConcentration) : 50
+                    }
+                  }
+                  
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60 font-mono text-xs">CONTRACT SECURITY</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-2 bg-white/10 rounded">
+                            <div className="h-full bg-green-500 rounded" style={{ width: `${security.contractSecurity.score}%` }}></div>
+                          </div>
+                          <span className="text-green-500 font-mono text-xs">{security.contractSecurity.grade}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60 font-mono text-xs">LIQUIDITY DEPTH</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-2 bg-white/10 rounded">
+                            <div className="h-full bg-green-500 rounded" style={{ width: `${security.liquidityLock.percentage}%` }}></div>
+                          </div>
+                          <span className={`font-mono text-xs ${security.liquidityLock.locked ? 'text-green-500' : 'text-yellow-500'}`}>
+                            {security.liquidityLock.locked ? '✓ GOOD' : '⚠ LOW'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60 font-mono text-xs">TOKEN MATURITY</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-2 bg-white/10 rounded">
+                            <div className="h-full bg-green-500 rounded" style={{ width: `${security.auditStatus.score}%` }}></div>
+                          </div>
+                          <span className={`font-mono text-xs ${security.auditStatus.audited ? 'text-green-500' : 'text-yellow-500'}`}>
+                            {security.auditStatus.audited ? '✓ MATURE' : '⚠ NEW'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60 font-mono text-xs">OWNERSHIP</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-2 bg-white/10 rounded">
+                            <div className="h-full bg-green-500 rounded" style={{ width: `${security.ownership.score}%` }}></div>
+                          </div>
+                          <span className={`font-mono text-xs ${
+                            security.ownership.status === 'RENOUNCED' ? 'text-green-500' :
+                            security.ownership.status === 'DECENTRALIZED' ? 'text-blue-500' : 'text-yellow-500'
+                          }`}>
+                            {security.ownership.status}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
             ) : (
               <div className="flex items-center justify-center h-32">
-                <p className="text-white/40 font-mono text-xs">
-                  {selectedToken ? 'No security data available' : 'Scan a token to view security'}
+                <p className="text-white/40 font-mono text-xs text-center px-4">
+                  {selectedToken ? 'No security metrics yet. Data builds up from historical scans.' : 'Scan a token to view security'}
                 </p>
               </div>
             )}
@@ -2385,8 +2411,8 @@ export default function PremiumDashboard() {
               </div>
             ) : (
               <div className="flex items-center justify-center h-32">
-                <p className="text-white/40 font-mono text-xs">
-                  {selectedToken ? 'No holder data available' : 'Scan a token to view holders'}
+                <p className="text-white/40 font-mono text-xs text-center px-4">
+                  {selectedToken ? 'No holder distribution data yet. Insights require historical scan data.' : 'Scan a token to view holders'}
                 </p>
               </div>
             )}
