@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "test:tokens": "node scripts/test-multi-token.js",
     "test:api": "node scripts/test-api.js",
-    "test:api-data": "node scripts/test-api-data.js"
+    "test:api-data": "node scripts/test-api-data.js",
+    "test:sources": "node scripts/test-api-data-sources.js"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.65",

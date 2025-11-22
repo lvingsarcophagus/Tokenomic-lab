@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Shield } from "lucide-react"
 import { theme } from "@/lib/theme"
 import { analyticsEvents } from "@/lib/firebase-analytics"
+import Navbar from "@/components/navbar"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -211,7 +212,9 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className={`relative min-h-screen flex items-center justify-center ${theme.backgrounds.main} overflow-hidden p-4`}>
+    <>
+      <Navbar />
+      <div className={`relative min-h-screen flex items-center justify-center ${theme.backgrounds.main} overflow-hidden p-4`}>
       {/* Stars background */}
       <div className="fixed inset-0 stars-bg pointer-events-none"></div>
 
@@ -446,5 +449,6 @@ export default function SignUpPage() {
         }
       `}</style>
     </div>
+    </>
   )
 }

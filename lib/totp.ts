@@ -42,19 +42,15 @@ function base32Decode(secret: string): Uint8Array {
 
 // HMAC-SHA1 implementation
 async function hmacSha1(key: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
-  // Create new Uint8Arrays to ensure we have proper ArrayBuffers
-  const keyArray = new Uint8Array(key);
-  const messageArray = new Uint8Array(message);
-  
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
-    keyArray,
+    key.buffer,
     { name: 'HMAC', hash: 'SHA-1' },
     false,
     ['sign']
   );
   
-  const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageArray);
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, message.buffer);
   return new Uint8Array(signature);
 }
 

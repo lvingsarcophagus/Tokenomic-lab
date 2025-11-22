@@ -17,6 +17,7 @@ import { theme } from "@/lib/theme"
 import { analyticsEvents } from "@/lib/firebase-analytics"
 import { has2FAEnabled } from "@/lib/totp"
 import TwoFactorVerify from "@/components/two-factor-verify"
+import Navbar from "@/components/navbar"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -177,6 +178,7 @@ export default function LoginPage() {
 
   return (
     <>
+      <Navbar />
       {show2FA && pendingUserId && (
         <TwoFactorVerify
           userId={pendingUserId}

@@ -50,9 +50,9 @@ export default function ProfilePage() {
       interface EthereumProvider {
         request: (args: { method: string }) => Promise<string[]>
       }
-      
+
       const windowWithEthereum = window as unknown as { ethereum?: EthereumProvider }
-      
+
       if (typeof window !== "undefined" && windowWithEthereum.ethereum) {
         const accounts = await windowWithEthereum.ethereum.request({
           method: "eth_requestAccounts",
@@ -139,7 +139,7 @@ export default function ProfilePage() {
       }
 
       alert("✅ Your account has been permanently deleted. You will be redirected to the home page.")
-      
+
       // Redirect to home (user will be automatically signed out by the API)
       router.push('/')
     } catch (error) {

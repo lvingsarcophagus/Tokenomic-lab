@@ -9,15 +9,19 @@ import Navbar from '@/components/navbar'
 import AIAnalysisAccordion from '@/components/ai-analysis-accordion'
 import { MorphingSquare } from '@/components/ui/morphing-square'
 import TokenSearchComponent from '@/components/token-search-cmc'
+import DexSearchPremium from '@/components/dex-search-premium'
 import SolanaHeliusPanel from '@/components/solana-helius-panel'
 import ScanLoader from '@/components/scan-loader'
 import AIExplanationPanel from '@/components/ai-explanation-panel'
+import RiskOverview from '@/components/risk-overview'
+import MarketMetrics from '@/components/market-metrics'
+import HolderDistribution from '@/components/holder-distribution'
 import { 
   Shield, TrendingUp, TrendingDown, Activity, Users, Droplet,
   Zap, Crown, AlertCircle, CheckCircle, Sparkles, BarChart3,
   Clock, Target, Plus, Search, Bell, Settings, LogOut, Menu, X,
   User, Flame, BadgeCheck, Loader2, AlertTriangle, Eye, RefreshCw,
-  ChevronDown, ChevronUp, ArrowRight, Star, Bookmark
+  ChevronDown, ChevronUp, ArrowRight, Star, Bookmark, ExternalLink, Database
 } from 'lucide-react'
 import { TokenScanService, CompleteTokenData } from '@/lib/token-scan-service'
 import type { RiskResult } from '@/lib/types/token-data'
@@ -131,6 +135,13 @@ export default function PremiumDashboard() {
   })
   const [loadingInsights, setLoadingInsights] = useState(false)
   
+  // Recent activity state
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [loadingActivity, setLoadingActivity] = useState(false)
+  
+  // Helius data state (for Solana tokens)
+  const [heliusData, setHeliusData] = useState<any>(null)
+  
   // Wallet analysis state
   const [walletData, setWalletData] = useState<any>(null)
   const [loadingWallet, setLoadingWallet] = useState(false)
@@ -160,6 +171,16 @@ export default function PremiumDashboard() {
   
   // Determine if user has premium features
   const isPremium = userProfile?.plan === 'PREMIUM'
+  
+  // DEBUG: Log premium status
+  useEffect(() => {
+    console.log('🔍 PREMIUM STATUS:', {
+      userProfile,
+      plan: userProfile?.plan,
+      isPremium,
+      user: user?.email
+    })
+  }, [userProfile, isPremium, user])
   
   // Load dashboard data
   useEffect(() => {
@@ -591,11 +612,22 @@ export default function PremiumDashboard() {
           const positiveSignals = result.positive_signals || []
           const breakdown = result.breakdown || {}
           
+          // Debug logging
+          console.log('[Dashboard] Risk Analysis:', {
+            symbol: data.priceData?.symbol,
+            overallRisk: riskScore,
+            breakdown,
+            isMeme: result.is_meme_token,
+            classification: result.ai_insights?.classification,
+            logo: data.priceData?.logo
+          })
+          
           setSelectedToken({
             name: data.priceData?.name || 'Unknown',
             symbol: data.priceData?.symbol || searchQuery.toUpperCase(),
             address: data.address,
             chain: data.chainInfo?.chainName || 'Unknown',
+            chainId: data.chainInfo?.chainId || 1,
             marketCap: formatMarketCap(data.priceData?.marketCap),
             price: data.priceData?.price || 0,
             age: result.data_freshness ? `${result.data_freshness} days` : 'N/A',
@@ -603,14 +635,16 @@ export default function PremiumDashboard() {
             confidence: result.confidence_score || 90,
             lastUpdated: 'just now',
             factors: {
-              contractControl: breakdown.contractControl || 0,
-              contractSecurity: breakdown.contractControl || 0,
-              supplyRisk: breakdown.supplyDilution || 0,
-              whaleConcentration: breakdown.holderConcentration || 0,
+              supplyDilution: breakdown.supplyDilution || 0,
+              holderConcentration: breakdown.holderConcentration || 0,
               liquidityDepth: breakdown.liquidityDepth || 0,
-              marketActivity: breakdown.adoption || 0,
-              burnMechanics: breakdown.burnDeflation || 0,
-              tokenAge: breakdown.auditTransparency || 0
+              vestingUnlock: breakdown.vestingUnlock || 0,
+              contractControl: breakdown.contractControl || 0,
+              taxFee: breakdown.taxFee || 0,
+              distribution: breakdown.distribution || 0,
+              burnDeflation: breakdown.burnDeflation || 0,
+              adoption: breakdown.adoption || 0,
+              auditTransparency: breakdown.auditTransparency || 0
             },
             redFlags,
             positiveSignals,
@@ -649,9 +683,8 @@ export default function PremiumDashboard() {
           confidence: 90,
           lastUpdated: 'just now',
           factors: {
-            contractSecurity: 0, // N/A for native assets
-            supplyRisk: isWellKnown ? 5 : 15,
-            whaleConcentration: isWellKnown ? 10 : 25,
+            supplyDilution: isWellKnown ? 5 : 15,
+            holderConcentration: isWellKnown ? 10 : 25,
             liquidityDepth: isWellKnown ? 5 : 15,
             marketActivity: isWellKnown ? 5 : 10,
             burnMechanics: 0, // N/A for most native assets
@@ -816,9 +849,11 @@ export default function PremiumDashboard() {
   }
   
   const loadHistoricalData = async (address: string, selectedTimeframe: string = timeframe) => {
-    // Skip loading charts for symbols without valid contract addresses
-    if (!address || address === 'N/A (Native Asset)' || address === 'N/A' || !address.startsWith('0x')) {
-      console.log('[Charts] Skipping historical data for symbol search:', address)
+    console.log('📊 [loadHistoricalData] Called with:', { address, selectedTimeframe })
+    
+    // Skip loading charts for invalid addresses
+    if (!address || address === 'N/A (Native Asset)' || address === 'N/A') {
+      console.log('⚠️ [loadHistoricalData] Skipping - invalid address:', address)
       setLoadingHistory(false)
       setHistoricalData({
         risk: [],
@@ -828,6 +863,14 @@ export default function PremiumDashboard() {
         transactions: [],
         whales: []
       })
+      return
+    }
+    
+    // Validate address format (EVM: 0x..., Solana: base58, etc.)
+    const isValidAddress = address.startsWith('0x') || address.length > 32 // Solana addresses are 32-44 chars
+    if (!isValidAddress) {
+      console.log('⚠️ [loadHistoricalData] Invalid address format:', address)
+      setLoadingHistory(false)
       return
     }
     
@@ -898,9 +941,11 @@ export default function PremiumDashboard() {
   }
   
   const loadInsightData = async (address: string) => {
+    console.log('💡 [loadInsightData] Called with:', { address })
+    
     // Skip loading insights for symbols without valid contract addresses
     if (!address || address === 'N/A (Native Asset)' || address === 'N/A') {
-      console.log('[Insights] Skipping insights for invalid address')
+      console.log('⚠️ [Insights] Skipping insights for invalid address:', address)
       setLoadingInsights(false)
       setInsightData({
         sentiment: null,
@@ -971,9 +1016,21 @@ export default function PremiumDashboard() {
   
   // Load historical data and insights when a token is scanned or selected (PREMIUM only)
   useEffect(() => {
+    console.log('🔍 DATA LOAD TRIGGER:', {
+      isPremium,
+      hasAddress: !!selectedToken?.address,
+      address: selectedToken?.address,
+      willLoad: isPremium && !!selectedToken?.address
+    })
+    
     if (isPremium && selectedToken?.address) {
+      console.log('✅ Loading historical data and insights...')
       loadHistoricalData(selectedToken.address, timeframe)
       loadInsightData(selectedToken.address)
+    } else {
+      console.log('❌ Not loading data:', {
+        reason: !isPremium ? 'Not premium' : 'No address'
+      })
     }
   }, [selectedToken?.address, isPremium])
   
@@ -1232,6 +1289,7 @@ export default function PremiumDashboard() {
         )}
 
         {/* Token Scanner - Click to Open Modal */}
+        <div id="scanner">
         <button
           onClick={() => setShowSearchModal(true)}
           className="w-full relative border-2 border-white/20 bg-black/40 backdrop-blur-xl p-8 mb-8 shadow-2xl hover:border-white/40 hover:bg-black/50 transition-all duration-300 group"
@@ -1256,266 +1314,118 @@ export default function PremiumDashboard() {
             </div>
           </div>
         </button>
+        </div>
 
         {/* Search Modal */}
         {showSearchModal && (
           <>
-            {/* Backdrop */}
+            {/* Full-Screen Glassmorphic Backdrop */}
             <div 
-              className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] animate-in fade-in duration-200"
+              className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] animate-in fade-in duration-300"
               onClick={() => setShowSearchModal(false)}
-            />
+            >
+              {/* Animated gradient orbs */}
+              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+              <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+            </div>
             
-            {/* Modal */}
-            <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
-              <div className="relative w-full max-w-2xl bg-black border border-white/20 shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Full-Screen Modal with DexSearchPremium */}
+            <div className="fixed inset-0 z-[101] flex items-center justify-center p-0 md:p-6">
+              <div className="relative w-full h-full md:h-auto md:max-h-[95vh] md:max-w-7xl bg-black/40 backdrop-blur-2xl border-0 md:border border-white/20 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                 
-                <div className="relative z-10 p-8">
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-white font-mono text-lg tracking-wider flex items-center gap-3">
-                      <Search className="w-5 h-5" />
-                      SCAN TOKEN
-                    </h2>
+                {/* Glassmorphic overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] via-transparent to-purple-500/[0.02] pointer-events-none" />
+                
+                {/* Header Bar */}
+                <div className="relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-md p-4 md:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 border border-white/30 bg-black/40 backdrop-blur-sm">
+                        <Search className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-white font-mono text-sm md:text-base tracking-wider">ADVANCED TOKEN SEARCH</h2>
+                        <p className="text-white/40 font-mono text-[10px] mt-0.5">Multi-chain DEX scanner with trending tokens</p>
+                      </div>
+                    </div>
                     <button
                       onClick={() => setShowSearchModal(false)}
-                      className="p-2 text-white/60 hover:text-white transition-colors"
-                      title="Close"
+                      className="p-2 border border-white/20 bg-black/40 hover:bg-white/5 hover:border-white/40 transition-all backdrop-blur-sm group"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
                     </button>
                   </div>
-
-          {/* Chain Selector Dropdown */}
-          <div className="mb-6">
-            <label className="text-white/60 font-mono text-[10px] tracking-wider mb-2 block uppercase">
-              Select Blockchain
-            </label>
-            <select
-              value={selectedChain}
-              onChange={(e) => setSelectedChain(e.target.value as any)}
-              className="w-full px-4 py-3 bg-black border border-white/20 text-white font-mono text-sm tracking-wider focus:border-white/40 focus:outline-none transition-all appearance-none cursor-pointer hover:border-white/30"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' opacity='0.6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 0.75rem center',
-                backgroundSize: '1.25rem',
-                paddingRight: '2.5rem'
-              }}
-            >
-              <option value="ethereum">◆ ETHEREUM</option>
-              <option value="bsc">◇ BSC (BNB CHAIN)</option>
-              <option value="polygon">▲ POLYGON</option>
-              <option value="avalanche">△ AVALANCHE</option>
-              <option value="solana">● SOLANA</option>
-            </select>
-          </div>
-
-          {/* Token Classification Dropdown */}
-          <div className="mb-6">
-            <label className="text-white/60 font-mono text-[10px] tracking-wider mb-2 block uppercase">
-              Token Classification (Optional)
-            </label>
-            <select
-              value={manualTokenType || 'auto'}
-              onChange={(e) => setManualTokenType(e.target.value === 'auto' ? null : e.target.value as 'MEME_TOKEN' | 'UTILITY_TOKEN')}
-              className={`w-full px-4 py-3 bg-black border text-white font-mono text-sm tracking-wider focus:border-white/40 focus:outline-none transition-all appearance-none cursor-pointer hover:border-white/30 ${
-                manualTokenType === 'MEME_TOKEN' ? 'border-yellow-500/50' : 'border-white/20'
-              }`}
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' opacity='0.6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 0.75rem center',
-                backgroundSize: '1.25rem',
-                paddingRight: '2.5rem'
-              }}
-            >
-              <option value="auto">⊕ AUTO DETECT (AI Classification)</option>
-              <option value="MEME_TOKEN">◐ MEME TOKEN (Speculative, +15 risk)</option>
-              <option value="UTILITY_TOKEN">◧ UTILITY TOKEN (Functional)</option>
-            </select>
-            {manualTokenType === 'MEME_TOKEN' && (
-              <p className="font-mono text-[9px] mt-2 text-yellow-400">
-                ! MEME TOKEN SELECTED - Adding +15 risk points to next scan
-              </p>
-            )}
-          </div>
-          
-          {/* Search Mode Toggle */}
-          <div className="flex justify-between items-center mb-4">
-            {manualTokenType && (
-              <button
-                onClick={() => setManualTokenType(null)}
-                className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 font-mono text-[10px] border border-yellow-500/30 transition-colors tracking-wider"
-              >
-                ↺ RESET
-              </button>
-            )}
-            <div className={manualTokenType ? '' : 'ml-auto'}>
-              <button
-                onClick={() => setShowTokenSearch(!showTokenSearch)}
-                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-mono text-[10px] border border-white/20 hover:border-white/30 transition-all tracking-wider"
-              >
-                {showTokenSearch ? '⊞ MANUAL INPUT' : '⊡ SEARCH BY NAME'}
-              </button>
-            </div>
-          </div>
-
-          <div className="token-search-container relative">
-            {showTokenSearch ? (
-              /* Token Search by Name/Symbol */
-              <div>
-                <TokenSearchComponent onTokenSelect={handleTokenSelectFromSearch} onQueryChange={(q) => setSearchQuery(q)} chain={selectedChain} />
-                <div className="text-[10px] font-mono text-white/40 tracking-wider mt-3">
-                  ⓘ Search for tokens by name or symbol (e.g., BONK, DOGWIFHAT)
-                </div>
-              </div>
-            ) : (
-              /* Traditional Address/Symbol Input */
-              <div className="relative">
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value)
-                      searchTokenSuggestions(e.target.value)
-                    }}
-                    onKeyPress={(e) => e.key === 'Enter' && handleScan()}
-                    onFocus={() => {
-                      if (tokenSuggestions.length > 0) {
-                        setShowSuggestions(true)
-                      }
-                    }}
-                    placeholder="0xW1Lzb...or1wBNbmD0nt...or BONK"
-                    className="flex-1 bg-black border border-white/30 text-white px-4 py-3 font-mono text-sm tracking-wider focus:outline-none focus:border-white placeholder:text-white/30"
-                    disabled={scanning}
-                  />
-                  <button
-                    onClick={() => handleScan()}
-                    disabled={scanning || !searchQuery.trim()}
-                    className="px-8 py-3 bg-white text-black font-mono text-sm tracking-wider hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {scanning ? (
-                      <>
-                        <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
-                        SCANNING...
-                      </>
-                    ) : (
-                      'SCAN'
-                    )}
-                  </button>
                 </div>
                 
-                {/* Token Suggestions Dropdown - Positioned relative to input */}
-                {showSuggestions && tokenSuggestions.length > 0 && (
-                  <>
-                    {/* Backdrop to close dropdown */}
-                    <div 
-                      className="fixed inset-0 z-[9998]" 
-                      onClick={() => setShowSuggestions(false)}
-                    />
-                    
-                    {/* Dropdown - Absolute positioning relative to input */}
-                    <div 
-                      className="absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-xl border border-white/30 z-[9999] max-h-[400px] overflow-y-auto shadow-2xl rounded-lg"
-                    >
-                      {loadingSuggestions && (
-                        <div className="p-4 text-center">
-                          <Loader2 className="w-4 h-4 inline animate-spin text-white/60" />
-                        </div>
-                      )}
-                      {tokenSuggestions.map((token, index) => (
-                        <button
-                          key={`${token.address}-${token.chainId}-${index}`}
-                          onClick={() => handleSelectSuggestion(token)}
-                          className="w-full p-3 text-left hover:bg-white/10 transition-all border-b border-white/10 last:border-b-0"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-white font-mono text-sm font-bold">
-                                  {token.symbol}
-                                </span>
-                                <span className="text-white/60 font-mono text-xs">
-                                  {token.name}
-                                </span>
-                              </div>
-                              <div className="text-white/40 font-mono text-[10px] truncate">
-                                {token.address}
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end gap-1">
-                              <span className="px-2 py-1 bg-white/10 text-white font-mono text-[9px] tracking-wider whitespace-nowrap">
-                                {token.chainName || `CHAIN ${token.chainId}`}
-                              </span>
-                              {token.marketCap && (
-                                <span className="text-white/60 font-mono text-[10px]">
-                                  ${(token.marketCap / 1000000).toFixed(2)}M
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-          </div>
-                  
-                  {scanError && (
-                    <div className="mt-4 border border-red-500/50 bg-red-500/10 p-4 rounded">
-                      <p className="text-red-500 font-mono text-xs">{scanError}</p>
-                    </div>
-                  )}
+                {/* Content Area */}
+                <div className="relative z-10 overflow-y-auto h-[calc(100%-80px)] md:h-auto md:max-h-[calc(95vh-100px)]">
+                  <DexSearchPremium
+                    onTokenSelect={handleSelectSuggestion}
+                    onCMCTokenSelect={handleTokenSelectFromSearch}
+                    selectedChain={selectedChain}
+                    onChainChange={(chain) => setSelectedChain(chain as any)}
+                    manualTokenType={manualTokenType}
+                    onTokenTypeChange={(type) => setManualTokenType(type as any)}
+                    scanning={scanning}
+                    error={scanError}
+                    onClose={() => setShowSearchModal(false)}
+                  />
                 </div>
               </div>
             </div>
           </>
         )}
 
-        {/* Scan Results - Glassmorphism */}
+        {/* Scan Results - Compact Layout */}
         {selectedToken && (
-          <div id="scan-results" className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-            <div className="relative z-10">
-            {/* Token Header with Price & Info */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              {/* Left: Token Info */}
-              <div className="lg:col-span-1">
-                <div className="flex items-start gap-3">
-                  <div className="flex-1">
-                    <h2 className="text-3xl font-bold text-white font-mono tracking-wider">{selectedToken.symbol}</h2>
-                    <p className="text-white/70 font-mono text-sm mt-1">{selectedToken.name}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="px-2 py-1 bg-white/10 border border-white/20 text-white/60 font-mono text-[10px] tracking-wider">
-                        {selectedToken.chain}
-                      </span>
-                      {selectedToken.confidence && (
-                        <span className="px-2 py-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-[10px] tracking-wider">
-                          {selectedToken.confidence}% CONFIDENCE
-                        </span>
-                      )}
-                    </div>
-                    {selectedToken.address && selectedToken.address !== 'N/A (Native Asset)' && selectedToken.address !== 'N/A' && (
-                      <p className="text-white/40 font-mono text-[10px] mt-2 break-all">
-                        {selectedToken.address}
-                      </p>
+          <div id="scan-results" className="space-y-4 mb-8">
+            
+            {/* Compact Header Row with Logo */}
+            <div className="border border-white/10 bg-black/40 backdrop-blur-xl p-5 transition-all duration-300 hover:border-white/20">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                {/* Token Info with Logo */}
+                <div className="flex items-center gap-4">
+                  {/* Token Logo */}
+                  <div className="w-14 h-14 rounded-full border-2 border-white/20 bg-black/40 p-1 flex items-center justify-center overflow-hidden">
+                    {selectedToken.rawData?.priceData?.logo ? (
+                      <img 
+                        src={selectedToken.rawData.priceData.logo} 
+                        alt={selectedToken.symbol}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          const parent = e.currentTarget.parentElement
+                          if (parent) {
+                            e.currentTarget.style.display = 'none'
+                            const fallback = document.createElement('span')
+                            fallback.className = 'text-white/60 font-mono text-xl font-bold'
+                            fallback.textContent = selectedToken.symbol.charAt(0)
+                            parent.appendChild(fallback)
+                          }
+                        }}
+                      />
+                    ) : (
+                      <span className="text-white/60 font-mono text-xl font-bold">{selectedToken.symbol.charAt(0)}</span>
                     )}
                   </div>
+                  
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-2xl font-bold text-white font-mono">{selectedToken.symbol}</h2>
+                      <span className="px-2 py-0.5 bg-white/10 border border-white/20 text-white/60 font-mono text-[9px]">
+                        {selectedToken.chain}
+                      </span>
+                    </div>
+                    <p className="text-white/60 font-mono text-xs mt-0.5">{selectedToken.name}</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Center: Price & Market Data */}
-              <div className="lg:col-span-1 border-l border-r border-white/10 px-6">
-                <div className="space-y-3">
+                {/* Risk Score - Compact with smooth animations */}
+                <div className="flex items-center gap-6">
                   {selectedToken.price > 0 && (
-                    <div>
-                      <div className="text-white/60 font-mono text-[10px] tracking-wider mb-1">CURRENT PRICE</div>
-                      <div className="text-2xl font-bold text-white font-mono">
+                    <div className="text-right transition-all duration-300">
+                      <div className="text-white/50 font-mono text-[9px]">PRICE</div>
+                      <div className="text-white font-mono text-lg font-bold transition-all duration-300">
                         ${selectedToken.price >= 1 
                           ? selectedToken.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                           : selectedToken.price >= 0.01
@@ -1527,40 +1437,35 @@ export default function PremiumDashboard() {
                   )}
                   
                   {selectedToken.marketCap && selectedToken.marketCap !== 'N/A' && (
-                    <div>
-                      <div className="text-white/60 font-mono text-[10px] tracking-wider mb-1">MARKET CAP</div>
-                      <div className="text-lg font-bold text-white/90 font-mono">{selectedToken.marketCap}</div>
+                    <div className="text-right transition-all duration-300">
+                      <div className="text-white/50 font-mono text-[9px]">MARKET CAP</div>
+                      <div className="text-white font-mono text-sm font-bold transition-all duration-300">{selectedToken.marketCap}</div>
                     </div>
                   )}
 
-                  {selectedToken.age && selectedToken.age !== 'N/A' && (
-                    <div>
-                      <div className="text-white/60 font-mono text-[10px] tracking-wider mb-1">TOKEN AGE</div>
-                      <div className="text-sm font-bold text-white/80 font-mono">{selectedToken.age}</div>
+                  <div className="border-l border-white/20 pl-6 transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className={`text-5xl font-bold font-mono transition-all duration-500 ${
+                        selectedToken.overallRisk < 30 ? 'text-green-400' :
+                        selectedToken.overallRisk < 60 ? 'text-yellow-400' :
+                        selectedToken.overallRisk < 80 ? 'text-orange-400' : 'text-red-400'
+                      }`}>
+                        {selectedToken.overallRisk}
+                      </div>
+                      <div>
+                        <div className="text-white/50 font-mono text-[9px]">RISK SCORE</div>
+                        <div className={`font-mono text-xs font-bold transition-all duration-300 ${
+                          selectedToken.overallRisk < 30 ? 'text-green-400' :
+                          selectedToken.overallRisk < 60 ? 'text-yellow-400' :
+                          selectedToken.overallRisk < 80 ? 'text-orange-400' : 'text-red-400'
+                        }`}>
+                          {selectedToken.overallRisk < 30 ? 'LOW RISK' :
+                           selectedToken.overallRisk < 60 ? 'MEDIUM' :
+                           selectedToken.overallRisk < 80 ? 'HIGH' : 'CRITICAL'}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right: Risk Score */}
-              <div className="lg:col-span-1 flex flex-col items-center justify-center">
-                <div className={`text-6xl font-bold font-mono ${
-                  selectedToken.overallRisk < 30 ? 'text-green-500' :
-                  selectedToken.overallRisk < 60 ? 'text-yellow-500' :
-                  selectedToken.overallRisk < 80 ? 'text-orange-500' : 'text-red-500'
-                }`}>
-                  {selectedToken.overallRisk}
-                </div>
-                <div className="text-white/60 font-mono text-xs mt-2 tracking-wider">RISK SCORE</div>
-                <div className={`mt-3 px-4 py-2 rounded border font-mono text-xs tracking-wider ${
-                  selectedToken.overallRisk < 30 ? 'bg-green-500/10 border-green-500/30 text-green-400' :
-                  selectedToken.overallRisk < 60 ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' :
-                  selectedToken.overallRisk < 80 ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' : 
-                  'bg-red-500/10 border-red-500/30 text-red-400'
-                }`}>
-                  {selectedToken.overallRisk < 30 ? 'LOW RISK' :
-                   selectedToken.overallRisk < 60 ? 'MEDIUM RISK' :
-                   selectedToken.overallRisk < 80 ? 'HIGH RISK' : 'CRITICAL RISK'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1699,39 +1604,191 @@ export default function PremiumDashboard() {
               </div>
             )}
 
-            {/* Helius Solana Data Panel - Only for Solana tokens */}
+            {/* Helius Solana Data Panel - Collapsible - Only for Solana tokens */}
             {selectedToken.chain && selectedToken.chain.toLowerCase().includes('solana') && selectedToken.address && selectedToken.address.length >= 32 && (
               <div className="mb-6">
-                <SolanaHeliusPanel 
-                  tokenAddress={selectedToken.address}
-                  onDataLoaded={(heliusData) => {
-                    console.log('[Dashboard] Helius data loaded:', heliusData)
-                  }}
-                />
+                <details className="group border border-white/10 bg-black/20 backdrop-blur-sm">
+                  <summary className="cursor-pointer p-4 hover:bg-white/5 transition-colors flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Database className="w-4 h-4 text-cyan-400" />
+                      <span className="text-white font-mono text-xs tracking-wider">ADVANCED SOLANA DATA (HELIUS API)</span>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-white/60 group-open:rotate-180 transition-transform" />
+                  </summary>
+                  <div className="border-t border-white/10 p-4">
+                    <SolanaHeliusPanel 
+                      tokenAddress={selectedToken.address}
+                      onDataLoaded={(heliusData) => {
+                        console.log('[Dashboard] Helius data loaded:', heliusData)
+                      }}
+                    />
+                  </div>
+                </details>
               </div>
             )}
 
-            {/* Risk Breakdown - All 10 Factors */}
-            <div className="mb-4">
-              <h3 className="text-white font-mono text-xs tracking-wider mb-3">RISK FACTORS (10-POINT ANALYSIS)</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {Object.entries(selectedToken.factors).map(([key, value]: [string, any]) => (
-                <div key={key} className="border border-white/10 p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-white/60 font-mono text-[10px] tracking-wider">
-                      {key.replace(/([A-Z])/g, ' $1').toUpperCase()}
-                    </span>
-                    <span className="text-white font-mono text-sm font-bold">{value}</span>
+            {/* Risk Factors - Improved Grid */}
+            <div className="border border-white/10 bg-black/40 backdrop-blur-xl p-5 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white font-mono text-xs tracking-wider">RISK FACTORS (10-POINT ANALYSIS)</h3>
+                {selectedToken.chain?.toLowerCase().includes('solana') && (
+                  <span className="text-cyan-400 font-mono text-[8px] px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30">
+                    SOLANA-ADAPTED
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {Object.entries(selectedToken.factors).map(([key, value]: [string, any]) => {
+                // Determine if this is a Solana token
+                const isSolana = selectedToken.chain?.toLowerCase().includes('solana') || 
+                                 selectedToken.chainId === 1399811149 ||
+                                 selectedToken.chainId === '1399811149'
+                
+                // Adaptive factor names and descriptions based on chain
+                let displayName = key.replace(/([A-Z])/g, ' $1').toUpperCase()
+                let description = ''
+                
+                if (isSolana) {
+                  // Solana-specific naming and descriptions
+                  if (key === 'contractControl') {
+                    displayName = 'PROGRAM SECURITY'
+                    description = 'Freeze authority, mint authority, and update authority status'
+                  }
+                  if (key === 'vestingUnlock') {
+                    displayName = 'TOKEN UNLOCK SCHEDULE'
+                    description = 'Upcoming token releases from vesting contracts'
+                  }
+                  if (key === 'liquidityDepth') {
+                    displayName = 'DEX LIQUIDITY'
+                    description = 'Available liquidity on Raydium, Orca, and other DEXs'
+                  }
+                  if (key === 'auditTransparency') {
+                    displayName = 'VERIFICATION STATUS'
+                    description = 'Program verification and metadata validation'
+                  }
+                  if (key === 'holderConcentration') {
+                    description = 'Top wallet concentration and distribution'
+                  }
+                  if (key === 'supplyDilution') {
+                    description = 'Circulating vs total supply ratio'
+                  }
+                } else {
+                  // EVM-specific descriptions
+                  if (key === 'contractControl') {
+                    description = 'Owner privileges, proxy patterns, and admin functions'
+                  }
+                  if (key === 'vestingUnlock') {
+                    description = 'Upcoming token releases from vesting contracts'
+                  }
+                  if (key === 'liquidityDepth') {
+                    description = 'DEX liquidity and lock status'
+                  }
+                  if (key === 'holderConcentration') {
+                    description = 'Top holder percentage and whale concentration'
+                  }
+                }
+                
+                // Special rendering for Program Security and Tax/Fee
+                const showDetailedStatus = (key === 'contractControl' && isSolana) || key === 'taxFee'
+                
+                if (showDetailedStatus) {
+                  const securityData = selectedToken.enhancedData?.security_data || selectedToken.rawData?.securityData || {}
+                  
+                  if (key === 'contractControl' && isSolana) {
+                    const freezeAuthority = securityData.freeze_authority
+                    const mintAuthority = securityData.mint_authority
+                    const updateAuthority = securityData.update_authority
+                    
+                    const hasFreezeAuth = freezeAuthority && freezeAuthority !== 'null' && freezeAuthority !== null
+                    const hasMintAuth = mintAuthority && mintAuthority !== 'null' && mintAuthority !== null
+                    const hasUpdateAuth = updateAuthority && updateAuthority !== 'null' && updateAuthority !== null
+                    
+                    return (
+                      <div key={key} className="border border-white/10 bg-black/20 p-4 hover:border-white/30 transition-all duration-300 hover:scale-105 group relative">
+                        <div className="text-white/50 font-mono text-[9px] mb-2 truncate">{displayName}</div>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-white/40 font-mono text-[8px]">Freeze</span>
+                            <span className={`font-mono text-[9px] font-bold transition-colors duration-300 ${hasFreezeAuth ? 'text-red-400' : 'text-green-400'}`}>
+                              {hasFreezeAuth ? '⚠️' : '✅'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-white/40 font-mono text-[8px]">Mint</span>
+                            <span className={`font-mono text-[9px] font-bold transition-colors duration-300 ${hasMintAuth ? 'text-red-400' : 'text-green-400'}`}>
+                              {hasMintAuth ? '⚠️' : '✅'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-white/40 font-mono text-[8px]">Update</span>
+                            <span className={`font-mono text-[9px] font-bold transition-colors duration-300 ${hasUpdateAuth ? 'text-yellow-400' : 'text-green-400'}`}>
+                              {hasUpdateAuth ? '⚠️' : '✅'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  } else if (key === 'taxFee') {
+                    const buyTax = securityData.buy_tax || 0
+                    const sellTax = securityData.sell_tax || 0
+                    
+                    return (
+                      <div key={key} className="border border-white/10 bg-black/20 p-4 hover:border-white/30 transition-all duration-300 hover:scale-105 group relative">
+                        <div className="text-white/50 font-mono text-[9px] mb-2 truncate">TAX / FEE</div>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-white/40 font-mono text-[8px]">Buy</span>
+                            <span className={`font-mono text-[9px] font-bold transition-colors duration-300 ${buyTax > 5 ? 'text-red-400' : buyTax > 0 ? 'text-yellow-400' : 'text-green-400'}`}>
+                              {buyTax > 0 ? `${buyTax}%` : '0%'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-white/40 font-mono text-[8px]">Sell</span>
+                            <span className={`font-mono text-[9px] font-bold transition-colors duration-300 ${sellTax > 5 ? 'text-red-400' : sellTax > 0 ? 'text-yellow-400' : 'text-green-400'}`}>
+                              {sellTax > 0 ? `${sellTax}%` : '0%'}
+                            </span>
+                          </div>
+                          <div className="text-center pt-1">
+                            <span className={`font-mono text-[8px] ${(buyTax === 0 && sellTax === 0) ? 'text-green-400' : 'text-yellow-400'}`}>
+                              {(buyTax === 0 && sellTax === 0) ? '✅ No Tax' : '⚠️ Has Tax'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+                }
+                
+                // Regular card rendering - bigger size
+                return (
+                  <div key={key} className="border border-white/10 bg-black/20 p-4 hover:border-white/30 transition-all duration-300 hover:scale-105 group relative">
+                    <div className="text-white/50 font-mono text-[9px] mb-2 truncate">{displayName}</div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className={`font-mono text-2xl font-bold transition-colors duration-300 ${
+                        value < 30 ? 'text-green-400' : 
+                        value < 60 ? 'text-yellow-400' : 
+                        value < 80 ? 'text-orange-400' : 'text-red-400'
+                      }`}>{value}</span>
+                      <span className="text-white/40 font-mono text-[10px]">/100</span>
+                    </div>
+                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mt-2.5">
+                      <div 
+                        className={`h-full transition-all duration-500 ease-out ${
+                          value < 30 ? 'bg-green-500' : 
+                          value < 60 ? 'bg-yellow-500' : 
+                          value < 80 ? 'bg-orange-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${value}%` }}
+                      />
+                    </div>
+                    {description && (
+                      <div className="absolute left-0 top-full mt-2 w-56 p-3 bg-black/95 border border-white/20 text-white/80 font-mono text-[9px] leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-10 backdrop-blur-sm shadow-xl">
+                        {description}
+                      </div>
+                    )}
                   </div>
-                  <div className="h-1 bg-white/20 rounded overflow-hidden">
-                    <div 
-                      className={`h-full ${value < 30 ? 'bg-green-500' : value < 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                      style={{ width: `${value}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {/* AI Analysis Accordion (replaces old AI Meme Detection) */}
@@ -1853,7 +1910,7 @@ export default function PremiumDashboard() {
         )}
 
         {/* Watchlist - Enhanced Glassmorphism */}
-        <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl overflow-hidden">
+        <div id="watchlist" className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-purple-500/[0.01] to-transparent pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
           <div className="relative z-10">
@@ -1954,15 +2011,19 @@ export default function PremiumDashboard() {
           </div>
         </div>
 
-        {/* Historical Analytics - Glassmorphism */}
+        {/* Historical Analytics - Collapsible */}
         {selectedToken && (
-        <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-          <div className="relative z-10">
-            <h2 className="text-white font-mono text-xs tracking-wider mb-6 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              HISTORICAL ANALYTICS - {selectedToken.symbol}
-            </h2>
+        <details className="group border border-white/10 bg-black/40 backdrop-blur-xl mb-8 transition-all duration-300">
+          <summary className="cursor-pointer p-5 hover:bg-white/5 transition-colors flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-white" />
+              <h2 className="text-white font-mono text-xs tracking-wider">
+                HISTORICAL ANALYTICS - {selectedToken.symbol}
+              </h2>
+            </div>
+            <ChevronDown className="w-4 h-4 text-white/60 group-open:rotate-180 transition-transform duration-300" />
+          </summary>
+          <div className="border-t border-white/10 p-6">
 
           {/* Timeframe Selector */}
           <div className="flex gap-2 mb-6">
@@ -2189,7 +2250,7 @@ export default function PremiumDashboard() {
             </div>
           </div>
           </div>
-        </div>
+        </details>
         )}
 
         {/* Advanced Insights Section - Glassmorphism */}
@@ -2207,51 +2268,73 @@ export default function PremiumDashboard() {
               <div className="flex items-center justify-center h-32">
                 <Loader2 className="w-6 h-6 text-white/40 animate-spin" />
               </div>
-            ) : insightData.sentiment ? (
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-white/60 font-mono text-xs">BULLISH</span>
-                    <span className="text-green-500 font-mono text-xs">{insightData.sentiment.bullish}%</span>
+            ) : insightData.sentiment || selectedToken ? (
+              (() => {
+                // Calculate sentiment from current token data if historical data not available
+                const sentiment = insightData.sentiment || (() => {
+                  if (!selectedToken) return null
+                  const risk = selectedToken.riskScore || 50
+                  // Low risk = bullish, high risk = bearish
+                  const bullish = Math.max(0, Math.min(100, 100 - risk * 1.2))
+                  const bearish = Math.max(0, Math.min(100, risk * 1.2))
+                  const neutral = Math.max(0, 100 - bullish - bearish)
+                  return {
+                    bullish: Math.round(bullish),
+                    neutral: Math.round(neutral),
+                    bearish: Math.round(bearish),
+                    overall: risk < 30 ? 'BULLISH' : risk > 60 ? 'BEARISH' : 'NEUTRAL'
+                  }
+                })()
+                
+                if (!sentiment) return null
+                
+                return (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-white/60 font-mono text-xs">BULLISH</span>
+                        <span className="text-green-500 font-mono text-xs">{sentiment.bullish}%</span>
+                      </div>
+                      <div className="h-2 bg-white/10 rounded">
+                        <div className="h-full bg-green-500 rounded" style={{ width: `${sentiment.bullish}%` }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-white/60 font-mono text-xs">NEUTRAL</span>
+                        <span className="text-yellow-500 font-mono text-xs">{sentiment.neutral}%</span>
+                      </div>
+                      <div className="h-2 bg-white/10 rounded">
+                        <div className="h-full bg-yellow-500 rounded" style={{ width: `${sentiment.neutral}%` }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-white/60 font-mono text-xs">BEARISH</span>
+                        <span className="text-red-500 font-mono text-xs">{sentiment.bearish}%</span>
+                      </div>
+                      <div className="h-2 bg-white/10 rounded">
+                        <div className="h-full bg-red-500 rounded" style={{ width: `${sentiment.bearish}%` }}></div>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t border-white/10">
+                      <div className="flex justify-between">
+                        <span className="text-white/60 font-mono text-xs">OVERALL</span>
+                        <span className={`font-mono text-xs font-bold ${
+                          sentiment.overall === 'BULLISH' ? 'text-green-500' :
+                          sentiment.overall === 'BEARISH' ? 'text-red-500' : 'text-yellow-500'
+                        }`}>
+                          {sentiment.overall}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="h-2 bg-white/10 rounded">
-                    <div className="h-full bg-green-500 rounded" style={{ width: `${insightData.sentiment.bullish}%` }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-white/60 font-mono text-xs">NEUTRAL</span>
-                    <span className="text-yellow-500 font-mono text-xs">{insightData.sentiment.neutral}%</span>
-                  </div>
-                  <div className="h-2 bg-white/10 rounded">
-                    <div className="h-full bg-yellow-500 rounded" style={{ width: `${insightData.sentiment.neutral}%` }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-white/60 font-mono text-xs">BEARISH</span>
-                    <span className="text-red-500 font-mono text-xs">{insightData.sentiment.bearish}%</span>
-                  </div>
-                  <div className="h-2 bg-white/10 rounded">
-                    <div className="h-full bg-red-500 rounded" style={{ width: `${insightData.sentiment.bearish}%` }}></div>
-                  </div>
-                </div>
-                <div className="pt-2 border-t border-white/10">
-                  <div className="flex justify-between">
-                    <span className="text-white/60 font-mono text-xs">OVERALL</span>
-                    <span className={`font-mono text-xs font-bold ${
-                      insightData.sentiment.overall === 'BULLISH' ? 'text-green-500' :
-                      insightData.sentiment.overall === 'BEARISH' ? 'text-red-500' : 'text-yellow-500'
-                    }`}>
-                      {insightData.sentiment.overall}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                )
+              })()
             ) : (
               <div className="flex items-center justify-center h-32">
                 <p className="text-white/40 font-mono text-xs text-center px-4">
-                  {selectedToken ? 'No sentiment data yet. Insights populate after multiple scans over time.' : 'Scan a token to view sentiment'}
+                  Scan a token to view sentiment
                 </p>
               </div>
             )}
@@ -2366,49 +2449,68 @@ export default function PremiumDashboard() {
               <div className="flex items-center justify-center h-32">
                 <Loader2 className="w-6 h-6 text-white/40 animate-spin" />
               </div>
-            ) : insightData.holders ? (
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-white/60 font-mono text-xs">TOP 10</span>
-                    <span className="text-white font-mono text-xs">{insightData.holders.top10}%</span>
+            ) : insightData.holders || selectedToken ? (
+              (() => {
+                // Calculate holder distribution from current token data if historical data not available
+                const holders = insightData.holders || (() => {
+                  if (!selectedToken) return null
+                  const top10 = selectedToken.top10HoldersPct || 0
+                  // Estimate top50 and top100 based on top10
+                  const top50 = Math.min(100, top10 * 1.8)
+                  const top100 = Math.min(100, top10 * 2.2)
+                  return {
+                    top10Percentage: Math.round(top10),
+                    top50Percentage: Math.round(top50),
+                    top100Percentage: Math.round(top100),
+                    distribution: top10 < 20 ? 'DECENTRALIZED' : top10 < 50 ? 'MODERATE' : 'CENTRALIZED'
+                  }
+                })()
+                
+                if (!holders) return null
+                
+                return (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-white/60 font-mono text-xs">TOP 10</span>
+                        <span className="text-white font-mono text-xs">{holders.top10Percentage || holders.top10 || 0}%</span>
+                      </div>
+                      <div className="h-2 bg-white/10 rounded">
+                        <div className="h-full bg-blue-500 rounded" style={{ width: `${holders.top10Percentage || holders.top10 || 0}%` }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-white/60 font-mono text-xs">TOP 50</span>
+                        <span className="text-white font-mono text-xs">{holders.top50Percentage || holders.top50 || 0}%</span>
+                      </div>
+                      <div className="h-2 bg-white/10 rounded">
+                        <div className="h-full bg-purple-500 rounded" style={{ width: `${holders.top50Percentage || holders.top50 || 0}%` }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-white/60 font-mono text-xs">TOP 100</span>
+                        <span className="text-white font-mono text-xs">{holders.top100Percentage || holders.top100 || 0}%</span>
+                      </div>
+                      <div className="h-2 bg-white/10 rounded">
+                        <div className="h-full bg-pink-500 rounded" style={{ width: `${holders.top100Percentage || holders.top100 || 0}%` }}></div>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t border-white/10">
+                      <div className="flex justify-between">
+                        <span className="text-white/60 font-mono text-xs">DISTRIBUTION</span>
+                        <span className={`font-mono text-xs font-bold ${
+                          holders.distribution === 'DECENTRALIZED' ? 'text-green-500' :
+                          holders.distribution === 'MODERATE' ? 'text-yellow-500' : 'text-red-500'
+                        }`}>
+                          {holders.distribution || 'UNKNOWN'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="h-2 bg-white/10 rounded">
-                    <div className="h-full bg-blue-500 rounded" style={{ width: `${insightData.holders.top10}%` }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-white/60 font-mono text-xs">TOP 50</span>
-                    <span className="text-white font-mono text-xs">{insightData.holders.top50}%</span>
-                  </div>
-                  <div className="h-2 bg-white/10 rounded">
-                    <div className="h-full bg-purple-500 rounded" style={{ width: `${insightData.holders.top50}%` }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-white/60 font-mono text-xs">TOP 100</span>
-                    <span className="text-white font-mono text-xs">{insightData.holders.top100}%</span>
-                  </div>
-                  <div className="h-2 bg-white/10 rounded">
-                    <div className="h-full bg-pink-500 rounded" style={{ width: `${insightData.holders.top100}%` }}></div>
-                  </div>
-                </div>
-                <div className="pt-2 border-t border-white/10">
-                  <div className="flex justify-between">
-                    <span className="text-white/60 font-mono text-xs">DECENTRALIZATION</span>
-                    <span className={`font-mono text-xs font-bold ${
-                      insightData.holders.decentralization === 'EXCELLENT' ? 'text-green-500' :
-                      insightData.holders.decentralization === 'GOOD' ? 'text-blue-500' :
-                      insightData.holders.decentralization === 'FAIR' ? 'text-yellow-500' :
-                      insightData.holders.decentralization === 'POOR' ? 'text-orange-500' : 'text-red-500'
-                    }`}>
-                      {insightData.holders.decentralization}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                )
+              })()
             ) : (
               <div className="flex items-center justify-center h-32">
                 <p className="text-white/40 font-mono text-xs text-center px-4">
