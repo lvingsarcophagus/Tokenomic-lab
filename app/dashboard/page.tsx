@@ -11,7 +11,7 @@ import { MorphingSquare } from '@/components/ui/morphing-square'
 import TokenSearchComponent from '@/components/token-search-cmc'
 import DexSearchPremium from '@/components/dex-search-premium'
 import SolanaHeliusPanel from '@/components/solana-helius-panel'
-import ScanLoader from '@/components/scan-loader'
+import Loader from '@/components/loader'
 import AIExplanationPanel from '@/components/ai-explanation-panel'
 import RiskOverview from '@/components/risk-overview'
 import MarketMetrics from '@/components/market-metrics'
@@ -163,10 +163,8 @@ export default function PremiumDashboard() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login')
-    } else if (!authLoading && userProfile && userProfile.plan !== 'PREMIUM') {
-      // Redirect FREE users to the free dashboard
-      router.push('/free-dashboard')
     }
+    // No redirect - unified dashboard handles both free and premium users
   }, [user, userProfile, authLoading, router])
   
   // Determine if user has premium features (check both plan and tier for compatibility)
@@ -381,12 +379,24 @@ export default function PremiumDashboard() {
     setSelectedChain(chainToScan);
     setSearchQuery(address)
     
-    // Close the search popup and modal immediately
+    // Close all modals and popups immediately
     setShowSuggestions(false)
     setShowSearchModal(false)
+    setShowTokenSearch(false)
     
-    // Trigger scan with the address passed directly (fixes race condition)
-    handleScan(chainToScan, address)
+    // Small delay to ensure modal closes before scan starts
+    setTimeout(() => {
+      // Trigger scan with the address passed directly (fixes race condition)
+      handleScan(chainToScan, address)
+      
+      // Smooth scroll to scanner section after modal closes
+      setTimeout(() => {
+        const scannerElement = document.getElementById('scanner')
+        if (scannerElement) {
+          scannerElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 200)
+    }, 100)
   }
 
   const handleScan = async (chainOverride?: 'ethereum' | 'bsc' | 'polygon' | 'avalanche' | 'solana', addressOverride?: string) => {
@@ -430,7 +440,11 @@ export default function PremiumDashboard() {
     setScannedToken(null)
     setRiskResult(null)
     setShowSuggestions(false)
-    setShowSearchModal(false) // Close the modal when scan starts
+    setShowSearchModal(false)
+    setShowTokenSearch(false) // Close all modals when scan starts
+    
+    // Scroll to top of page smoothly when scan starts
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     
     try {
       console.log('[Scanner] Starting scan for:', queryToUse)
@@ -1035,20 +1049,13 @@ export default function PremiumDashboard() {
   }, [selectedToken?.address, isPremium])
   
   if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <MorphingSquare 
-          message="LOADING PREMIUM DASHBOARD..."
-          messagePlacement="bottom"
-        />
-      </div>
-    )
+    return <Loader fullScreen text="Loading dashboard" />
   }
   
   return (
     <div className="min-h-screen bg-black">
       {/* Scan Loader */}
-      {scanning && <ScanLoader />}
+      {scanning && <Loader fullScreen size="lg" text="Analyzing token" />}
       
       {/* Global Navbar */}
       <Navbar />
@@ -1332,34 +1339,13 @@ export default function PremiumDashboard() {
             
             {/* Full-Screen Modal with DexSearchPremium */}
             <div className="fixed inset-0 z-[101] flex items-center justify-center p-0 md:p-6">
-              <div className="relative w-full h-full md:h-auto md:max-h-[95vh] md:max-w-7xl bg-black/40 backdrop-blur-2xl border-0 md:border border-white/20 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="relative w-full h-full md:h-[95vh] md:max-w-7xl bg-black/40 backdrop-blur-2xl border-0 md:border border-white/20 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                 
                 {/* Glassmorphic overlay gradient */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] via-transparent to-purple-500/[0.02] pointer-events-none" />
                 
-                {/* Header Bar */}
-                <div className="relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-md p-4 md:p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 border border-white/30 bg-black/40 backdrop-blur-sm">
-                        <Search className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-white font-mono text-sm md:text-base tracking-wider">ADVANCED TOKEN SEARCH</h2>
-                        <p className="text-white/40 font-mono text-[10px] mt-0.5">Multi-chain DEX scanner with trending tokens</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setShowSearchModal(false)}
-                      className="p-2 border border-white/20 bg-black/40 hover:bg-white/5 hover:border-white/40 transition-all backdrop-blur-sm group"
-                    >
-                      <X className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Content Area */}
-                <div className="relative z-10 overflow-y-auto h-[calc(100%-80px)] md:h-auto md:max-h-[calc(95vh-100px)]">
+                {/* Content Area - Full Height */}
+                <div className="relative z-10 overflow-y-auto h-full md:max-h-[98vh]">
                   <DexSearchPremium
                     onTokenSelect={handleSelectSuggestion}
                     onCMCTokenSelect={handleTokenSelectFromSearch}

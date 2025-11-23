@@ -18,6 +18,7 @@ import { analyticsEvents } from "@/lib/firebase-analytics"
 import { has2FAEnabled } from "@/lib/totp"
 import TwoFactorVerify from "@/components/two-factor-verify"
 import Navbar from "@/components/navbar"
+import { logAuth } from "@/lib/services/activity-logger"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -60,6 +61,9 @@ export default function LoginPage() {
         setLoading(false)
       } else {
         // No 2FA, proceed with login
+        // Log successful login
+        await logAuth(userId, userCredential.user.email || '', 'user_login')
+        
         setTimeout(() => {
           router.push("/premium/dashboard") // Will auto-redirect FREE users to free-dashboard
         }, 500)
@@ -147,6 +151,8 @@ export default function LoginPage() {
         })
 
         analyticsEvents.signup('google')
+        // Log new user signup
+        await logAuth(user.uid, email, 'user_signup')
       } else {
         // Update last login time
         await setDoc(doc(db, "users", user.uid), {
@@ -154,6 +160,8 @@ export default function LoginPage() {
         }, { merge: true })
         
         analyticsEvents.login('google')
+        // Log successful login
+        await logAuth(user.uid, user.email || '', 'user_login')
       }
       
       // Redirect to unified dashboard
@@ -176,8 +184,14 @@ export default function LoginPage() {
     }
   }
 
-  const handle2FASuccess = () => {
+  const handle2FASuccess = async () => {
     setShow2FA(false)
+    
+    // Log successful login after 2FA
+    if (pendingUserId && auth.currentUser) {
+      await logAuth(pendingUserId, auth.currentUser.email || '', 'user_login')
+    }
+    
     setPendingUserId(null)
     // Proceed with login
     setTimeout(() => {

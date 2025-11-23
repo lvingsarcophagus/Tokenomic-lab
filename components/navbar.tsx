@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { Shield, Home, Search, TrendingUp, LogOut, User, Bell, Activity } from "lucide-react"
+import { Shield, Home, Search, TrendingUp, LogOut, User, Activity, X } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { Button } from "./ui/button"
 import { analyticsEvents } from "@/lib/firebase-analytics"
 import NotificationBell from "./notification-bell"
+import { logAuth } from "@/lib/services/activity-logger"
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -29,6 +31,11 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
+      // Log logout before signing out
+      if (user) {
+        await logAuth(user.uid, user.email || '', 'user_logout')
+      }
+      
       analyticsEvents.logout()
       await signOut(auth)
       
@@ -75,9 +82,14 @@ export default function Navbar() {
       navLinks.push({ href: "#watchlist", label: "Watchlist", icon: TrendingUp })
     }
     
-    // Pricing link (only for free users not on dashboard)
+    // Landing page links (always show)
+    navLinks.push({ href: "/#features", label: "Features", icon: Activity })
+    navLinks.push({ href: "/docs", label: "Docs", icon: Shield })
+    navLinks.push({ href: "/contact", label: "Contact", icon: Activity })
+    
+    // Pricing link (only for free users)
     const isPremiumUser = userData?.tier === "pro"
-    if (!isDashboard && !isPremiumUser) {
+    if (!isPremiumUser) {
       navLinks.push({ href: "/pricing", label: "Pricing", icon: TrendingUp })
     }
   }
@@ -98,6 +110,7 @@ export default function Navbar() {
     const landingLinks = [
       { href: "#features", label: "Features" },
       { href: "#technology", label: "Technology" },
+      { href: "/docs", label: "Docs" },
       { href: "/contact", label: "Contact" },
       { href: "/pricing", label: "Pricing" }
     ]
@@ -113,51 +126,26 @@ export default function Navbar() {
             <div className="flex items-center justify-between h-14 sm:h-16">
               <Link href="/" className="flex items-center gap-3 group">
                 <div className="relative">
-                  <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="relative p-1.5 rounded-xl border border-white/20 bg-black/40 backdrop-blur-sm group-hover:border-white/40 group-hover:bg-white/10 transition-all duration-300">
+                  <div className="relative p-1.5 rounded-full border border-white/20 bg-black/40 backdrop-blur-sm group-hover:border-white/40 group-hover:bg-white/10 transition-all duration-300">
                     <img 
                       src="/tokenomics-lab-logo.ico" 
                       alt="Tokenomics Lab" 
-                      className="w-7 h-7 sm:w-9 sm:h-9 object-contain transition-all duration-500 group-hover:scale-110 group-hover:brightness-125 group-hover:drop-shadow-[0_0_16px_rgba(255,255,255,0.8)] group-hover:rotate-6" 
+                      className="w-7 h-7 sm:w-9 sm:h-9 object-contain rounded-full transition-all duration-300 group-hover:scale-110" 
                     />
                   </div>
                 </div>
                 <div className="hidden sm:block">
-                  <span className="text-base lg:text-lg font-bold text-white font-mono tracking-widest group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all">
+                  <span className="text-base lg:text-lg font-bold text-white font-mono tracking-widest transition-all">
                     TOKENOMICS LAB
                   </span>
                   <div className="text-[8px] text-white/60 font-mono -mt-0.5 tracking-wider group-hover:text-white/80 transition-colors">ANALYTICS.PLATFORM</div>
                 </div>
               </Link>
 
-              {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center gap-2">
-                {landingLinks.map((link, index) => (
-                  <Link
-                    key={`${link.href}-${index}`}
-                    href={link.href}
-                    onClick={(e) => handleNavClick(e, link.href)}
-                    className="px-4 py-2 rounded-xl border border-white/20 hover:border-white/30 text-white/60 hover:text-white hover:bg-white/10 backdrop-blur-md transition-all duration-300 font-mono text-[10px] font-bold tracking-wider"
-                  >
-                    {link.label.toUpperCase()}
-                  </Link>
-                ))}
-                <Link href="/login">
-                  <Button variant="ghost" className="rounded-xl text-white/70 hover:text-white hover:bg-white/10 border border-white/20 hover:border-white/30 text-xs font-mono px-4 py-2 h-9 transition-all">
-                    LOGIN
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button className="rounded-xl bg-white/10 border border-white/30 text-white hover:bg-white hover:text-black text-xs font-mono px-4 py-2 h-9 transition-all duration-300 hover:shadow-lg hover:shadow-white/20">
-                    SIGN UP
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Mobile Menu Button */}
+              {/* Hamburger Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-xl border border-white/30 hover:border-white/40 bg-black/40 hover:bg-white/10 backdrop-blur-md transition-all duration-300 h-10 w-10 flex items-center justify-center"
+                className="p-2 rounded-xl border border-white/30 hover:border-white/40 bg-black/40 hover:bg-white/10 backdrop-blur-md transition-all duration-300 h-10 w-10 flex items-center justify-center"
                 aria-label="Toggle menu"
               >
                 <div className="relative w-5 h-4 flex flex-col justify-between">
@@ -176,37 +164,28 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Fullscreen Menu Overlay */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-2">
-            <div className="rounded-2xl border border-white/10 bg-black/90 backdrop-blur-2xl shadow-2xl animate-in slide-in-from-top-4 duration-300">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent rounded-2xl pointer-events-none"></div>
-              
-              <div className="relative p-4 space-y-2">
-                {landingLinks.map((link, index) => (
-                  <Link
-                    key={`${link.href}-mobile-${index}`}
-                    href={link.href}
-                    onClick={(e) => {
-                      handleNavClick(e, link.href)
-                      setMobileMenuOpen(false)
-                    }}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 font-mono text-[10px]"
-                  >
-                    <span className="font-bold tracking-wider">{link.label.toUpperCase()}</span>
-                  </Link>
-                ))}
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <button className="w-full px-4 py-3 rounded-xl border border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 font-mono text-[10px] font-bold tracking-wider">
-                    LOGIN
-                  </button>
+          <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300">
+            <div className="flex flex-col items-center justify-center h-full space-y-6 p-8">
+              {landingLinks.map((link, index) => (
+                <Link
+                  key={`${link.href}-fullscreen-${index}`}
+                  href={link.href}
+                  onClick={(e) => {
+                    handleNavClick(e, link.href)
+                    setMobileMenuOpen(false)
+                  }}
+                  className="text-3xl md:text-5xl font-bold text-white/60 hover:text-white transition-all duration-300 font-mono tracking-wider hover:scale-110"
+                >
+                  {link.label.toUpperCase()}
                 </Link>
-                <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                  <button className="w-full px-4 py-3 rounded-xl border border-white/30 bg-white/10 hover:bg-white hover:text-black backdrop-blur-md text-white transition-all duration-300 font-mono text-[10px] font-bold tracking-wider">
-                    SIGN UP
-                  </button>
-                </Link>
-              </div>
+              ))}
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                <button className="mt-8 px-8 py-4 rounded-xl border-2 border-white/30 bg-white/10 hover:bg-white hover:text-black text-white transition-all duration-300 font-mono text-lg font-bold tracking-wider hover:scale-110">
+                  GET STARTED
+                </button>
+              </Link>
             </div>
           </div>
         )}
@@ -225,63 +204,86 @@ export default function Navbar() {
           <div className="relative px-4 sm:px-6">
             <div className="flex items-center justify-between h-14 sm:h-16">
               {/* Logo */}
-              <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-3 group">
+              <Link href="/" className="flex items-center gap-3 group">
                 <div className="relative">
-                  <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="relative p-1.5 rounded-xl border border-white/20 bg-black/40 backdrop-blur-sm group-hover:border-white/40 group-hover:bg-white/10 transition-all duration-300">
+                  <div className="relative p-1.5 rounded-full border border-white/20 bg-black/40 backdrop-blur-sm group-hover:border-white/40 group-hover:bg-white/10 transition-all duration-300">
                     <img 
                       src="/tokenomics-lab-logo.ico" 
                       alt="Tokenomics Lab" 
-                      className="w-7 h-7 sm:w-9 sm:h-9 object-contain transition-all duration-500 group-hover:scale-110 group-hover:brightness-125 group-hover:drop-shadow-[0_0_16px_rgba(255,255,255,0.8)] group-hover:rotate-6" 
+                      className="w-7 h-7 sm:w-9 sm:h-9 object-contain rounded-full transition-all duration-300 group-hover:scale-110" 
                     />
                   </div>
                 </div>
                 
                 <div className="hidden sm:block">
-                  <span className="text-base lg:text-lg font-bold text-white font-mono tracking-widest group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all">
+                  <span className="text-base lg:text-lg font-bold text-white font-mono tracking-widest transition-all">
                     TOKENOMICS LAB
                   </span>
                   <div className="text-[8px] text-white/60 font-mono -mt-0.5 tracking-wider group-hover:text-white/80 transition-colors">ANALYTICS.PLATFORM</div>
                 </div>
               </Link>
 
-              {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center gap-2">
-                {navLinks.map((link, index) => {
-                  const Icon = link.icon
-                  const isActive = link.href.startsWith('#') ? false : pathname === link.href
-                  return (
-                    <Link
-                      key={`${link.href}-${link.label}-${index}`}
-                      href={link.href}
-                      onClick={(e) => handleNavClick(e, link.href)}
-                      className={`relative flex items-center gap-2 px-4 py-2 rounded-xl border backdrop-blur-md transition-all duration-300 group font-mono text-[10px] overflow-hidden ${
-                        isActive
-                          ? "text-white border-white/40 bg-white/15 shadow-lg shadow-white/10"
-                          : "text-white/60 hover:text-white border-white/20 hover:border-white/30 hover:bg-white/10 hover:shadow-md"
-                      }`}
-                    >
-                      <Icon className={`w-3.5 h-3.5 transition-all duration-300 ${
-                        isActive ? 'text-white' : 'text-white/50 group-hover:text-white group-hover:scale-110'
-                      }`} />
-                      <span className="font-bold tracking-wider">{link.label.toUpperCase()}</span>
-                      {!isActive && (
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-white/0 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-xl" />
-                      )}
-                    </Link>
-                  )
-                })}
-              </div>
-
-              {/* Desktop User Menu */}
-              <div className="hidden md:flex items-center gap-2">
+              {/* Right Side: Notifications, User Profile, Admin (if admin), Hamburger */}
+              <div className="flex items-center gap-2">
                 {/* Notifications */}
                 <div className="rounded-xl border border-white/20 hover:border-white/30 backdrop-blur-md transition-all duration-300 hover:shadow-md h-9 flex items-center justify-center">
                   <NotificationBell />
                 </div>
 
-                {/* User Menu Dropdown */}
-                <div className="relative user-menu-container">
+                {/* Admin Panel Button (only for admins) */}
+                {userData?.role === "admin" && (
+                  <button
+                    onClick={() => router.push('/admin/dashboard')}
+                    className="hidden sm:flex items-center gap-2 px-3 rounded-xl border border-purple-500/30 hover:border-purple-400/50 bg-purple-500/10 hover:bg-purple-500/20 backdrop-blur-md transition-all duration-300 h-9"
+                    title="Admin Panel"
+                  >
+                    <Shield className="w-4 h-4 text-purple-400" />
+                    <span className="text-xs font-mono text-purple-300 font-bold tracking-wider">ADMIN</span>
+                  </button>
+                )}
+
+                {/* User Profile Button */}
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="relative rounded-xl border border-white/20 hover:border-white/30 bg-black/40 hover:bg-white/5 backdrop-blur-md transition-all duration-300 h-9 w-9 flex items-center justify-center overflow-hidden p-0"
+                  title={user?.email || 'Profile'}
+                >
+                  {userData?.photoURL ? (
+                    <Image
+                      src={userData.photoURL}
+                      alt="Profile"
+                      width={36}
+                      height={36}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-4 h-4 text-white/60" />
+                  )}
+                  {userData?.tier === "pro" && (
+                    <span className="absolute -top-1 -right-1 text-[10px]">⚡</span>
+                  )}
+                </button>
+                {/* Hamburger Menu Button */}
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="p-2 rounded-xl border border-white/30 hover:border-white/40 bg-black/40 hover:bg-white/10 backdrop-blur-md transition-all duration-300 h-10 w-10 flex items-center justify-center"
+                  aria-label="Toggle menu"
+                >
+                  <div className="relative w-5 h-4 flex flex-col justify-between">
+                    <span className={`block h-0.5 w-full bg-white rounded-full transition-all duration-300 ${
+                      mobileMenuOpen ? 'rotate-45 translate-y-[7px]' : ''
+                    }`}></span>
+                    <span className={`block h-0.5 w-full bg-white rounded-full transition-all duration-300 ${
+                      mobileMenuOpen ? 'opacity-0 scale-0' : 'opacity-100'
+                    }`}></span>
+                    <span className={`block h-0.5 w-full bg-white rounded-full transition-all duration-300 ${
+                      mobileMenuOpen ? '-rotate-45 -translate-y-[7px]' : ''
+                    }`}></span>
+                  </div>
+                </button>
+
+                {/* User Menu Dropdown (Hidden - now in fullscreen menu) */}
+                <div className="relative user-menu-container hidden">
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                     className="relative p-2 rounded-xl border border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md transition-all duration-300 hover:shadow-md h-9 w-9 flex items-center justify-center"
@@ -387,110 +389,69 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Fullscreen Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
+        <div className="fixed inset-0 z-[100] animate-in fade-in duration-300">
+          {/* Glassmorphic Background */}
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-3xl"></div>
           
-          <div className="absolute top-20 left-4 right-4 rounded-2xl border border-white/10 bg-black/90 backdrop-blur-2xl shadow-2xl animate-in slide-in-from-top-4 duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent rounded-2xl pointer-events-none"></div>
-            
-            <div className="relative p-4 space-y-3">
-              {/* User Info */}
-              <div className="flex items-center gap-3 pb-3 mb-3 border-b border-white/10">
-                <div className="w-10 h-10 rounded-xl border border-white/40 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-white font-mono truncate">
-                    {user?.email?.split('@')[0]?.toUpperCase()}
-                  </div>
-                  <div className="text-[9px] text-white/50 font-mono truncate">
-                    {user?.email}
-                  </div>
-                  {userData?.tier === "pro" && (
-                    <div className="inline-block mt-1 px-2 py-0.5 rounded bg-white/20 border border-white/30">
-                      <span className="text-[8px] font-bold text-white font-mono">⚡ PRO</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] via-transparent to-purple-500/[0.05] pointer-events-none"></div>
+          
+          {/* Animated Gradient Orbs */}
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          
+          {/* Close Button */}
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="absolute top-6 right-6 p-3 rounded-full border border-white/30 hover:border-white/40 bg-black/40 hover:bg-white/10 backdrop-blur-md transition-all duration-300 z-10"
+            aria-label="Close menu"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
 
-              {/* Navigation Links */}
-              <div className="space-y-2">
-                {navLinks.map((link, index) => {
-                  const Icon = link.icon
-                  const isActive = link.href.startsWith('#') ? false : pathname === link.href
-                  return (
-                    <Link
-                      key={`${link.href}-${link.label}-${index}`}
-                      href={link.href}
-                      onClick={(e) => {
-                        handleNavClick(e, link.href)
-                        setMobileMenuOpen(false)
-                      }}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-md transition-all duration-300 font-mono text-[10px] ${
-                        isActive
-                          ? "bg-white/15 border-white/40 text-white font-bold shadow-md"
-                          : "text-white/60 border-white/20 hover:border-white/30 hover:bg-white/10 hover:text-white"
-                      }`}
-                    >
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-white' : ''}`} />
-                      <span className="font-bold tracking-wider">{link.label.toUpperCase()}</span>
-                    </Link>
-                  )
-                })}
-                
+          <div className="relative flex flex-col items-center justify-center h-full space-y-4 p-8 overflow-y-auto">
+            {/* Navigation Links */}
+            {navLinks.map((link, index) => {
+              const Icon = link.icon
+              return (
                 <Link
-                  href="/profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 font-mono text-[10px]"
-                >
-                  <User className="w-4 h-4" />
-                  <span className="font-bold tracking-wider">PROFILE</span>
-                </Link>
-
-                <Link
-                  href="/dashboard#settings"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 font-mono text-[10px]"
-                >
-                  <Shield className="w-4 h-4" />
-                  <span className="font-bold tracking-wider">SETTINGS</span>
-                </Link>
-
-                <Link
-                  href="/dashboard#history"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 font-mono text-[10px]"
-                >
-                  <Activity className="w-4 h-4" />
-                  <span className="font-bold tracking-wider">HISTORY</span>
-                </Link>
-
-                {userData?.role === "admin" && (
-                  <Link
-                    href="/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/20 hover:border-white/30 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 font-mono text-[10px]"
-                  >
-                    <Shield className="w-4 h-4" />
-                    <span className="font-bold tracking-wider">ADMIN PANEL</span>
-                  </Link>
-                )}
-                
-                <button
-                  onClick={() => {
+                  key={`${link.href}-fullscreen-${index}`}
+                  href={link.href}
+                  onClick={(e) => {
+                    handleNavClick(e, link.href)
                     setMobileMenuOpen(false)
-                    handleLogout()
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-white/20 hover:border-red-400/50 hover:bg-red-500/10 backdrop-blur-md text-white/60 hover:text-red-400 transition-all duration-300 font-mono text-[10px]"
+                  className="flex items-center gap-3 text-2xl md:text-4xl font-bold text-white/60 hover:text-white transition-all duration-300 font-mono tracking-wider hover:scale-110"
                 >
-                  <LogOut className="w-4 h-4" />
-                  <span className="font-bold tracking-wider">LOGOUT</span>
-                </button>
-              </div>
-            </div>
+                  <Icon className="w-6 h-6 md:w-8 md:h-8" />
+                  {link.label.toUpperCase()}
+                </Link>
+              )
+            })}
+            
+            {userData?.role === "admin" && (
+              <Link
+                href="/admin/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 text-2xl md:text-4xl font-bold text-purple-400/80 hover:text-purple-300 transition-all duration-300 font-mono tracking-wider hover:scale-110 border-t border-white/10 pt-4 mt-4"
+              >
+                <Shield className="w-6 h-6 md:w-8 md:h-8" />
+                ADMIN PANEL
+              </Link>
+            )}
+            
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false)
+                handleLogout()
+              }}
+              className="mt-8 flex items-center gap-3 text-2xl md:text-4xl font-bold text-white/60 hover:text-red-400 transition-all duration-300 font-mono tracking-wider hover:scale-110"
+            >
+              <LogOut className="w-6 h-6 md:w-8 md:h-8" />
+              LOGOUT
+            </button>
           </div>
         </div>
       )}

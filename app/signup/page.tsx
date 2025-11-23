@@ -15,6 +15,7 @@ import { Shield } from "lucide-react"
 import { theme } from "@/lib/theme"
 import { analyticsEvents } from "@/lib/firebase-analytics"
 import Navbar from "@/components/navbar"
+import { logAuth } from "@/lib/services/activity-logger"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -111,6 +112,9 @@ export default function SignUpPage() {
 
       // Track signup event
       analyticsEvents.signup('email')
+      
+      // Log user signup
+      await logAuth(userCredential.user.uid, email, 'user_signup')
       
       // Redirect based on tier
       router.push(redirectPath)

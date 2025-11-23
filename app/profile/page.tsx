@@ -12,10 +12,14 @@ import { theme } from "@/lib/theme"
 import Navbar from "@/components/navbar"
 import { Download, Trash2, Shield } from "lucide-react"
 import TwoFactorSetup from "@/components/two-factor-setup"
+import ProfileImageUpload from "@/components/profile-image-upload"
+import Loader from "@/components/loader"
 
 export default function ProfilePage() {
   const { user, userData, updateProfile, loading } = useAuth()
   const [name, setName] = useState("")
+  const [company, setCompany] = useState("")
+  const [country, setCountry] = useState("")
   const [saving, setSaving] = useState(false)
   const [walletAddress, setWalletAddress] = useState("")
   const [connectingWallet, setConnectingWallet] = useState(false)
@@ -29,8 +33,21 @@ export default function ProfilePage() {
     if (!loading && !user) {
       router.push("/login")
     }
+    // Set fields from userData
     if (userData?.name) {
       setName(userData.name)
+    } else {
+      setName('')
+    }
+    if (userData?.company) {
+      setCompany(userData.company)
+    } else {
+      setCompany('')
+    }
+    if (userData?.country) {
+      setCountry(userData.country)
+    } else {
+      setCountry('')
     }
     if (userData?.walletAddress) {
       setWalletAddress(userData.walletAddress)
@@ -39,7 +56,7 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     setSaving(true)
-    await updateProfile({ name })
+    await updateProfile({ name, company, country })
     setSaving(false)
     alert("Profile updated!")
   }
@@ -150,11 +167,7 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    return (
-      <div className={`min-h-screen ${theme.backgrounds.main} flex items-center justify-center`}>
-        <div className={`${theme.text.primary} ${theme.fonts.mono} ${theme.fonts.tracking}`}>LOADING...</div>
-      </div>
-    )
+    return <Loader fullScreen text="Loading profile" />
   }
 
   if (!user) return null
@@ -190,6 +203,15 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
+                <Label className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase`}>
+                  Profile Image
+                </Label>
+                <div className="mt-2">
+                  <ProfileImageUpload />
+                </div>
+              </div>
+
+              <div>
                 <Label htmlFor="name" className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase`}>
                   Full Name
                 </Label>
@@ -215,6 +237,34 @@ export default function ProfilePage() {
                 />
               </div>
 
+              <div>
+                <Label htmlFor="company" className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase`}>
+                  Company (Optional)
+                </Label>
+                <Input
+                  id="company"
+                  type="text"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Your company name"
+                  className={`mt-1 ${theme.inputs.boxed}`}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="country" className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase`}>
+                  Country (Optional)
+                </Label>
+                <Input
+                  id="country"
+                  type="text"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  placeholder="Your country"
+                  className={`mt-1 ${theme.inputs.boxed}`}
+                />
+              </div>
+
               <Button
                 onClick={handleSave}
                 disabled={saving}
@@ -234,11 +284,11 @@ export default function ProfilePage() {
                 <div>
                   <div className={`${theme.text.small} ${theme.text.secondary} ${theme.fonts.mono} uppercase ${theme.fonts.tracking}`}>Current Plan</div>
                   <div className={`${theme.text.xlarge} ${theme.fonts.bold} ${theme.text.primary} mt-1 ${theme.fonts.mono} ${theme.fonts.tracking}`}>
-                    {userData?.tier === "pro" ? "PRO" : "FREE"}
+                    {(userData?.tier === "pro" || userData?.plan === "PREMIUM") ? "PREMIUM" : "FREE"}
                   </div>
                 </div>
 
-                {userData?.tier === "free" && (
+                {(userData?.tier === "free" || userData?.plan === "FREE") && (
                   <Link href="/pricing">
                     <Button className={`${theme.buttons.secondary} uppercase`}>
                       UPGRADE TO PRO
@@ -247,7 +297,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {userData?.tier === "pro" && userData?.nextBillingDate && (
+              {(userData?.tier === "pro" || userData?.plan === "PREMIUM") && userData?.nextBillingDate && (
                 <div className={`mt-4 pt-4 border-t ${theme.borders.default} ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
                   Next billing date: {userData.nextBillingDate}
                 </div>

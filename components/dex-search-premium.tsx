@@ -140,6 +140,10 @@ export default function DexSearchPremium({
             return
         }
 
+        // Clear dropdown immediately
+        setQuery('')
+        setResults([])
+
         // Call the parent callback
         onCMCTokenSelect(token.address, token.chain || 'Unknown', token.symbol, token.name)
 
@@ -148,9 +152,6 @@ export default function DexSearchPremium({
             console.log('[DexSearchPremium] Closing modal via onClose prop')
             onClose()
         }
-
-        setQuery('')
-        setResults([])
     }
 
     return (
@@ -239,7 +240,7 @@ export default function DexSearchPremium({
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="absolute top-full left-0 right-0 mt-4 bg-black/80 backdrop-blur-xl border border-white/10 overflow-hidden shadow-2xl z-50 max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent"
+                                className="absolute top-full left-0 right-0 mt-4 bg-black/80 backdrop-blur-xl border border-white/10 overflow-hidden shadow-2xl z-50 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent"
                             >
                                 {loading ? (
                                     <div className="py-12 flex justify-center items-center text-white/40 font-mono text-sm tracking-wider">
