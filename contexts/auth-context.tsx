@@ -8,14 +8,16 @@ import { getUserProfile, createUserProfile, updateUserPlan } from "@/lib/service
 import { migrateUserSchema } from "@/lib/services/migration-service"
 import { initializeUserTracking, clearUserTracking } from "@/lib/firebase-analytics"
 import type { UserDocument } from "@/lib/firestore-schema"
+import { logAuth } from "@/lib/services/activity-logger"
 
 interface UserData {
   uid: string
   email: string
   name?: string
   photoURL?: string | null
-  tier: "free" | "pro"
-  plan?: "FREE" | "PREMIUM"
+  tier: "free" | "pro" | "PAY_PER_USE"
+  plan?: "FREE" | "PAY_PER_USE" | "PREMIUM"
+  credits?: number
   role?: "user" | "admin"
   dailyAnalyses: number
   watchlist: string[]
@@ -66,6 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           if (profile) {
             setUserProfile(profile)
+            
+            // Log user login
+            if (user.email) {
+              const isAdmin = profile.role === 'admin'
+              logAuth(user.uid, user.email, isAdmin ? 'admin_login' : 'user_login')
+                .catch(err => console.error('Failed to log login:', err))
+            }
+            
             // Map to old userData for backward compatibility
             setUserData({
               uid: user.uid,
@@ -229,6 +239,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.walletAddress !== undefined) updateData.walletAddress = data.walletAddress
       if (data.company !== undefined) updateData.company = data.company
       if (data.country !== undefined) updateData.country = data.country
+      if (data.plan !== undefined) updateData.plan = data.plan
+      if (data.tier !== undefined) updateData.tier = data.tier
+      if (data.credits !== undefined) updateData.credits = data.credits
       
       await updateDoc(userRef, updateData)
       

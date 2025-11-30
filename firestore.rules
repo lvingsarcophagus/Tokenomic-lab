@@ -111,6 +111,33 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
+    // Token cache collection (alternative naming)
+    match /tokenCache/{tokenAddress} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Admin settings
+    match /admin_settings/{settingId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+    
+    // Credit transactions - NEW: For PAY_PER_USE tier
+    match /credit_transactions/{transactionId} {
+      // Users can read their own transactions
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Admins can read all transactions
+      allow read: if isAdmin();
+      
+      // System can create transactions (via API)
+      allow create: if isAuthenticated();
+      
+      // No updates or deletes (audit trail)
+      allow update, delete: if false;
+    }
+    
     // Legacy collections (backward compatibility)
     match /tokens/{tokenId} {
       allow read: if isAuthenticated();

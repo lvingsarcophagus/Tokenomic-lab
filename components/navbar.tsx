@@ -85,6 +85,7 @@ export default function Navbar() {
     // Landing page links (always show)
     navLinks.push({ href: "/#features", label: "Features", icon: Activity })
     navLinks.push({ href: "/docs", label: "Docs", icon: Shield })
+    // navLinks.push({ href: "/pay-per-scan", label: "Pay-Per-Scan", icon: Search }) // Hidden for now
     navLinks.push({ href: "/contact", label: "Contact", icon: Activity })
     
     // Pricing link (only for free users)

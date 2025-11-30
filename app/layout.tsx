@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   description: "Professional tokenomics analysis with real-time risk assessment, security audits, and market intelligence",
   generator: "v0.app",
   icons: {
-    icon: '/tokenomics-lab-logo.ico',
-    shortcut: '/tokenomics-lab-logo.ico',
-    apple: '/tokenomics-lab-logo.ico',
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
   },
 }
 

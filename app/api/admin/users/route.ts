@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
         role: data.role || 'user',
         tier: data.tier || data.plan || 'FREE',
         plan: data.plan || data.tier || 'FREE',
+        credits: data.credits || 0, // Add credits field
         lastLogin: data.lastLoginAt || data.lastLogin || null,
         createdAt: data.createdAt || null,
         company: data.company || null,
@@ -45,6 +46,8 @@ export async function GET(request: NextRequest) {
     const stats = {
       totalUsers: users.length,
       premiumUsers: users.filter(u => u.tier === 'PREMIUM' || u.tier === 'pro' || u.plan === 'PREMIUM').length,
+      payPerUseUsers: users.filter(u => u.plan === 'PAY_PER_USE').length,
+      totalCredits: users.reduce((sum, u) => sum + (u.credits || 0), 0),
       cachedTokens: 0, // TODO: Implement if needed
       queries24h: 0 // TODO: Implement if needed
     }

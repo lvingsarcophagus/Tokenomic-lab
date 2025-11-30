@@ -390,12 +390,12 @@ export async function calculateRisk(
   // STEP 4: ADD MEME DETECTION TO INSIGHTS (PREMIUM only)
   // ═══════════════════════════════════════════════════════════
   
-  if (plan === 'PREMIUM' && useNewWeights) {
-    // Add structured AI insights
+  if (plan === 'PREMIUM') {
+    // Add structured AI insights (even if meme detection failed)
     result.ai_insights = {
       classification: memeDetection.isMeme ? 'MEME_TOKEN' : 'UTILITY_TOKEN',
       confidence: memeDetection.confidence,
-      reasoning: isManualOverride ? 'Manual classification by user' : memeDetection.reasoning,
+      reasoning: isManualOverride ? 'Manual classification by user' : (memeDetection.reasoning || 'Classification unavailable'),
       meme_baseline_applied: memeDetection.isMeme,
       is_manual_override: isManualOverride
     }
@@ -451,7 +451,7 @@ export async function calculateRisk(
         name: metadata?.tokenName || 'Token',
         symbol: metadata?.tokenSymbol || 'Unknown',
         chain: metadata?.chain || 'EVM',
-        riskScore: overallScoreRaw,
+        riskScore: result.overall_risk_score, // Use final score after all overrides
         riskLevel: result.risk_level,
         price: (data as any).priceUSD,
         marketCap: data.marketCap,
@@ -470,26 +470,49 @@ export async function calculateRisk(
       
       console.log(`🤖 [AI Analysis] Raw AI response:`, JSON.stringify(aiSummary, null, 2))
       
+      // Build calculation breakdown with weighted formula
+      const weightMap: Record<string, number> = {
+        supplyDilution: 0.18,
+        holderConcentration: 0.16,
+        liquidityDepth: 0.14,
+        vestingUnlock: 0.13,
+        contractControl: 0.12,
+        taxFee: 0.10,
+        distribution: 0.09,
+        burnDeflation: 0.08,
+        adoption: 0.07,
+        auditTransparency: 0.03
+      }
+      
+      const sortedFactors = factors.sort((a, b) => b.value - a.value)
+      const calculationLines = sortedFactors.map(f => {
+        const factorName = f.name.replace(/([A-Z])/g, ' $1').trim()
+        const weight = weightMap[f.name] || 0
+        const contribution = (f.value * weight).toFixed(2)
+        return `  • ${factorName}: ${f.value}/100 × ${(weight * 100).toFixed(0)}% = ${contribution}`
+      })
+      
+      const totalContribution = sortedFactors.reduce((sum, f) => {
+        const weight = weightMap[f.name] || 0
+        return sum + (f.value * weight)
+      }, 0)
+      
+      const calculationBreakdown = `Risk Score Calculation:\n\nWeighted Formula:\n${calculationLines.join('\n')}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nBase Score: ${totalContribution.toFixed(2)}/100\nFinal Score: ${result.overall_risk_score}/100 (${result.risk_level})\n\nNote: Final score may differ from base due to:\n• Chain-specific adjustments (${metadata?.chain || 'EVM'})\n• Official token verification (-45 points)\n• Dead token detection (+90 points)\n• Meme token baseline (+15 points)`
+      
+      // Pass through the AI summary structure directly (matches AIExplanationPanel props)
       result.ai_summary = {
-        executive_summary: aiSummary.overview,
-        recommendation: overallScoreRaw > 70 ? 'AVOID' : overallScoreRaw > 40 ? 'RESEARCH_MORE' : 'BUY',
-        classification: {
-          type: memeDetection.isMeme ? 'MEME_TOKEN' : 'UTILITY_TOKEN',
-          confidence: memeDetection.confidence
-        },
-        factor_explanations: factorExplanations,
-        top_risk_factors: factors.slice(0, 3).map(f => ({ 
-          name: f.name, 
-          score: f.value, 
-          explanation: aiSummary.riskAnalysis,
-          impact: 'HIGH'
-        })),
-        key_insights: aiSummary.keyInsights,
-        generated_at: new Date().toISOString()
+        overview: aiSummary.overview,
+        keyInsights: aiSummary.keyInsights,
+        riskAnalysis: aiSummary.riskAnalysis,
+        recommendation: aiSummary.recommendation,
+        technicalDetails: aiSummary.technicalDetails,
+        calculationBreakdown: calculationBreakdown
       }
       
       console.log(`✓ AI Analysis complete - Summary generated successfully`)
       console.log(`✓ AI Summary structure:`, Object.keys(result.ai_summary))
+      console.log(`✓ AI Summary overview length:`, result.ai_summary.overview?.length || 0)
+      console.log(`✓ AI Summary key insights count:`, result.ai_summary.keyInsights?.length || 0)
     } catch (error) {
       console.error(`❌ [AI Analysis] FAILED to generate summary:`, error)
       console.error(`❌ [AI Analysis] Error details:`, {

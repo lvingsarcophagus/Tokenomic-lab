@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown, DollarSign, BarChart3, Shield, Clock, Users } from "lucide-react"
 import { CompleteTokenData } from "@/lib/token-scan-service"
+import RiskExplanation from "@/components/risk-explanation"
 
 interface TokenAnalysisProps {
   token: CompleteTokenData
@@ -67,6 +68,18 @@ export default function TokenAnalysis({ token, userTier }: TokenAnalysisProps) {
           </div>
         </div>
       </div>
+
+      {/* AI-Powered Risk Explanation - Full Width */}
+      {securityData && (
+        <RiskExplanation
+          riskScore={securityData.riskScore}
+          riskLevel={securityData.riskLevel}
+          aiInsights={(token as any).ai_insights || securityData.ai_insights}
+          aiSummary={(token as any).ai_summary || securityData.ai_summary}
+          criticalFlags={(token as any).critical_flags || securityData.critical_flags || []}
+          isPremium={userTier === "pro"}
+        />
+      )}
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Left Column */}

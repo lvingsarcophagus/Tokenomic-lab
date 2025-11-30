@@ -12,19 +12,22 @@ import TokenSearchComponent from '@/components/token-search-cmc'
 import DexSearchPremium from '@/components/dex-search-premium'
 import SolanaHeliusPanel from '@/components/solana-helius-panel'
 import Loader from '@/components/loader'
-import AIExplanationPanel from '@/components/ai-explanation-panel'
+import WalletConnect from '@/components/wallet-connect'
 import RiskOverview from '@/components/risk-overview'
 import MarketMetrics from '@/components/market-metrics'
 import HolderDistribution from '@/components/holder-distribution'
+import CreditsManager from '@/components/credits-manager'
+import FeaturePreferences from '@/components/feature-preferences'
 import { 
   Shield, TrendingUp, TrendingDown, Activity, Users, Droplet,
   Zap, Crown, AlertCircle, CheckCircle, Sparkles, BarChart3,
   Clock, Target, Plus, Search, Bell, Settings, LogOut, Menu, X,
   User, Flame, BadgeCheck, Loader2, AlertTriangle, Eye, RefreshCw,
-  ChevronDown, ChevronUp, ArrowRight, Star, Bookmark, ExternalLink, Database
+  ChevronDown, ChevronUp, ArrowRight, Star, Bookmark, ExternalLink, Database, Wallet
 } from 'lucide-react'
 import { TokenScanService, CompleteTokenData } from '@/lib/token-scan-service'
 import type { RiskResult } from '@/lib/types/token-data'
+import { logTokenScan, logPageView, logFeatureAccess } from '@/lib/services/activity-logger'
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -167,18 +170,22 @@ export default function PremiumDashboard() {
     // No redirect - unified dashboard handles both free and premium users
   }, [user, userProfile, authLoading, router])
   
-  // Determine if user has premium features
-  const isPremium = userProfile?.plan === 'PREMIUM'
+  // Determine if user has premium features (PREMIUM or PAY_PER_USE)
+  const isPremium = userProfile?.plan === 'PREMIUM' || userProfile?.plan === 'PAY_PER_USE'
+  const isPayPerUse = userProfile?.plan === 'PAY_PER_USE'
+  const credits = userProfile?.credits || 0
   
   // DEBUG: Log premium status
   useEffect(() => {
-    console.log('🔍 PREMIUM STATUS:', {
+    console.log('🔍 USER STATUS:', {
       userProfile,
       plan: userProfile?.plan,
       isPremium,
+      isPayPerUse,
+      credits,
       user: user?.email
     })
-  }, [userProfile, isPremium, user])
+  }, [userProfile, isPremium, isPayPerUse, credits, user])
   
   // Load dashboard data
   useEffect(() => {
@@ -200,7 +207,7 @@ export default function PremiumDashboard() {
     setLoading(true)
     try {
       // Load real data from Firebase
-      const userPlan = userProfile?.plan === 'PREMIUM' ? 'PREMIUM' : 'FREE'
+      const userPlan = (userProfile?.plan === 'PREMIUM' || userProfile?.plan === 'PAY_PER_USE') ? 'PREMIUM' : 'FREE'
       const [stats, userWatchlist] = await Promise.all([
         getDashboardStats(user.uid, userPlan),
         getWatchlist(user.uid)
@@ -409,8 +416,24 @@ export default function PremiumDashboard() {
       return
     }
     
+    // Check credits for PAY_PER_USE users (basic scan is free, but they need credits for AI features)
+    if (isPayPerUse && userProfile) {
+      const currentCredits = userProfile.credits || 0
+      if (currentCredits < 0.5) {
+        setScanError('INSUFFICIENT CREDITS. PLEASE ADD FUNDS TO CONTINUE.')
+        // Scroll to credits manager
+        setTimeout(() => {
+          const creditsElement = document.querySelector('[data-credits-manager]')
+          if (creditsElement) {
+            creditsElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 100)
+        return
+      }
+    }
+    
     // Check scan limit for FREE users (20 scans per day)
-    if (!isPremium && portfolioStats && portfolioStats.totalScans >= 20) {
+    if (!isPremium && !isPayPerUse && portfolioStats && portfolioStats.totalScans >= 20) {
       setScanError('DAILY LIMIT REACHED (20/20). UPGRADE TO PREMIUM FOR UNLIMITED SCANS.')
       return
     }
@@ -617,6 +640,7 @@ export default function PremiumDashboard() {
           const result = await res.json()
           console.log('Full risk analysis received:', result)
           console.log('[AI Insights]:', result.ai_insights)
+          console.log('[AI Summary]:', result.ai_summary)
           console.log('[Twitter Metrics]:', result.twitter_metrics)
           
           // Extract data from enhanced result
@@ -625,6 +649,13 @@ export default function PremiumDashboard() {
           const redFlags = result.warning_flags || []
           const positiveSignals = result.positive_signals || []
           const breakdown = result.breakdown || {}
+          
+          // Debug: Check if risk score matches AI summary
+          console.log('[Dashboard] Risk Score Check:', {
+            displayedScore: riskScore,
+            aiSummaryScore: result.ai_summary?.overview?.match(/(\d+\.?\d*)/)?.[0],
+            fullResult: result
+          })
           
           // Debug logging
           console.log('[Dashboard] Risk Analysis:', {
@@ -666,8 +697,49 @@ export default function PremiumDashboard() {
             rawData: data,
             enhancedData: result, // Store full result for debugging
             ai_insights: result.ai_insights, // Add AI insights
+            ai_summary: result.ai_summary, // Add AI summary for AIExplanationPanel
             twitter_metrics: result.twitter_metrics // Add Twitter metrics
           })
+          
+          // Log token scan activity
+          if (user && userProfile?.email) {
+            logTokenScan(
+              user.uid,
+              userProfile.email,
+              data.address,
+              data.chainInfo?.chainName || 'unknown',
+              riskScore
+            ).catch(err => console.error('Failed to log scan:', err))
+          }
+          
+          // Deduct credits for PAY_PER_USE users (0.5 credits per scan)
+          if (isPayPerUse && user) {
+            try {
+              const token = await user.getIdToken()
+              await fetch('/api/credits/deduct', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  amount: 0.5,
+                  reason: 'Token scan',
+                  tokenAddress: data.address
+                })
+              })
+              console.log('[Credits] Deducted 0.5 credits for scan')
+              
+              // Refresh user profile to update credits display
+              if (typeof window !== 'undefined') {
+                setTimeout(() => {
+                  window.location.reload()
+                }, 2000)
+              }
+            } catch (error) {
+              console.error('[Credits] Failed to deduct credits:', error)
+            }
+          }
           
           setTimeout(() => {
             document.getElementById('scan-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -1105,6 +1177,14 @@ export default function PremiumDashboard() {
           </div>
         </div>
 
+        {/* Credits Manager and Feature Preferences for PAY_PER_USE users */}
+        {isPayPerUse && (
+          <div className="mb-8 grid md:grid-cols-2 gap-6">
+            <CreditsManager onAddCredits={() => router.push('/pay-per-scan')} />
+            <FeaturePreferences />
+          </div>
+        )}
+
         {/* Stats Grid - MOVED TO TOP */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <StatCard icon={<Target />} label="TOTAL TOKENS" value={portfolioStats?.totalTokens || 0} />
@@ -1166,7 +1246,7 @@ export default function PremiumDashboard() {
           </div>
         )}
 
-        {/* Wallet Analysis Section - Enhanced */}
+        {/* Wallet Analysis Section - Phantom Integration */}
         {user && (
           <div className="relative border border-white/10 bg-black/40 backdrop-blur-xl p-6 mb-8 shadow-2xl overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
@@ -1174,153 +1254,51 @@ export default function PremiumDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-white font-mono text-xs tracking-wider flex items-center gap-2">
                   <div className="p-1.5 border border-white/30 bg-black/40">
-                    <User className="w-4 h-4" />
+                    <Wallet className="w-4 h-4" />
                   </div>
-                  CONNECTED WALLET ANALYSIS
+                  PHANTOM WALLET PORTFOLIO
                 </h2>
-              <button
-                onClick={async () => {
-                  if (!user) return
-                  setLoadingWallet(true)
-                  try {
-                    // Fetch wallet holdings from Moralis or similar API
-                    const response = await fetch(`/api/wallet/analyze`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ 
-                        walletAddress: user.email // In production, use actual connected wallet
-                      })
-                    })
-                    const data = await response.json()
-                    setWalletData(data)
-                  } catch (error) {
-                    console.error('Failed to load wallet data:', error)
-                  } finally {
-                    setLoadingWallet(false)
-                  }
-                }}
-                disabled={loadingWallet}
-                className="px-4 py-2 bg-transparent border-2 border-white/30 text-white font-mono text-[10px] hover:bg-white hover:text-black hover:border-white transition-all disabled:opacity-50 tracking-wider"
-              >
-                {loadingWallet ? (
-                  <>
-                    <Loader2 className="w-3 h-3 inline animate-spin mr-1" />
-                    ANALYZING...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-3 h-3 inline mr-1" />
-                    REFRESH WALLET
-                  </>
-                )}
-              </button>
-            </div>
-
-            {walletData ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="group relative border border-white/10 bg-black/40 backdrop-blur-md p-5 hover:border-white/30 hover:bg-black/50 transition-all duration-300 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                    <div className="relative">
-                      <p className="text-white/60 font-mono text-[10px] mb-2 tracking-wider group-hover:text-white/80 transition-colors">TOTAL HOLDINGS</p>
-                      <p className="text-white font-mono text-2xl font-bold drop-shadow-lg">${walletData.totalValue?.toFixed(2) || '0.00'}</p>
-                    </div>
-                  </div>
-                  <div className="group relative border border-white/10 bg-black/40 backdrop-blur-md p-5 hover:border-white/30 hover:bg-black/50 transition-all duration-300 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                    <div className="relative">
-                      <p className="text-white/60 font-mono text-[10px] mb-2 tracking-wider group-hover:text-white/80 transition-colors">TOKENS</p>
-                      <p className="text-white font-mono text-2xl font-bold drop-shadow-lg">{walletData.tokenCount || 0}</p>
-                    </div>
-                  </div>
-                  <div className="group relative border border-white/10 bg-black/40 backdrop-blur-md p-5 hover:border-white/30 hover:bg-black/50 transition-all duration-300 overflow-hidden">
-                    <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ${
-                      (walletData.avgRiskScore || 0) < 30 ? 'from-green-500/[0.02]' :
-                      (walletData.avgRiskScore || 0) < 60 ? 'from-yellow-500/[0.02]' :
-                      'from-red-500/[0.02]'
-                    } to-transparent`}></div>
-                    <div className="relative">
-                      <p className="text-white/60 font-mono text-[10px] mb-2 tracking-wider group-hover:text-white/80 transition-colors">AVG RISK SCORE</p>
-                      <p className={`font-mono text-2xl font-bold drop-shadow-lg ${
-                        (walletData.avgRiskScore || 0) < 30 ? 'text-green-400' :
-                        (walletData.avgRiskScore || 0) < 60 ? 'text-yellow-400' :
-                        'text-red-400'
-                      }`}>
-                        {walletData.avgRiskScore || 0}/100
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Wallet Tokens List */}
-                {walletData.tokens && walletData.tokens.length > 0 && (
-                  <div className="border border-white/10 p-4">
-                    <h3 className="text-white font-mono text-[10px] mb-3">YOUR TOKENS</h3>
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                      {walletData.tokens.map((token: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 transition-all">
-                          <div className="flex-1">
-                            <p className="text-white font-mono text-sm">{token.symbol}</p>
-                            <p className="text-white/60 font-mono text-[10px]">{token.name}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-white font-mono text-sm">{token.balance}</p>
-                            <p className="text-white/60 font-mono text-[10px]">${token.value?.toFixed(2) || '0.00'}</p>
-                          </div>
-                          <div className={`ml-4 px-2 py-1 border font-mono text-[10px] ${
-                            token.riskScore < 30 ? 'border-green-500/30 bg-green-500/10 text-green-500' :
-                            token.riskScore < 60 ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-500' :
-                            'border-red-500/30 bg-red-500/10 text-red-500'
-                          }`}>
-                            RISK: {token.riskScore || 0}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
-            ) : (
-              <div className="border border-white/10 p-8 text-center">
-                <User className="w-8 h-8 text-white/40 mx-auto mb-3" />
-                <p className="text-white/60 font-mono text-xs mb-4">
-                  Connect your wallet to analyze your token holdings and get personalized risk insights
-                </p>
-                <p className="text-white/40 font-mono text-[10px]">
-                  Currently using: {user.email}
-                </p>
-              </div>
-            )}
+
+              {/* Wallet Connect Component */}
+              <WalletConnect />
             </div>
           </div>
         )}
 
         {/* Token Scanner - Click to Open Modal */}
-        <div id="scanner">
-        <button
-          onClick={() => setShowSearchModal(true)}
-          className="w-full relative border-2 border-white/20 bg-black/40 backdrop-blur-xl p-8 mb-8 shadow-2xl hover:border-white/40 hover:bg-black/50 transition-all duration-300 group"
-        >
-          {/* Decorative elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-cyan-500/[0.01] to-transparent"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl"></div>
-          </div>
+        <div id="scanner" className="space-y-4 mb-8">
+          <button
+            onClick={() => setShowSearchModal(true)}
+            className="w-full relative border-2 border-white/20 bg-black/40 backdrop-blur-xl p-8 shadow-2xl hover:border-white/40 hover:bg-black/50 transition-all duration-300 group"
+          >
+            {/* Decorative elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-cyan-500/[0.01] to-transparent"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl"></div>
+            </div>
+            
+            <div className="relative z-10 flex flex-col items-center gap-4">
+              <div className="p-4 border-2 border-white/30 bg-black/40 group-hover:border-white/50 group-hover:scale-110 transition-all duration-300">
+                <Search className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-center">
+                <h2 className="text-white font-mono text-lg tracking-wider mb-2 group-hover:text-white/90 transition-colors">
+                  CLICK TO SCAN TOKEN
+                </h2>
+                <p className="text-white/60 font-mono text-xs tracking-wider">
+                  Search by name, symbol, or contract address
+                </p>
+              </div>
+            </div>
+          </button>
           
-          <div className="relative z-10 flex flex-col items-center gap-4">
-            <div className="p-4 border-2 border-white/30 bg-black/40 group-hover:border-white/50 group-hover:scale-110 transition-all duration-300">
-              <Search className="w-8 h-8 text-white" />
-            </div>
-            <div className="text-center">
-              <h2 className="text-white font-mono text-lg tracking-wider mb-2 group-hover:text-white/90 transition-colors">
-                CLICK TO SCAN TOKEN
-              </h2>
-              <p className="text-white/60 font-mono text-xs tracking-wider">
-                Search by name, symbol, or contract address
-              </p>
-            </div>
+          {/* Wallet Connect Section */}
+          <div className="flex items-center justify-center gap-4">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+            <span className="text-white/40 font-mono text-xs tracking-wider">OR</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
           </div>
-        </button>
         </div>
 
         {/* Search Modal */}
@@ -1459,11 +1437,11 @@ export default function PremiumDashboard() {
             {/* Divider */}
             <div className="border-t border-white/10 mb-6"></div>
 
-            {/* AI Explanation Panel - Prominent Display */}
+            {/* AI Analysis Accordion - Collapsible */}
             {selectedToken.ai_summary && (
-              <AIExplanationPanel 
+              <AIAnalysisAccordion
                 aiSummary={selectedToken.ai_summary}
-                riskScore={selectedToken.overallRisk}
+                tokenName={selectedToken.name || 'Token'}
                 riskLevel={selectedToken.overallRisk < 30 ? 'LOW' : selectedToken.overallRisk < 60 ? 'MEDIUM' : selectedToken.overallRisk < 80 ? 'HIGH' : 'CRITICAL'}
               />
             )}
@@ -1781,38 +1759,7 @@ export default function PremiumDashboard() {
               })}
             </div>
 
-            {/* AI Analysis Accordion (replaces old AI Meme Detection) */}
-            {selectedToken.ai_summary && (
-              <AIAnalysisAccordion
-                aiSummary={selectedToken.ai_summary}
-                tokenName={selectedToken.name || 'Token'}
-                riskLevel={selectedToken.risk_level || 'MEDIUM'}
-              />
-            )}
 
-            {/* Fallback to old AI Insights if no AI Summary */}
-            {!selectedToken.ai_summary && selectedToken.ai_insights && (
-              <div className="border border-gray-700/50 bg-gray-900/30 p-4 mb-4 rounded-lg">
-                <h3 className="text-gray-300 font-mono text-xs tracking-wider mb-3 flex items-center gap-2">
-                  <span className="text-lg">⊕</span>
-                  AI CLASSIFICATION
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500 font-mono text-[10px]">TYPE</span>
-                    <span className={`font-mono text-xs font-bold ${
-                      selectedToken.ai_insights.classification === 'MEME_TOKEN' ? 'text-yellow-400' : 'text-blue-400'
-                    }`}>
-                      {selectedToken.ai_insights.classification === 'MEME_TOKEN' ? '◐ MEME TOKEN' : '◧ UTILITY TOKEN'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500 font-mono text-[10px]">CONFIDENCE</span>
-                    <span className="text-gray-200 font-mono text-xs">{selectedToken.ai_insights.confidence}%</span>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Twitter/X Social Metrics */}
             {selectedToken.twitter_metrics && (

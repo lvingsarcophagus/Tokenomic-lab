@@ -37,17 +37,18 @@ export default function AIAnalysisAccordion({
   };
 
   const getRecommendationColor = (rec: string) => {
-    switch (rec) {
-      case 'BUY':
-        return 'text-green-400 bg-green-400/10';
-      case 'AVOID':
-        return 'text-red-400 bg-red-400/10';
-      default:
-        return 'text-yellow-400 bg-yellow-400/10';
+    const recLower = rec.toLowerCase();
+    if (recLower.includes('avoid') || recLower.includes('high risk') || recLower.includes('caution')) {
+      return 'text-red-400 bg-red-400/10 border border-red-500/30';
     }
+    if (recLower.includes('research') || recLower.includes('moderate')) {
+      return 'text-yellow-400 bg-yellow-400/10 border border-yellow-500/30';
+    }
+    if (recLower.includes('safe') || recLower.includes('low risk') || recLower.includes('proceed')) {
+      return 'text-green-400 bg-green-400/10 border border-green-500/30';
+    }
+    return 'text-gray-400 bg-gray-400/10 border border-gray-500/30';
   };
-
-  const recommendationText = (aiSummary.recommendation || 'NEUTRAL').replace(/_/g, ' ');
 
   return (
     <div
@@ -67,7 +68,7 @@ export default function AIAnalysisAccordion({
               AI ANALYSIS
             </h3>
             <p className="text-gray-400 font-mono text-xs mt-1 line-clamp-1">
-              {aiSummary.executive_summary.substring(0, 50)}...
+              {aiSummary.overview?.substring(0, 50) || 'AI analysis available'}...
             </p>
           </div>
         </div>
@@ -81,105 +82,34 @@ export default function AIAnalysisAccordion({
       {expanded && (
         <div className="border-t border-white/10 bg-black/40">
           <div className="p-4 space-y-6">
-            {/* A: Executive Summary */}
+            {/* Overview */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Zap className="w-4 h-4 text-gray-400" />
                 <h4 className="text-gray-300 font-mono text-xs font-bold tracking-wider">
-                  EXECUTIVE SUMMARY
+                  OVERVIEW
                 </h4>
               </div>
               <p className="text-gray-300 text-sm leading-relaxed pl-6">
-                {aiSummary.executive_summary}
+                {aiSummary.overview}
               </p>
-              <div className={`mt-3 pl-6 inline-block px-3 py-1 rounded text-xs font-mono ${getRecommendationColor(aiSummary.recommendation)}`}>
-                → {recommendationText}
-              </div>
             </div>
 
-            {/* Classification & Confidence */}
-            <div className="grid grid-cols-2 gap-4 bg-black/20 p-3 rounded">
-              <div>
-                <span className="text-gray-500 font-mono text-[10px] block mb-1">
-                  TOKEN CLASSIFICATION
-                </span>
-                <span className="text-gray-200 font-mono text-sm">
-                  {aiSummary.classification.type === 'MEME_TOKEN'
-                    ? '🎭 MEME TOKEN'
-                    : '🏢 UTILITY TOKEN'}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500 font-mono text-[10px] block mb-1">
-                  CONFIDENCE
-                </span>
-                <span className="text-gray-200 font-mono text-sm">
-                  {aiSummary.classification.confidence}%
-                </span>
-              </div>
-            </div>
-
-            {/* B: Factor Explanations */}
+            {/* Risk Analysis */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="w-4 h-4 text-gray-400" />
                 <h4 className="text-gray-300 font-mono text-xs font-bold tracking-wider">
-                  RISK FACTOR BREAKDOWN
+                  RISK ANALYSIS
                 </h4>
               </div>
-              <div className="space-y-2 pl-6">
-                {Object.entries(aiSummary.factor_explanations).slice(0, 5).map(([factor, explanation]) => (
-                  <div key={factor} className="bg-black/20 p-2 rounded text-xs">
-                    <span className="text-gray-400 font-mono block mb-1 capitalize">
-                      {factor.replace(/_/g, ' ')}
-                    </span>
-                    <span className="text-gray-300 block text-[11px] leading-relaxed">
-                      {explanation}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <p className="text-gray-300 text-sm leading-relaxed pl-6">
+                {aiSummary.riskAnalysis}
+              </p>
             </div>
 
-            {/* C: Top Risk Factors */}
-            {aiSummary.top_risk_factors && aiSummary.top_risk_factors.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertTriangle className="w-4 h-4 text-gray-400" />
-                  <h4 className="text-gray-300 font-mono text-xs font-bold tracking-wider">
-                    TOP RISK FACTORS
-                  </h4>
-                </div>
-                <div className="space-y-3 pl-6">
-                  {aiSummary.top_risk_factors.map((factor, idx) => (
-                    <div
-                      key={idx}
-                      className="border border-red-500/20 bg-red-500/10 p-3 rounded"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-red-300 font-mono text-sm font-bold capitalize">
-                          {idx + 1}. {factor.name.replace(/_/g, ' ')}
-                        </span>
-                        <span className="text-red-400 font-mono text-xs font-bold">
-                          {factor.score}/100
-                        </span>
-                      </div>
-                      <p className="text-gray-300 text-xs mb-2 leading-relaxed">
-                        {factor.explanation}
-                      </p>
-                      <div className="bg-black/30 p-2 rounded border border-red-500/20">
-                        <p className="text-gray-400 text-[10px] font-mono">
-                          <span className="text-red-400">Impact:</span> {factor.impact}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Key Insights */}
-            {aiSummary.key_insights && aiSummary.key_insights.length > 0 && (
+            {aiSummary.keyInsights && aiSummary.keyInsights.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Target className="w-4 h-4 text-gray-400" />
@@ -188,7 +118,7 @@ export default function AIAnalysisAccordion({
                   </h4>
                 </div>
                 <ul className="space-y-2 pl-6">
-                  {aiSummary.key_insights.map((insight, idx) => (
+                  {aiSummary.keyInsights.map((insight, idx) => (
                     <li
                       key={idx}
                       className="text-gray-300 text-xs flex gap-2 leading-relaxed"
@@ -201,11 +131,38 @@ export default function AIAnalysisAccordion({
               </div>
             )}
 
-            {/* Generated Time */}
-            {aiSummary.generated_at && (
+            {/* Recommendation */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-4 h-4 text-gray-400" />
+                <h4 className="text-gray-300 font-mono text-xs font-bold tracking-wider">
+                  RECOMMENDATION
+                </h4>
+              </div>
+              <div className={`pl-6 inline-block px-3 py-2 rounded text-sm font-mono ${getRecommendationColor(aiSummary.recommendation)}`}>
+                {aiSummary.recommendation}
+              </div>
+            </div>
+
+            {/* Calculation Breakdown */}
+            {aiSummary.calculationBreakdown && (
               <div className="pt-3 border-t border-white/10">
-                <p className="text-gray-500 font-mono text-[10px]">
-                  Analysis generated: {new Date(aiSummary.generated_at).toLocaleString()}
+                <h4 className="text-gray-300 font-mono text-xs font-bold tracking-wider mb-3 uppercase">
+                  📊 CALCULATION BREAKDOWN
+                </h4>
+                <div className="bg-black/40 p-4 rounded border border-white/10">
+                  <pre className="text-gray-300 font-mono text-[10px] leading-relaxed whitespace-pre-wrap">
+                    {aiSummary.calculationBreakdown}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {/* Technical Details */}
+            {aiSummary.technicalDetails && (
+              <div className="pt-3 border-t border-white/10">
+                <p className="text-gray-400 font-mono text-xs leading-relaxed">
+                  {aiSummary.technicalDetails}
                 </p>
               </div>
             )}

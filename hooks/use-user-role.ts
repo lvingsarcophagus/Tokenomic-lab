@@ -13,12 +13,13 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
-export type UserRole = 'FREE' | 'PREMIUM' | 'ADMIN' | null
+export type UserRole = 'FREE' | 'PAY_PER_USE' | 'PREMIUM' | 'ADMIN' | null
 
 export interface UserRoleData {
   role: UserRole
   isAdmin: boolean
   isPremium: boolean
+  isPayPerUse: boolean
   isFree: boolean
   loading: boolean
   userId: string | null
@@ -88,6 +89,7 @@ export function useUserRole(): UserRoleData {
     role,
     isAdmin,
     isPremium: role === 'PREMIUM' || role === 'ADMIN',
+    isPayPerUse: role === 'PAY_PER_USE',
     isFree: role === 'FREE',
     loading,
     userId,

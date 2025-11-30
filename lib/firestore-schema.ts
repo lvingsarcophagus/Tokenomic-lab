@@ -19,7 +19,10 @@ export interface UserDocument {
   country?: string
   walletAddress?: string
   role?: 'user' | 'admin'
-  plan: 'FREE' | 'PREMIUM'
+  plan: 'FREE' | 'PAY_PER_USE' | 'PREMIUM'
+  
+  // Credits for PAY_PER_USE tier
+  credits?: number // Number of credits available (1 credit = $0.10)
   
   // Subscription details
   subscription: {
@@ -33,7 +36,7 @@ export interface UserDocument {
   usage: {
     tokensAnalyzed: number
     lastResetDate: Date
-    dailyLimit: number // 10 for FREE, unlimited (-1) for PREMIUM
+    dailyLimit: number // 10 for FREE, unlimited (-1) for PREMIUM/PAY_PER_USE
   }
   
   // Preferences
@@ -41,6 +44,12 @@ export interface UserDocument {
     notifications: boolean
     emailAlerts: boolean
     theme: 'light' | 'dark' | 'system'
+  }
+  
+  // Feature preferences for PAY_PER_USE tier
+  featurePreferences?: {
+    aiRiskAnalyst: boolean // 1 credit per report
+    portfolioAudit: boolean // 0.5 credits per token
   }
   
   // Metadata

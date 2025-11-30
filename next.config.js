@@ -8,6 +8,8 @@ const nextConfig = {
     MOBULA_API_KEY: process.env.MOBULA_API_KEY,
     COINMARKETCAP_API_KEY: process.env.COINMARKETCAP_API_KEY,
     COINGECKO_API_KEY: process.env.COINGECKO_API_KEY,
+    X402_RECIPIENT_ADDRESS: process.env.X402_RECIPIENT_ADDRESS,
+    X402_USE_TESTNET: process.env.X402_USE_TESTNET,
   },
 }
 

@@ -126,9 +126,11 @@ export default function PricingPage() {
                     PRIORITY SUPPORT
                   </li>
                 </ul>
-                <Button className={`w-full ${theme.buttons.secondary} uppercase`}>
-                  UPGRADE TO PRO
-                </Button>
+                <Link href="/premium-signup">
+                  <Button className={`w-full ${theme.buttons.secondary} uppercase`}>
+                    UPGRADE TO PRO
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>

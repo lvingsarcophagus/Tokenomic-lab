@@ -16,6 +16,7 @@ import ProfileImageUpload from "@/components/profile-image-upload"
 import Loader from "@/components/loader"
 import CustomModal from "@/components/custom-modal"
 import { useModal } from "@/hooks/use-modal"
+import { SubscriptionManager } from "@/components/subscription-manager"
 
 export default function ProfilePage() {
   const { user, userData, updateProfile, loading } = useAuth()
@@ -305,28 +306,133 @@ export default function ProfilePage() {
 
           <Card className={`${theme.backgrounds.card} border ${theme.borders.default}`}>
             <CardHeader>
-              <CardTitle className={`${theme.text.primary} ${theme.fonts.mono} ${theme.fonts.tracking}`}>SUBSCRIPTION</CardTitle>
+              <CardTitle className={`${theme.text.primary} ${theme.fonts.mono} ${theme.fonts.tracking}`}>PLAN & BILLING</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
+              {/* Current Plan Display */}
               <div className="flex items-center justify-between">
                 <div>
                   <div className={`${theme.text.small} ${theme.text.secondary} ${theme.fonts.mono} uppercase ${theme.fonts.tracking}`}>Current Plan</div>
                   <div className={`${theme.text.xlarge} ${theme.fonts.bold} ${theme.text.primary} mt-1 ${theme.fonts.mono} ${theme.fonts.tracking}`}>
-                    {(userData?.tier === "pro" || userData?.plan === "PREMIUM") ? "PREMIUM" : "FREE"}
+                    {userData?.plan === "PREMIUM" ? "PREMIUM ($29/mo)" : 
+                     userData?.plan === "PAY_PER_USE" ? "PAY-AS-YOU-GO" : 
+                     "FREE"}
                   </div>
                 </div>
-
-                {(userData?.tier === "free" || userData?.plan === "FREE") && (
-                  <Link href="/pricing">
-                    <Button className={`${theme.buttons.secondary} uppercase`}>
-                      UPGRADE TO PRO
-                    </Button>
-                  </Link>
-                )}
               </div>
 
-              {(userData?.tier === "pro" || userData?.plan === "PREMIUM") && userData?.nextBillingDate && (
-                <div className={`mt-4 pt-4 border-t ${theme.borders.default} ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
+              {/* Credits Display for PAY_PER_USE */}
+              {userData?.plan === "PAY_PER_USE" && (
+                <div className="p-4 bg-black/40 border border-white/10">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`${theme.text.small} ${theme.text.secondary} ${theme.fonts.mono} uppercase`}>
+                      CREDIT BALANCE
+                    </div>
+                    <div className={`${theme.text.xlarge} ${theme.fonts.bold} ${theme.text.primary} ${theme.fonts.mono}`}>
+                      {userData?.credits || 0} <span className="text-white/40 text-sm">credits</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 bg-white/10 border border-white/20 mb-3">
+                    <div 
+                      className="h-full bg-white transition-all"
+                      style={{ width: `${Math.min(((userData?.credits || 0) / 50) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <Link href="/pay-per-scan">
+                    <Button className={`${theme.buttons.primary} w-full uppercase`}>
+                      ADD CREDITS
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
+              {/* Plan Switching */}
+              <div className="pt-4 border-t border-white/10">
+                <div className={`${theme.text.small} ${theme.text.secondary} ${theme.fonts.mono} uppercase ${theme.fonts.tracking} mb-4`}>
+                  SWITCH PLAN
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => {
+                      if (userData?.plan === "FREE") return
+                      showConfirm(
+                        "Switch to FREE Plan?",
+                        "You will lose access to premium features. Your credits will be preserved if you switch back to PAY-AS-YOU-GO.",
+                        async () => {
+                          try {
+                            await updateProfile({ plan: "FREE", tier: "free" })
+                            showSuccess("Plan Changed", "Switched to FREE plan successfully! Refreshing...")
+                            setTimeout(() => window.location.reload(), 1500)
+                          } catch (error) {
+                            showError("Failed", "Could not change plan. Please try again.")
+                          }
+                        }
+                      )
+                    }}
+                    disabled={userData?.plan === "FREE"}
+                    className={`p-4 border-2 transition-all ${
+                      userData?.plan === "FREE"
+                        ? "border-white bg-white/10"
+                        : "border-white/30 hover:border-white/50"
+                    } disabled:opacity-50`}
+                  >
+                    <div className="text-white font-mono text-sm font-bold">FREE</div>
+                    <div className="text-white/60 font-mono text-xs mt-1">$0/mo</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (userData?.plan === "PAY_PER_USE") return
+                      showConfirm(
+                        "Switch to PAY-AS-YOU-GO?",
+                        "You'll pay only for what you use. Buy credits anytime and use premium features.",
+                        async () => {
+                          try {
+                            await updateProfile({ 
+                              plan: "PAY_PER_USE", 
+                              tier: "PAY_PER_USE",
+                              credits: userData?.credits || 0
+                            })
+                            showSuccess("Plan Changed", "Switched to PAY-AS-YOU-GO successfully! Refreshing...")
+                            setTimeout(() => window.location.reload(), 1500)
+                          } catch (error) {
+                            showError("Failed", "Could not change plan. Please try again.")
+                          }
+                        }
+                      )
+                    }}
+                    disabled={userData?.plan === "PAY_PER_USE"}
+                    className={`p-4 border-2 transition-all ${
+                      userData?.plan === "PAY_PER_USE"
+                        ? "border-white bg-white/10"
+                        : "border-white/30 hover:border-white/50"
+                    } disabled:opacity-50`}
+                  >
+                    <div className="text-white font-mono text-sm font-bold">PAY-PER-USE</div>
+                    <div className="text-white/60 font-mono text-xs mt-1">Credits</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (userData?.plan === "PREMIUM") return
+                      router.push("/pricing")
+                    }}
+                    disabled={userData?.plan === "PREMIUM"}
+                    className={`p-4 border-2 transition-all ${
+                      userData?.plan === "PREMIUM"
+                        ? "border-white bg-white/10"
+                        : "border-white/30 hover:border-white/50"
+                    } disabled:opacity-50`}
+                  >
+                    <div className="text-white font-mono text-sm font-bold">PREMIUM</div>
+                    <div className="text-white/60 font-mono text-xs mt-1">$29/mo</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Billing Info for PREMIUM */}
+              {userData?.plan === "PREMIUM" && userData?.nextBillingDate && (
+                <div className={`pt-4 border-t ${theme.borders.default} ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
                   Next billing date: {userData.nextBillingDate}
                 </div>
               )}
@@ -387,6 +493,9 @@ export default function ProfilePage() {
               <TwoFactorSetup />
             </CardContent>
           </Card>
+
+          {/* Subscription Management */}
+          <SubscriptionManager />
 
           <Card className={`${theme.backgrounds.card} border ${theme.borders.default}`}>
             <CardHeader>

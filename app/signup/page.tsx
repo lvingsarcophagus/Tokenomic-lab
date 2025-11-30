@@ -24,6 +24,7 @@ export default function SignUpPage() {
   const [name, setName] = useState("")
   const [company, setCompany] = useState("")
   const [country, setCountry] = useState("")
+  const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'PAY_PER_USE'>('FREE')
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -56,16 +57,17 @@ export default function SignUpPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
-      // Check if auto-premium is enabled
-      let userTier = "FREE"
-      let userPlan = "FREE"
-      let redirectPath = "/free-dashboard"
+      // Use selected plan or check auto-premium
+      let userTier = selectedPlan
+      let userPlan = selectedPlan
+      let redirectPath = selectedPlan === 'PAY_PER_USE' ? '/dashboard' : '/free-dashboard'
+      let userCredits = selectedPlan === 'PAY_PER_USE' ? 0 : undefined
       
       try {
         const settingsDoc = await getDoc(doc(db, "system", "platform_settings"))
         const settings = settingsDoc.data()
         
-        if (settings?.autoPremiumEnabled === true) {
+        if (settings?.autoPremiumEnabled === true && selectedPlan === 'FREE') {
           userTier = "PREMIUM"
           userPlan = "PREMIUM"
           redirectPath = "/premium/dashboard"
@@ -73,11 +75,11 @@ export default function SignUpPage() {
         }
       } catch (settingsError) {
         console.error('[Signup] Failed to check auto-premium setting:', settingsError)
-        // Continue with FREE tier if settings check fails
+        // Continue with selected plan if settings check fails
       }
 
       // Create user profile in Firestore with enhanced data
-      await setDoc(doc(db, "users", userCredential.user.uid), {
+      const userDoc: any = {
         uid: userCredential.user.uid,
         email,
         name,
@@ -88,8 +90,17 @@ export default function SignUpPage() {
         usage: {
           tokensAnalyzed: 0,
           lastResetDate: new Date(),
-          dailyLimit: userTier === "PREMIUM" ? 999999 : 10
+          dailyLimit: (userTier === "PREMIUM" || userTier === "PAY_PER_USE") ? 999999 : 10
         },
+      }
+      
+      // Add credits field for PAY_PER_USE users
+      if (userTier === 'PAY_PER_USE') {
+        userDoc.credits = userCredits
+      }
+      
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        ...userDoc,
         dailyAnalyses: 0,
         totalAnalyses: 0,
         watchlist: [],
@@ -368,6 +379,42 @@ export default function SignUpPage() {
               required
               minLength={8}
             />
+          </div>
+
+          {/* Plan Selection */}
+          <div className="pt-4">
+            <Label className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase mb-3 block`}>
+              Select Plan *
+            </Label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setSelectedPlan('FREE')}
+                className={`p-4 border-2 transition-all ${
+                  selectedPlan === 'FREE'
+                    ? 'border-white bg-white/10'
+                    : 'border-white/30 bg-black/40 hover:border-white/50'
+                }`}
+              >
+                <div className="text-white font-mono text-sm font-bold mb-1">FREE</div>
+                <div className="text-white/60 font-mono text-xs">Basic features</div>
+                <div className="text-white/40 font-mono text-[10px] mt-2">20 scans/day</div>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setSelectedPlan('PAY_PER_USE')}
+                className={`p-4 border-2 transition-all ${
+                  selectedPlan === 'PAY_PER_USE'
+                    ? 'border-white bg-white/10'
+                    : 'border-white/30 bg-black/40 hover:border-white/50'
+                }`}
+              >
+                <div className="text-white font-mono text-sm font-bold mb-1">PAY-AS-YOU-GO</div>
+                <div className="text-white/60 font-mono text-xs">Buy credits</div>
+                <div className="text-white/40 font-mono text-[10px] mt-2">$5 = 50 credits</div>
+              </button>
+            </div>
           </div>
 
           <div className="flex items-start gap-3 pt-2">

@@ -12,10 +12,12 @@ import { auth } from '@/lib/firebase'
 import { 
   Shield, Users, Database, Activity, Settings,
   Search, Edit, Lock, Trash2, RefreshCw,
-  TrendingUp, CheckCircle, XCircle, Power, Key, Smartphone, Copy, Check
+  TrendingUp, CheckCircle, XCircle, Power, Key, Smartphone, Copy, Check, Zap, DollarSign
 } from 'lucide-react'
 import Navbar from '@/components/navbar'
 import Loader from '@/components/loader'
+import { AdminPaymentsPanel } from '@/components/admin-payments-panel'
+import { CacheViewer } from '@/components/admin-cache-viewer'
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 interface User {
@@ -26,6 +28,7 @@ interface User {
   tier: string
   plan?: string
   lastLogin?: string
+  credits?: number
 }
 
 interface AnalyticsData {
@@ -48,13 +51,15 @@ export default function ModernAdminPanel() {
   const router = useRouter()
   const { isAdmin, loading: roleLoading } = useUserRole()
   
-  const [activeTab, setActiveTab] = useState<'users' | 'cache' | 'system' | 'analytics' | 'settings' | 'logs'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'cache' | 'system' | 'analytics' | 'settings' | 'logs' | 'payments'>('users')
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [stats, setStats] = useState({
     totalUsers: 0,
     premiumUsers: 0,
+    payPerUseUsers: 0,
+    totalCredits: 0,
     cachedTokens: 0,
     queries24h: 0
   })
@@ -122,7 +127,9 @@ export default function ModernAdminPanel() {
         setUsers(data.users || [])
         setStats({
           totalUsers: data.users?.length || 0,
-          premiumUsers: data.users?.filter((u: User) => u.tier === 'pro').length || 0,
+          premiumUsers: data.users?.filter((u: User) => u.tier === 'pro' || u.plan === 'PREMIUM').length || 0,
+          payPerUseUsers: data.users?.filter((u: User) => u.plan === 'PAY_PER_USE').length || 0,
+          totalCredits: data.users?.reduce((sum: number, u: User) => sum + (u.credits || 0), 0) || 0,
           cachedTokens: 13,
           queries24h: 0
         })
@@ -372,8 +379,14 @@ export default function ModernAdminPanel() {
     
     try {
       const user = auth.currentUser
-      if (!user) return
+      if (!user) {
+        alert('Not authenticated')
+        return
+      }
+      
       const token = await user.getIdToken()
+      
+      console.log('[Admin] Updating user:', selectedUser.uid, 'to tier:', editingTier)
       
       // Update tier/plan
       const response = await fetch('/api/admin/users', {
@@ -383,18 +396,28 @@ export default function ModernAdminPanel() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          action: 'update_plan',
+          action: 'update',
           userId: selectedUser.uid,
-          plan: editingTier.toUpperCase()
+          updates: {
+            tier: editingTier,
+            plan: editingTier.toUpperCase()
+          }
         })
       })
       
+      const data = await response.json()
+      console.log('[Admin] Update response:', data)
+      
       if (response.ok) {
+        alert('User updated successfully!')
         setShowEditModal(false)
-        loadAdminData()
+        await loadAdminData()
+      } else {
+        alert(`Failed to update user: ${data.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Failed to update user:', error)
+      alert('Failed to update user. Check console for details.')
     }
   }
 
@@ -471,78 +494,110 @@ export default function ModernAdminPanel() {
       <Navbar />
       <div className="min-h-screen bg-black pt-20">
         <div className="flex">
-          {/* Sidebar */}
-          <div className="w-16 fixed left-0 top-20 bottom-0 bg-black border-r border-white/10 flex flex-col items-center py-6 gap-4">
+          {/* Modern Floating Sidebar */}
+          <div className="w-20 fixed left-4 top-24 bottom-4 bg-black/60 backdrop-blur-xl border border-white/20 rounded-2xl flex flex-col items-center py-6 gap-2 z-40 shadow-2xl">
             <button
               onClick={() => setActiveTab('users')}
-              className={`p-3 rounded-lg transition-all ${
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all relative group ${
                 activeTab === 'users'
-                  ? 'bg-white/10 text-white'
-                  : 'text-white/40 hover:text-white hover:bg-white/5'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
               title="Users"
             >
               <Users className="w-5 h-5" />
+              {activeTab === 'users' && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-l-xl" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab('cache')}
-              className={`p-3 rounded-lg transition-all ${
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all relative group ${
                 activeTab === 'cache'
-                  ? 'bg-white/10 text-white'
-                  : 'text-white/40 hover:text-white hover:bg-white/5'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
               title="Cache"
             >
               <Database className="w-5 h-5" />
+              {activeTab === 'cache' && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-l-xl" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab('system')}
-              className={`p-3 rounded-lg transition-all ${
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all relative group ${
                 activeTab === 'system'
-                  ? 'bg-white/10 text-white'
-                  : 'text-white/40 hover:text-white hover:bg-white/5'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
               title="System"
             >
               <Activity className="w-5 h-5" />
+              {activeTab === 'system' && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-l-xl" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`p-3 rounded-lg transition-all ${
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all relative group ${
                 activeTab === 'analytics'
-                  ? 'bg-white/10 text-white'
-                  : 'text-white/40 hover:text-white hover:bg-white/5'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
               title="Analytics"
             >
               <TrendingUp className="w-5 h-5" />
+              {activeTab === 'analytics' && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-l-xl" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`p-3 rounded-lg transition-all ${
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all relative group ${
                 activeTab === 'settings'
-                  ? 'bg-white/10 text-white'
-                  : 'text-white/40 hover:text-white hover:bg-white/5'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
               title="Settings"
             >
               <Settings className="w-5 h-5" />
+              {activeTab === 'settings' && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-l-xl" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab('logs')}
-              className={`p-3 rounded-lg transition-all ${
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all relative group ${
                 activeTab === 'logs'
-                  ? 'bg-white/10 text-white'
-                  : 'text-white/40 hover:text-white hover:bg-white/5'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
               title="Activity Logs"
             >
               <Activity className="w-5 h-5" />
+              {activeTab === 'logs' && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-l-xl" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('payments')}
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all relative group ${
+                activeTab === 'payments'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/10'
+              }`}
+              title="Payments"
+            >
+              <DollarSign className="w-5 h-5" />
+              {activeTab === 'payments' && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-l-xl" />
+              )}
             </button>
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 ml-16 p-8">
+          <div className="flex-1 ml-28 mr-4 p-8">
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
@@ -562,7 +617,7 @@ export default function ModernAdminPanel() {
               </div>
 
               {/* Stats Cards */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                 <div className="bg-black border border-white/10 rounded-xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-white/60 text-xs font-mono uppercase">Total Users</span>
@@ -581,7 +636,29 @@ export default function ModernAdminPanel() {
                   </div>
                   <div className="text-3xl font-bold text-white font-mono">{stats.premiumUsers}</div>
                   <div className="text-white/50 text-xs font-mono mt-2">
-                    {stats.totalUsers > 0 ? `${((stats.premiumUsers / stats.totalUsers) * 100).toFixed(1)}% conversion` : '0% conversion'}
+                    {stats.totalUsers > 0 ? `${((stats.premiumUsers / stats.totalUsers) * 100).toFixed(1)}%` : '0%'}
+                  </div>
+                </div>
+
+                <div className="bg-black border border-blue-500/20 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-blue-400 text-xs font-mono uppercase">Pay-Per-Use</span>
+                    <Zap className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div className="text-3xl font-bold text-white font-mono">{stats.payPerUseUsers}</div>
+                  <div className="text-blue-400 text-xs font-mono mt-2">
+                    {stats.totalUsers > 0 ? `${((stats.payPerUseUsers / stats.totalUsers) * 100).toFixed(1)}%` : '0%'}
+                  </div>
+                </div>
+
+                <div className="bg-black border border-blue-500/20 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-blue-400 text-xs font-mono uppercase">Total Credits</span>
+                    <Zap className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div className="text-3xl font-bold text-white font-mono">{stats.totalCredits}</div>
+                  <div className="text-white/50 text-xs font-mono mt-2">
+                    ${(stats.totalCredits * 0.10).toFixed(2)} value
                   </div>
                 </div>
 
@@ -605,75 +682,7 @@ export default function ModernAdminPanel() {
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex items-center gap-2 mb-6 border-b border-white/10 pb-4">
-              <button
-                onClick={() => setActiveTab('users')}
-                className={`px-4 py-2 rounded-lg font-mono text-xs transition-all ${
-                  activeTab === 'users'
-                    ? 'bg-white/10 text-white border border-white/20'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Users className="w-4 h-4 inline mr-2" />
-                USERS
-              </button>
-              <button
-                onClick={() => setActiveTab('cache')}
-                className={`px-4 py-2 rounded-lg font-mono text-xs transition-all ${
-                  activeTab === 'cache'
-                    ? 'bg-white/10 text-white border border-white/20'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Database className="w-4 h-4 inline mr-2" />
-                CACHE
-              </button>
-              <button
-                onClick={() => setActiveTab('system')}
-                className={`px-4 py-2 rounded-lg font-mono text-xs transition-all ${
-                  activeTab === 'system'
-                    ? 'bg-white/10 text-white border border-white/20'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Activity className="w-4 h-4 inline mr-2" />
-                SYSTEM
-              </button>
-              <button
-                onClick={() => setActiveTab('analytics')}
-                className={`px-4 py-2 rounded-lg font-mono text-xs transition-all ${
-                  activeTab === 'analytics'
-                    ? 'bg-white/10 text-white border border-white/20'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <TrendingUp className="w-4 h-4 inline mr-2" />
-                ANALYTICS
-              </button>
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`px-4 py-2 rounded-lg font-mono text-xs transition-all ${
-                  activeTab === 'settings'
-                    ? 'bg-white/10 text-white border border-white/20'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Settings className="w-4 h-4 inline mr-2" />
-                SETTINGS
-              </button>
-              <button
-                onClick={() => setActiveTab('logs')}
-                className={`px-4 py-2 rounded-lg font-mono text-xs transition-all ${
-                  activeTab === 'logs'
-                    ? 'bg-white/10 text-white border border-white/20'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Activity className="w-4 h-4 inline mr-2" />
-                LOGS
-              </button>
-            </div>
+
 
             {/* User Management Tab */}
             {activeTab === 'users' && (
@@ -718,6 +727,7 @@ export default function ModernAdminPanel() {
                         <th className="text-left px-6 py-4 text-white/60 font-mono text-xs uppercase">UID</th>
                         <th className="text-left px-6 py-4 text-white/60 font-mono text-xs uppercase">Role</th>
                         <th className="text-left px-6 py-4 text-white/60 font-mono text-xs uppercase">Tier</th>
+                        <th className="text-left px-6 py-4 text-white/60 font-mono text-xs uppercase">Credits</th>
                         <th className="text-left px-6 py-4 text-white/60 font-mono text-xs uppercase">Last Login</th>
                         <th className="text-right px-6 py-4 text-white/60 font-mono text-xs uppercase">Actions</th>
                       </tr>
@@ -737,10 +747,22 @@ export default function ModernAdminPanel() {
                           </td>
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 rounded text-xs font-mono font-bold ${
-                              (user.tier === 'pro' || user.tier === 'PREMIUM' || user.plan === 'PREMIUM') ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-white/10 text-white/60'
+                              (user.tier === 'pro' || user.tier === 'PREMIUM' || user.plan === 'PREMIUM') ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 
+                              user.plan === 'PAY_PER_USE' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                              'bg-white/10 text-white/60'
                             }`}>
-                              {(user.tier === 'pro' || user.tier === 'PREMIUM' || user.plan === 'PREMIUM') ? 'PREMIUM' : 'FREE'}
+                              {(user.tier === 'pro' || user.tier === 'PREMIUM' || user.plan === 'PREMIUM') ? 'PREMIUM' : 
+                               user.plan === 'PAY_PER_USE' ? 'PAY-PER-USE' : 'FREE'}
                             </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            {user.plan === 'PAY_PER_USE' ? (
+                              <span className="text-white font-mono text-sm font-bold">
+                                {user.credits || 0} <span className="text-white/40 text-xs">credits</span>
+                              </span>
+                            ) : (
+                              <span className="text-white/40 font-mono text-xs">N/A</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 text-white/60 font-mono text-xs">
                             {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
@@ -791,55 +813,7 @@ export default function ModernAdminPanel() {
             )}
 
             {/* Cache Tab */}
-            {activeTab === 'cache' && (
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-bold text-white font-mono flex items-center gap-2">
-                    <Database className="w-5 h-5" />
-                    Cache Management
-                  </h2>
-                  <button
-                    onClick={async () => {
-                      if (confirm('Clear all cached tokens?')) {
-                        const user = auth.currentUser
-                        if (user) {
-                          const token = await user.getIdToken()
-                          await fetch('/api/admin/clear-cache', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` }
-                          })
-                          loadAdminData()
-                        }
-                      }
-                    }}
-                    className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all text-sm font-mono flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    CLEAR CACHE
-                  </button>
-                </div>
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="bg-black border border-white/10 rounded-xl p-6">
-                    <div className="text-white/60 text-xs font-mono uppercase mb-2">Cached Tokens</div>
-                    <div className="text-3xl font-bold text-white font-mono">{stats.cachedTokens}</div>
-                  </div>
-                  <div className="bg-black border border-white/10 rounded-xl p-6">
-                    <div className="text-white/60 text-xs font-mono uppercase mb-2">Total Queries</div>
-                    <div className="text-3xl font-bold text-white font-mono">158</div>
-                  </div>
-                  <div className="bg-black border border-white/10 rounded-xl p-6">
-                    <div className="text-white/60 text-xs font-mono uppercase mb-2">Cache Hit Rate</div>
-                    <div className="text-3xl font-bold text-white font-mono">87%</div>
-                  </div>
-                </div>
-                <div className="bg-black border border-white/10 rounded-xl p-6">
-                  <p className="text-white/60 font-mono text-sm">
-                    Cache stores frequently accessed token data to reduce API calls and improve performance.
-                    Cached data expires after 24 hours.
-                  </p>
-                </div>
-              </div>
-            )}
+            {activeTab === 'cache' && <CacheViewer />}
 
             {/* System Tab */}
             {activeTab === 'system' && (
@@ -1277,6 +1251,11 @@ export default function ModernAdminPanel() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Payments Tab */}
+            {activeTab === 'payments' && (
+              <AdminPaymentsPanel />
             )}
           </div>
         </div>
