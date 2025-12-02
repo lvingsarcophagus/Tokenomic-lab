@@ -24,6 +24,7 @@ export default function SignUpPage() {
   const [name, setName] = useState("")
   const [company, setCompany] = useState("")
   const [country, setCountry] = useState("")
+  const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'PAY_PER_USE'>('FREE')
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -34,19 +35,78 @@ export default function SignUpPage() {
     setLoading(true)
     setError("")
 
-    // Validation
+    // Enhanced Validation with boundary checks
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!email || !emailRegex.test(email)) {
+      setError("Please enter a valid email address")
+      setLoading(false)
+      return
+    }
+    
+    if (email.length > 254) {
+      setError("Email address is too long (max 254 characters)")
+      setLoading(false)
+      return
+    }
+
+    // Password validation
+    if (!password || password.length < 8) {
+      setError("Password must be at least 8 characters long")
+      setLoading(false)
+      return
+    }
+    
+    if (password.length > 128) {
+      setError("Password is too long (max 128 characters)")
+      setLoading(false)
+      return
+    }
+    
     if (password !== confirmPassword) {
       setError("Passwords do not match")
       setLoading(false)
       return
     }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long")
+    
+    // Password strength check
+    const hasUpperCase = /[A-Z]/.test(password)
+    const hasLowerCase = /[a-z]/.test(password)
+    const hasNumber = /[0-9]/.test(password)
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+      setError("Password must contain uppercase, lowercase, and numbers")
       setLoading(false)
       return
     }
 
+    // Name validation
+    if (name && name.length > 100) {
+      setError("Name is too long (max 100 characters)")
+      setLoading(false)
+      return
+    }
+    
+    // Sanitize name input
+    const sanitizedName = name.trim().replace(/[<>]/g, '')
+    
+    // Company validation
+    if (company && company.length > 200) {
+      setError("Company name is too long (max 200 characters)")
+      setLoading(false)
+      return
+    }
+    
+    // Country validation
+    if (country && country.length > 100) {
+      setError("Country name is too long (max 100 characters)")
+      setLoading(false)
+      return
+    }
+
+    // Terms agreement
     if (!agreeToTerms) {
       setError("You must agree to the Terms of Service and Privacy Policy")
       setLoading(false)
@@ -56,16 +116,17 @@ export default function SignUpPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
-      // Check if auto-premium is enabled
-      let userTier = "FREE"
-      let userPlan = "FREE"
-      let redirectPath = "/free-dashboard"
+      // Use selected plan or check auto-premium
+      let userTier: 'FREE' | 'PAY_PER_USE' | 'PREMIUM' = selectedPlan
+      let userPlan: 'FREE' | 'PAY_PER_USE' | 'PREMIUM' = selectedPlan
+      let redirectPath = selectedPlan === 'PAY_PER_USE' ? '/dashboard' : '/free-dashboard'
+      let userCredits = selectedPlan === 'PAY_PER_USE' ? 0 : undefined
       
       try {
         const settingsDoc = await getDoc(doc(db, "system", "platform_settings"))
         const settings = settingsDoc.data()
         
-        if (settings?.autoPremiumEnabled === true) {
+        if (settings?.autoPremiumEnabled === true && selectedPlan === 'FREE') {
           userTier = "PREMIUM"
           userPlan = "PREMIUM"
           redirectPath = "/premium/dashboard"
@@ -73,23 +134,32 @@ export default function SignUpPage() {
         }
       } catch (settingsError) {
         console.error('[Signup] Failed to check auto-premium setting:', settingsError)
-        // Continue with FREE tier if settings check fails
+        // Continue with selected plan if settings check fails
       }
 
       // Create user profile in Firestore with enhanced data
-      await setDoc(doc(db, "users", userCredential.user.uid), {
+      const userDoc: any = {
         uid: userCredential.user.uid,
         email,
-        name,
-        company: company || null,
-        country: country || null,
+        name: sanitizedName || null,
+        company: company?.trim() || null,
+        country: country?.trim() || null,
         tier: userTier,
         plan: userPlan,
         usage: {
           tokensAnalyzed: 0,
           lastResetDate: new Date(),
-          dailyLimit: userTier === "PREMIUM" ? 999999 : 10
+          dailyLimit: (userTier === "PREMIUM" || userTier === "PAY_PER_USE") ? 999999 : 10
         },
+      }
+      
+      // Add credits field for PAY_PER_USE users
+      if (userTier === 'PAY_PER_USE') {
+        userDoc.credits = userCredits
+      }
+      
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        ...userDoc,
         dailyAnalyses: 0,
         totalAnalyses: 0,
         watchlist: [],
@@ -282,11 +352,20 @@ export default function SignUpPage() {
                 id="name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value.length <= 100) {
+                    setName(value)
+                  }
+                }}
                 className={`mt-1 ${theme.inputs.default}`}
                 placeholder="John Doe"
+                maxLength={100}
                 required
               />
+              <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
+                {name.length}/100 characters
+              </p>
             </div>
 
             <div>
@@ -297,10 +376,19 @@ export default function SignUpPage() {
                 id="company"
                 type="text"
                 value={company}
-                onChange={(e) => setCompany(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value.length <= 200) {
+                    setCompany(value)
+                  }
+                }}
                 className={`mt-1 ${theme.inputs.default}`}
                 placeholder="Acme Inc."
+                maxLength={200}
               />
+              <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
+                {company.length}/200 characters
+              </p>
             </div>
           </div>
 
@@ -313,11 +401,20 @@ export default function SignUpPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value.length <= 254) {
+                    setEmail(value)
+                  }
+                }}
                 className={`mt-1 ${theme.inputs.default}`}
                 placeholder="you@example.com"
+                maxLength={254}
                 required
               />
+              <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
+                {email.length}/254 characters
+              </p>
             </div>
 
             <div>
@@ -328,10 +425,19 @@ export default function SignUpPage() {
                 id="country"
                 type="text"
                 value={country}
-                onChange={(e) => setCountry(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value.length <= 100) {
+                    setCountry(value)
+                  }
+                }}
                 className={`mt-1 ${theme.inputs.default}`}
                 placeholder="United States"
+                maxLength={100}
               />
+              <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
+                {country.length}/100 characters
+              </p>
             </div>
           </div>
 
@@ -343,14 +449,20 @@ export default function SignUpPage() {
               id="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value
+                if (value.length <= 128) {
+                  setPassword(value)
+                }
+              }}
               className={`mt-1 ${theme.inputs.default}`}
               placeholder="••••••••"
               required
               minLength={8}
+              maxLength={128}
             />
             <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
-              Minimum 8 characters
+              {password.length}/128 characters - must include uppercase, lowercase, and numbers
             </p>
           </div>
 
@@ -362,12 +474,57 @@ export default function SignUpPage() {
               id="confirmPassword"
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value
+                if (value.length <= 128) {
+                  setConfirmPassword(value)
+                }
+              }}
               className={`mt-1 ${theme.inputs.default}`}
               placeholder="••••••••"
               required
               minLength={8}
+              maxLength={128}
             />
+            <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
+              {confirmPassword.length}/128 characters
+            </p>
+          </div>
+
+          {/* Plan Selection */}
+          <div className="pt-4">
+            <Label className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase mb-3 block`}>
+              Select Plan *
+            </Label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setSelectedPlan('FREE')}
+                className={`p-4 border-2 transition-all ${
+                  selectedPlan === 'FREE'
+                    ? 'border-white bg-white/10'
+                    : 'border-white/30 bg-black/40 hover:border-white/50'
+                }`}
+              >
+                <div className="text-white font-mono text-sm font-bold mb-1">FREE</div>
+                <div className="text-white/60 font-mono text-xs">Basic features</div>
+                <div className="text-white/40 font-mono text-[10px] mt-2">20 scans/day</div>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setSelectedPlan('PAY_PER_USE')}
+                className={`p-4 border-2 transition-all ${
+                  selectedPlan === 'PAY_PER_USE'
+                    ? 'border-white bg-white/10'
+                    : 'border-white/30 bg-black/40 hover:border-white/50'
+                }`}
+              >
+                <div className="text-white font-mono text-sm font-bold mb-1">PAY-AS-YOU-GO</div>
+                <div className="text-white/60 font-mono text-xs">Buy credits</div>
+                <div className="text-white/40 font-mono text-[10px] mt-2">$5 = 50 credits</div>
+              </button>
+            </div>
           </div>
 
           <div className="flex items-start gap-3 pt-2">

@@ -83,24 +83,14 @@ export interface RiskResult {
   };
 
   // Comprehensive AI Analysis (Premium only)
+  // Structure matches AIExplanationPanel props
   ai_summary?: {
-    executive_summary: string;
-    recommendation: 'BUY' | 'RESEARCH_MORE' | 'AVOID';
-    classification: {
-      type: 'MEME_TOKEN' | 'UTILITY_TOKEN';
-      confidence: number;
-    };
-    factor_explanations: {
-      [key: string]: string;
-    };
-    top_risk_factors: Array<{
-      name: string;
-      score: number;
-      explanation: string;
-      impact: string;
-    }>;
-    key_insights: string[];
-    generated_at?: string;
+    overview: string;
+    keyInsights: string[];
+    riskAnalysis: string;
+    recommendation: string;
+    technicalDetails: string;
+    calculationBreakdown?: string;
   };
 
   // Positive Signals (Solana-specific good indicators)

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import CryptoIcon from '@/components/crypto-icon'
 
 interface TokenSearchResult {
     name: string
@@ -48,6 +49,20 @@ export default function DexSearchPremium({
     const [showFilters, setShowFilters] = useState(false)
     const [activeTab, setActiveTab] = useState<'trending' | 'recent' | 'gainers'>('trending')
 
+    // Auto-rotate tabs every 5 seconds
+    useEffect(() => {
+        const tabs: ('trending' | 'recent' | 'gainers')[] = ['trending', 'recent', 'gainers']
+        const interval = setInterval(() => {
+            setActiveTab(current => {
+                const currentIndex = tabs.indexOf(current)
+                const nextIndex = (currentIndex + 1) % tabs.length
+                return tabs[nextIndex]
+            })
+        }, 5000) // Change every 5 seconds
+
+        return () => clearInterval(interval)
+    }, [])
+
     // Mock trending data with real icons
     const trendingTokens = [
         { symbol: 'BONK', name: 'Bonk', chain: 'Solana', price: '$0.00001234', change: '+15.4%', icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/23095.png' },
@@ -59,12 +74,12 @@ export default function DexSearchPremium({
     ]
 
     const chains = [
-        { id: 'ethereum', name: 'ETHEREUM', icon: '⟠', color: 'text-white' },
-        { id: 'solana', name: 'SOLANA', icon: '◎', color: 'text-white' },
-        { id: 'bsc', name: 'BSC', icon: 'BNB', color: 'text-white' },
-        { id: 'base', name: 'BASE', icon: '🔵', color: 'text-white' },
-        { id: 'polygon', name: 'POLYGON', icon: 'MATIC', color: 'text-white' },
-        { id: 'avalanche', name: 'AVALANCHE', icon: '🔺', color: 'text-white' },
+        { id: 'ethereum', name: 'ETHEREUM', color: 'text-white' },
+        { id: 'solana', name: 'SOLANA', color: 'text-white' },
+        { id: 'bsc', name: 'BSC', color: 'text-white' },
+        { id: 'base', name: 'BASE', color: 'text-white' },
+        { id: 'polygon', name: 'POLYGON', color: 'text-white' },
+        { id: 'avalanche', name: 'AVALANCHE', color: 'text-white' },
     ]
 
     // Debounced search
@@ -192,7 +207,13 @@ export default function DexSearchPremium({
                                         : "bg-black/30 text-white/50 border-white/10 hover:border-white/30 hover:text-white hover:bg-white/5 hover:scale-102"
                                 )}
                             >
-                                <span className={cn("text-sm", selectedChain === chain.id ? "text-black" : "text-white/50")}>{chain.icon}</span>
+                                <CryptoIcon 
+                                    chain={chain.id} 
+                                    className={cn(
+                                        "w-4 h-4",
+                                        selectedChain === chain.id ? "opacity-100" : "opacity-60"
+                                    )}
+                                />
                                 {chain.name}
                             </button>
                         ))}

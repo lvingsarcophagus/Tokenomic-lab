@@ -4,6 +4,7 @@
  */
 
 import Groq from 'groq-sdk'
+import { generateEnhancedFallback } from './groq-fallback'
 
 let groq: Groq | null = null
 
@@ -221,6 +222,7 @@ export async function generateComprehensiveAISummary(
   riskAnalysis: string
   recommendation: string
   technicalDetails: string
+  calculationBreakdown?: string
 }> {
   try {
     const client = getGroqClient()
@@ -317,16 +319,7 @@ Be professional, actionable, and data-driven. No speculation.`
     return summary
   } catch (error: any) {
     console.error('[Groq AI] Comprehensive summary failed:', error.message);
-    return {
-      overview: `${tokenData.name} (${tokenData.symbol}) - ${tokenData.chain} token with ${tokenData.riskLevel} risk.`,
-      keyInsights: [
-        `Risk Score: ${tokenData.riskScore}/100`,
-        tokenData.holders ? `${tokenData.holders} holders` : 'Limited data',
-        `Risk Level: ${tokenData.riskLevel}`
-      ],
-      riskAnalysis: `Token analysis shows ${tokenData.riskLevel.toLowerCase()} risk based on available metrics.`,
-      recommendation: tokenData.riskScore > 70 ? 'Exercise extreme caution' : 'Proceed with standard risk management',
-      technicalDetails: `${tokenData.chain} blockchain, Age: ${tokenData.age || 'Unknown'}`
-    }
+    console.log('[Groq AI] Using enhanced fallback due to error')
+    return generateEnhancedFallback(tokenData)
   }
 }

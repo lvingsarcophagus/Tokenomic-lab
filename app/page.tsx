@@ -39,125 +39,116 @@ export default function LandingPage() {
 
       {/* Hero Section - Enhanced */}
       <section className="relative min-h-screen flex items-center justify-center px-6 py-20">
-        <div className="max-w-6xl w-full">
-          {/* Top decorative line */}
-          <div className="flex items-center gap-2 mb-8 opacity-60">
-            <div className="w-8 lg:w-12 h-px bg-white"></div>
-            <span className="text-white text-[10px] font-mono tracking-wider">∞</span>
-            <div className="flex-1 h-px bg-white"></div>
-            <span className="text-white text-[10px] font-mono tracking-wider">TOKENOMICS.LAB</span>
-          </div>
+        <div className="max-w-6xl w-full mx-auto">
+            {/* Top decorative line with enhanced styling - Centered */}
+            <div className="flex items-center justify-center gap-3 mb-12 opacity-70">
+              <div className="w-12 lg:w-16 h-px bg-gradient-to-r from-transparent via-white to-white"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-white text-[10px] font-mono tracking-[0.3em]">∞</span>
+                <div className="w-px h-4 bg-white/50"></div>
+                <span className="text-white text-[10px] font-mono tracking-[0.3em]">TOKENOMICS.LAB</span>
+              </div>
+              <div className="w-12 lg:w-16 h-px bg-gradient-to-r from-white to-transparent"></div>
+            </div>
 
-          {/* Main Title - Enhanced */}
-          <div className="relative mb-8">
-            <div className="hidden lg:block absolute -right-3 top-0 bottom-0 w-1 dither-pattern opacity-40"></div>
-            <h1 className="text-4xl lg:text-6xl xl:text-8xl font-bold text-white mb-6 leading-tight font-mono tracking-wider">
-              AI-POWERED
-              <br />
-              <span className="text-white/80">TOKEN</span> ANALYSIS
-            </h1>
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
-                <span className="text-white text-xs font-mono tracking-wider">MEME + UTILITY</span>
-              </div>
-              <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
-                <span className="text-white text-xs font-mono tracking-wider">MULTI-CHAIN</span>
-              </div>
-              <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
-                <span className="text-white text-xs font-mono tracking-wider">REAL-TIME</span>
-              </div>
-              <div className="px-3 py-1 bg-white/10 border border-white/30 backdrop-blur-sm">
-                <span className="text-white/90 text-xs font-mono tracking-wider">AI-POWERED</span>
+          {/* Main Title - Centered */}
+          <div className="relative mb-12 text-center">
+            <div className="space-y-6">
+              <h1 className="text-5xl lg:text-7xl xl:text-9xl font-bold text-white leading-[0.9] font-mono tracking-tight">
+                ADVANCED
+                <br />
+                <span className="text-white/70">TOKENOMICS</span>
+                <br />
+                <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">ANALYSIS</span>
+              </h1>
+              
+              {/* Enhanced badges with better spacing - Centered */}
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+                <div className="group relative px-4 py-2 bg-white/5 border border-white/20 backdrop-blur-sm hover:bg-white/10 hover:border-white/40 transition-all duration-300">
+                  <span className="text-white text-xs font-mono tracking-[0.2em] font-bold">10-FACTOR ALGORITHM</span>
+                  <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </div>
+                <div className="px-4 py-2 bg-white/5 border border-white/20 backdrop-blur-sm">
+                  <span className="text-white/80 text-xs font-mono tracking-[0.2em]">MULTI-CHAIN</span>
+                </div>
+                <div className="px-4 py-2 bg-white/5 border border-white/20 backdrop-blur-sm">
+                  <span className="text-white/80 text-xs font-mono tracking-[0.2em]">REAL-TIME</span>
+                </div>
+                <div className="px-4 py-2 bg-white/5 border border-white/20 backdrop-blur-sm">
+                  <span className="text-white/80 text-xs font-mono tracking-[0.2em]">MEME + UTILITY</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Decorative dots pattern */}
-          <div className="flex gap-1 mb-8 opacity-40">
-            {Array.from({ length: 80 }).map((_, i) => (
-              <div key={i} className="w-0.5 h-0.5 bg-white"></div>
+          {/* Decorative separator with animation - Centered */}
+          <div className="flex items-center justify-center gap-1 mb-12 opacity-40">
+            {Array.from({ length: 100 }).map((_, i) => (
+              <div 
+                key={i} 
+                className="w-0.5 h-0.5 bg-white animate-pulse" 
+                style={{ animationDelay: `${i * 20}ms`, animationDuration: '2s' }}
+              ></div>
             ))}
           </div>
 
-          {/* Description - Enhanced */}
-          <div className="relative max-w-3xl mb-10">
-            <p className="text-base lg:text-lg text-white/90 mb-6 leading-relaxed font-mono">
-              PROTECT YOUR INVESTMENTS WITH AI-POWERED TOKEN ANALYSIS. DETECT SCAMS, RUG PULLS & HONEYPOTS BEFORE YOU BUY.
-            </p>
-            <p className="text-sm lg:text-base text-white/70 mb-8 leading-relaxed font-mono">
-              Comprehensive 10-factor risk algorithm analyzes contract security, holder distribution, liquidity depth, and market behavior across 6+ blockchains.
-              Powered by Groq AI (Llama 3.3 70B) for intelligent token classification (meme vs utility). Real-time data from Mobula, Moralis, GoPlus, and Helius APIs.
-            </p>
-
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="flex items-center gap-2 text-white/60 text-xs font-mono">
-                <Binary className="w-4 h-4" />
-                <span>10 RISK FACTORS</span>
+          {/* Description - Centered */}
+          <div className="relative max-w-4xl mx-auto mb-14 text-center">
+            <div className="space-y-6">
+              <p className="text-xl lg:text-2xl text-white font-mono leading-relaxed font-bold">
+                PROTECT YOUR INVESTMENTS WITH PROPRIETARY 10-FACTOR RISK SCORING.
+              </p>
+              <p className="text-base lg:text-lg text-white/60 font-mono leading-relaxed">
+                Detect scams, rug pulls & honeypots before you buy. Our custom algorithm analyzes contract security, holder distribution, liquidity depth, and market behavior across 6+ blockchains.
+              </p>
+              
+              {/* Feature highlights with icons - Centered */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 max-w-5xl mx-auto">
+                <div className="flex flex-col items-center text-center gap-3 p-6 border border-white/10 bg-white/5 backdrop-blur-sm">
+                  <Binary className="w-6 h-6 text-white/80" />
+                  <div>
+                    <div className="text-white font-mono text-sm font-bold mb-1">10 RISK FACTORS</div>
+                    <div className="text-white/50 font-mono text-xs">Comprehensive analysis</div>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center text-center gap-3 p-6 border border-white/10 bg-white/5 backdrop-blur-sm">
+                  <GitBranch className="w-6 h-6 text-white/80" />
+                  <div>
+                    <div className="text-white font-mono text-sm font-bold mb-1">6 BLOCKCHAINS</div>
+                    <div className="text-white/50 font-mono text-xs">Multi-chain support</div>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center text-center gap-3 p-6 border border-white/10 bg-white/5 backdrop-blur-sm">
+                  <Hexagon className="w-6 h-6 text-white/80" />
+                  <div>
+                    <div className="text-white font-mono text-sm font-bold mb-1">5 DATA SOURCES</div>
+                    <div className="text-white/50 font-mono text-xs">Real-time aggregation</div>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-white/60 text-xs font-mono">
-                <GitBranch className="w-4 h-4" />
-                <span>6 BLOCKCHAINS</span>
-              </div>
-              <div className="flex items-center gap-2 text-white/60 text-xs font-mono">
-                <Hexagon className="w-4 h-4" />
-                <span>5 DATA SOURCES</span>
-              </div>
-            </div>
-
-            <div className="hidden lg:block absolute -left-4 top-1/2 w-3 h-3 border border-white opacity-30" style={{ transform: 'translateY(-50%)' }}>
-              <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-white" style={{ transform: 'translate(-50%, -50%)' }}></div>
             </div>
           </div>
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-            <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
-              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">10</div>
-              <div className="text-xs text-white/60 font-mono">RISK FACTORS</div>
-            </div>
-            <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
-              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">6</div>
-              <div className="text-xs text-white/60 font-mono">BLOCKCHAINS</div>
-            </div>
-            <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
-              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">5</div>
-              <div className="text-xs text-white/60 font-mono">API SOURCES</div>
-            </div>
-            <div className="border border-white/20 bg-black/40 backdrop-blur-sm p-4">
-              <div className="text-2xl lg:text-3xl font-bold text-white font-mono mb-1">SOL</div>
-              <div className="text-xs text-white/60 font-mono">SOLANA FOCUS</div>
-            </div>
-          </div>
-
-          {/* CTA Buttons - Enhanced */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/dashboard">
-              <button className="relative px-10 py-5 bg-white text-black font-mono text-base lg:text-lg border-2 border-white hover:bg-transparent hover:text-white transition-all duration-200 group overflow-hidden">
-                <span className="relative z-10 flex items-center gap-2 justify-center font-bold">
-                  START ANALYZING TOKENS
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </span>
-                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-200"></div>
-              </button>
-            </Link>
-
+          {/* CTA Button - Centered */}
+          <div className="flex justify-center mb-16">
             <Link href="/signup">
-              <button className="relative px-10 py-5 bg-transparent border-2 border-white/50 text-white font-mono text-base lg:text-lg hover:bg-white/10 hover:border-white transition-all duration-200 group">
-                <span className="flex items-center gap-2 justify-center">
-                  CREATE FREE ACCOUNT
-                  <Sparkles className="w-5 h-5" />
+              <button className="group relative px-16 py-6 bg-white text-black font-mono text-base lg:text-xl border-2 border-white hover:bg-black hover:text-white transition-all duration-300 overflow-hidden">
+                <span className="relative z-10 flex items-center gap-3 justify-center font-bold tracking-wider">
+                  GET STARTED
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
             </Link>
           </div>
 
-          {/* Bottom technical notation */}
-          <div className="flex items-center gap-2 opacity-40">
-            <span className="text-white text-[9px] font-mono">∞</span>
-            <div className="flex-1 h-px bg-white max-w-xs"></div>
-            <span className="text-white text-[9px] font-mono">AI.MEME.DETECTION.V2.0</span>
-            <div className="flex-1 h-px bg-white max-w-xs"></div>
-            <span className="text-white text-[9px] font-mono">∞</span>
+          {/* Bottom technical notation with enhanced styling */}
+          <div className="flex items-center justify-center gap-3 opacity-50 pt-8">
+            <span className="text-white text-[10px] font-mono tracking-[0.3em]">∞</span>
+            <div className="w-32 h-px bg-gradient-to-r from-transparent via-white to-transparent"></div>
+            <span className="text-white text-[10px] font-mono tracking-[0.3em]">RISK.ALGORITHM.V2.0</span>
+            <div className="w-32 h-px bg-gradient-to-r from-transparent via-white to-transparent"></div>
+            <span className="text-white text-[10px] font-mono tracking-[0.3em]">∞</span>
           </div>
         </div>
       </section>
@@ -615,68 +606,90 @@ export default function LandingPage() {
 
       {/* Pricing Section - Enhanced */}
       <section className="relative px-6 py-20 border-t border-white/10">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Section Header */}
           <div className="mb-16 text-center">
             <div className="flex items-center gap-2 mb-4 opacity-60 justify-center">
               <div className="w-8 h-px bg-white"></div>
-              <span className="text-white text-[10px] font-mono tracking-wider">ACCESS LEVELS</span>
+              <span className="text-white text-[10px] font-mono tracking-wider">HYBRID MONETIZATION</span>
               <div className="w-8 h-px bg-white"></div>
             </div>
             <h2 className="text-3xl lg:text-5xl font-bold text-white font-mono tracking-wider mb-4">
               CHOOSE YOUR PLAN
             </h2>
-            <p className="text-white/60 text-sm lg:text-base font-mono max-w-2xl mx-auto">
-              Start with our free tier and upgrade when you need advanced features. No credit card required.
+            <p className="text-white/60 text-sm lg:text-base font-mono max-w-3xl mx-auto">
+              Start free, pay only for what you use, or go unlimited. No barriers to entry, sustainable for everyone.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
-            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all">
-              <CardContent className="p-8 lg:p-10">
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+            {/* Tier 1: Free */}
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20 hover:border-white/40 transition-all group">
+              <CardContent className="p-8">
                 <div className="flex items-center gap-2 mb-4 opacity-60">
                   <div className="w-6 h-px bg-white"></div>
                   <span className="text-white text-[9px] font-mono">TIER.01</span>
                 </div>
-                <h4 className="text-2xl lg:text-3xl font-bold text-white mb-2 font-mono tracking-wider">FREE</h4>
-                <div className="text-5xl lg:text-6xl font-bold text-white mb-2 font-mono">
-                  $0
+                <h4 className="text-2xl font-bold text-white mb-2 font-mono tracking-wider">FREE</h4>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-5xl font-bold text-white font-mono">$0</span>
+                  <span className="text-white/40 text-sm font-mono">/month</span>
                 </div>
-                <p className="text-sm text-white/40 font-mono mb-8">PERFECT FOR GETTING STARTED</p>
+                <p className="text-xs text-white/50 font-mono mb-8 h-10">Casual User / Social Sharer</p>
 
-                <ul className="space-y-4 mb-10">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="text-white font-mono text-sm font-bold mb-1">20 SCANS PER DAY</div>
-                      <div className="text-white/60 text-xs font-mono">Analyze up to 20 tokens daily</div>
+                <div className="space-y-4 mb-10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <Shield className="w-3 h-3 text-white" />
                     </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <div className="text-white font-mono text-sm font-bold mb-1">BASIC RISK SCORE</div>
-                      <div className="text-white/60 text-xs font-mono">7-factor risk analysis with confidence</div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">Honeypot Check</div>
+                      <div className="text-white/50 text-xs font-mono">Safety First - Free for everyone</div>
                     </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <BarChart3 className="w-3 h-3 text-white" />
+                    </div>
                     <div>
-                      <div className="text-white font-mono text-sm font-bold mb-1">MULTI-CHAIN SUPPORT</div>
-                      <div className="text-white/60 text-xs font-mono">Access all 7+ supported chains</div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">Risk Score</div>
+                      <div className="text-white/50 text-xs font-mono">10-factor algorithm (0-100)</div>
                     </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <CheckCircle className="w-3 h-3 text-white" />
+                    </div>
                     <div>
-                      <div className="text-white font-mono text-sm font-bold mb-1">COMMUNITY ALERTS</div>
-                      <div className="text-white/60 text-xs font-mono">General market notifications</div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">PDF Export</div>
+                      <div className="text-white/50 text-xs font-mono">Watermarked reports</div>
                     </div>
-                  </li>
-                </ul>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border-2 border-white/20 rounded-full mt-0.5 flex-shrink-0"></div>
+                    <div>
+                      <div className="text-white/40 font-mono text-sm font-bold mb-1">AI Analyst</div>
+                      <div className="text-white/30 text-xs font-mono">Raw data only</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border-2 border-white/20 rounded-full mt-0.5 flex-shrink-0"></div>
+                    <div>
+                      <div className="text-white/40 font-mono text-sm font-bold mb-1">Portfolio Audit</div>
+                      <div className="text-white/30 text-xs font-mono">Not available</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border-2 border-white/20 rounded-full mt-0.5 flex-shrink-0"></div>
+                    <div>
+                      <div className="text-white/40 font-mono text-sm font-bold mb-1">Smart Alerts</div>
+                      <div className="text-white/30 text-xs font-mono">Not available</div>
+                    </div>
+                  </div>
+                </div>
 
                 <Link href="/signup" className="block">
-                  <button className="w-full px-6 py-4 bg-transparent border-2 border-white text-white font-mono text-sm hover:bg-white hover:text-black transition-all duration-200 flex items-center justify-center gap-2 group">
+                  <button className="w-full px-6 py-4 bg-transparent border-2 border-white text-white font-mono text-sm hover:bg-white hover:text-black transition-all duration-200 flex items-center justify-center gap-2 group-hover:scale-105 transform">
                     START FREE
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
@@ -684,74 +697,286 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-black/80 to-black/60 backdrop-blur-lg border-2 border-white relative overflow-hidden">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1.5 text-xs font-mono tracking-wider border-2 border-white z-10">
-                ⚡ RECOMMENDED
+            {/* Tier 2: Pay-As-You-Go */}
+            <Card className="bg-black/60 backdrop-blur-lg border-2 border-white/30 relative overflow-hidden group hover:border-white/50 transition-all">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1.5 text-xs font-mono tracking-wider border-2 border-white z-10 font-bold">
+                ⚡ x402 CREDITS
               </div>
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
 
-              <CardContent className="p-8 lg:p-10 relative z-10">
+              <CardContent className="p-8 relative z-10">
                 <div className="flex items-center gap-2 mb-4 opacity-60">
                   <div className="w-6 h-px bg-white"></div>
                   <span className="text-white text-[9px] font-mono">TIER.02</span>
                 </div>
-                <h4 className="text-2xl lg:text-3xl font-bold text-white mb-2 font-mono tracking-wider">PREMIUM</h4>
-                <div className="text-5xl lg:text-6xl font-bold text-white mb-2 font-mono">
-                  $29
+                <h4 className="text-2xl font-bold text-white mb-2 font-mono tracking-wider">PAY-AS-YOU-GO</h4>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-5xl font-bold text-white font-mono">$5</span>
+                  <span className="text-white/40 text-sm font-mono">= 50 Credits</span>
                 </div>
-                <p className="text-sm text-white/40 font-mono mb-8">FOR SERIOUS TRADERS</p>
+                <p className="text-xs text-white/60 font-mono mb-2">USDC on Base (x402)</p>
+                <p className="text-xs text-white/50 font-mono mb-6 h-10">Weekend Trader</p>
 
-                <ul className="space-y-4 mb-10">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="text-white font-mono text-sm font-bold mb-1">UNLIMITED SCANS</div>
-                      <div className="text-white/60 text-xs font-mono">Analyze as many tokens as you need</div>
+                <div className="space-y-4 mb-10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <CheckCircle className="w-3 h-3 text-white" />
                     </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <div className="text-white font-mono text-sm font-bold mb-1">ADVANCED AI INSIGHTS</div>
-                      <div className="text-white/60 text-xs font-mono">Deep behavioral analysis & predictions</div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">Honeypot Check</div>
+                      <div className="text-white/50 text-xs font-mono">Included</div>
                     </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <CheckCircle className="w-3 h-3 text-white" />
+                    </div>
                     <div>
-                      <div className="text-white font-mono text-sm font-bold mb-1">UNLIMITED WATCHLIST</div>
-                      <div className="text-white/60 text-xs font-mono">Track portfolio with custom alerts</div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">Risk Score</div>
+                      <div className="text-white/50 text-xs font-mono">Included</div>
                     </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <CheckCircle className="w-3 h-3 text-white" />
+                    </div>
                     <div>
-                      <div className="text-white font-mono text-sm font-bold mb-1">HISTORICAL CHARTS</div>
-                      <div className="text-white/60 text-xs font-mono">6 comprehensive analytics charts</div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">PDF Export</div>
+                      <div className="text-white/50 text-xs font-mono">No watermark</div>
                     </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <Cpu className="w-3 h-3 text-white" />
+                    </div>
                     <div>
-                      <div className="text-white font-mono text-sm font-bold mb-1">PRIORITY SUPPORT</div>
-                      <div className="text-white/60 text-xs font-mono">24/7 dedicated assistance</div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">AI Analyst</div>
+                      <div className="text-white/60 text-xs font-mono">1 Credit / report</div>
                     </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <Eye className="w-3 h-3 text-white" />
+                    </div>
                     <div>
-                      <div className="text-white font-mono text-sm font-bold mb-1">API ACCESS</div>
-                      <div className="text-white/60 text-xs font-mono">Integrate with your tools</div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">Portfolio Audit</div>
+                      <div className="text-white/60 text-xs font-mono">0.5 Credits / token</div>
                     </div>
-                  </li>
-                </ul>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border-2 border-white/20 rounded-full mt-0.5 flex-shrink-0"></div>
+                    <div>
+                      <div className="text-white/40 font-mono text-sm font-bold mb-1">Smart Alerts</div>
+                      <div className="text-white/30 text-xs font-mono">Not available</div>
+                    </div>
+                  </div>
+                </div>
 
-                <Link href="/pricing" className="block">
-                  <button className="w-full px-6 py-4 bg-white text-black font-mono text-sm hover:bg-transparent hover:text-white border-2 border-white transition-all duration-200 flex items-center justify-center gap-2 group font-bold">
-                    UPGRADE TO PREMIUM
+                <Link href="/pay-per-scan" className="block">
+                  <button className="w-full px-6 py-4 bg-white text-black border-2 border-white font-mono text-sm hover:bg-transparent hover:text-white transition-all duration-200 flex items-center justify-center gap-2 group-hover:scale-105 transform font-bold">
+                    BUY CREDITS
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </Link>
+              </CardContent>
+            </Card>
+
+            {/* Tier 3: Pro Plan */}
+            <Card className="bg-gradient-to-br from-white/10 to-black/60 backdrop-blur-lg border-2 border-white relative overflow-hidden group hover:border-white/80 transition-all">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1.5 text-xs font-mono tracking-wider border-2 border-white z-10 font-bold">
+                ⚡ RECOMMENDED
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+
+              <CardContent className="p-8 relative z-10">
+                <div className="flex items-center gap-2 mb-4 opacity-60">
+                  <div className="w-6 h-px bg-white"></div>
+                  <span className="text-white text-[9px] font-mono">TIER.03</span>
+                </div>
+                <h4 className="text-2xl font-bold text-white mb-2 font-mono tracking-wider">PRO PLAN</h4>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-5xl font-bold text-white font-mono">$29</span>
+                  <span className="text-white/40 text-sm font-mono">/month</span>
+                </div>
+                <p className="text-xs text-white/50 font-mono mb-8 h-10">Active Power User</p>
+
+                <div className="space-y-4 mb-10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <Shield className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">Honeypot Check</div>
+                      <div className="text-white/50 text-xs font-mono">Included</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <BarChart3 className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">Risk Score</div>
+                      <div className="text-white/50 text-xs font-mono">Included</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <CheckCircle className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">PDF Export</div>
+                      <div className="text-white/50 text-xs font-mono">Custom logo branding</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <Cpu className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">AI Analyst</div>
+                      <div className="text-white/60 text-xs font-mono">✓ Unlimited</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <Eye className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">Portfolio Audit</div>
+                      <div className="text-white/60 text-xs font-mono">✓ Unlimited</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border border-white/30 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <Bell className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-white font-mono text-sm font-bold mb-1">Smart Alerts</div>
+                      <div className="text-white/60 text-xs font-mono">Real-Time 24/7</div>
+                    </div>
+                  </div>
+                </div>
+
+                <Link href="/pricing" className="block">
+                  <button className="w-full px-6 py-4 bg-white text-black font-mono text-sm hover:bg-transparent hover:text-white border-2 border-white transition-all duration-200 flex items-center justify-center gap-2 group-hover:scale-105 transform font-bold">
+                    UPGRADE TO PRO
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* How Credits Work - Pay-As-You-Go */}
+          <div className="mt-16 border border-white/20 bg-black/40 backdrop-blur-lg p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 border border-white/30 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white font-mono tracking-wider">HOW CREDITS WORK</h3>
+            </div>
+            
+            <div className="grid md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mx-auto mb-3 text-white/90 font-mono font-bold">
+                  1
+                </div>
+                <h4 className="text-white font-mono text-sm font-bold mb-2">SIGN IN</h4>
+                <p className="text-white/60 text-xs font-mono leading-relaxed">
+                  Log in using your Web3 Wallet via Firebase Authentication
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mx-auto mb-3 text-white/90 font-mono font-bold">
+                  2
+                </div>
+                <h4 className="text-white font-mono text-sm font-bold mb-2">TOP-UP</h4>
+                <p className="text-white/60 text-xs font-mono leading-relaxed">
+                  Click "Add Funds" and select $5.00 (50 Credits). Pay with USDC via x402
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mx-auto mb-3 text-white/90 font-mono font-bold">
+                  3
+                </div>
+                <h4 className="text-white font-mono text-sm font-bold mb-2">TRACK BALANCE</h4>
+                <p className="text-white/60 text-xs font-mono leading-relaxed">
+                  Dashboard displays progress bar: "Credits Remaining: 50 / 50"
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mx-auto mb-3 text-white/90 font-mono font-bold">
+                  4
+                </div>
+                <h4 className="text-white font-mono text-sm font-bold mb-2">USE INSTANTLY</h4>
+                <p className="text-white/60 text-xs font-mono leading-relaxed">
+                  Request AI Report (1 credit) or Portfolio Audit (0.5 credits/token). No wallet popup needed
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 border border-white/30 flex items-center justify-center flex-shrink-0">
+                    <Cpu className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h5 className="text-white font-mono text-sm font-bold mb-1">AI ANALYST (1 Credit)</h5>
+                    <p className="text-white/50 text-xs font-mono">Natural language risk explanation powered by Llama 3.3 70B</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 border border-white/30 flex items-center justify-center flex-shrink-0">
+                    <Eye className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h5 className="text-white font-mono text-sm font-bold mb-1">PORTFOLIO AUDIT (0.5 Credits/token)</h5>
+                    <p className="text-white/50 text-xs font-mono">Batch scan your wallet. 10 tokens = 5 credits ($0.50)</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing Justification */}
+          <div className="mt-12 grid md:grid-cols-3 gap-6">
+            <Card className="bg-black/40 backdrop-blur-lg border border-white/10">
+              <CardContent className="p-6">
+                <div className="w-10 h-10 bg-white/10 border border-white/20 flex items-center justify-center mb-4">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <h5 className="text-white font-mono text-sm font-bold mb-2">FREE TIER</h5>
+                <p className="text-white/50 text-xs font-mono leading-relaxed">
+                  User acquisition funnel. Essential safety tools build trust and traffic. Fulfills ethical mission of fraud reduction.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/40 backdrop-blur-lg border border-white/10">
+              <CardContent className="p-6">
+                <div className="w-10 h-10 bg-white/10 border border-white/20 flex items-center justify-center mb-4">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <h5 className="text-white font-mono text-sm font-bold mb-2">PAY-AS-YOU-GO</h5>
+                <p className="text-white/50 text-xs font-mono leading-relaxed">
+                  Solves market gap. Traditional processors can&apos;t handle $0.10 profitably. x402 enables micropayments, covering API costs in real-time.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/40 backdrop-blur-lg border border-white/10">
+              <CardContent className="p-6">
+                <div className="w-10 h-10 bg-white/10 border border-white/20 flex items-center justify-center mb-4">
+                  <Activity className="w-5 h-5 text-white" />
+                </div>
+                <h5 className="text-white font-mono text-sm font-bold mb-2">PRO PLAN</h5>
+                <p className="text-white/50 text-xs font-mono leading-relaxed">
+                  Long-term viability. $29/month covers VPS costs for 24/7 Smart Alert workers and unlimited API access for power users.
+                </p>
               </CardContent>
             </Card>
           </div>
