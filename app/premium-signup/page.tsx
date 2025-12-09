@@ -14,8 +14,8 @@ export default function PremiumSignupPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [isTestnet, setIsTestnet] = useState(true)
-  const [price, setPrice] = useState('29.00')
-  const [asset, setAsset] = useState('USDC')
+  const [usdcPrice] = useState('29.00') // Fixed USDC price
+  const [solPrice, setSolPrice] = useState('0.15') // SOL price (will be calculated)
   const [selectedPaymentAsset, setSelectedPaymentAsset] = useState<'SOL' | 'USDC'>('USDC')
   const [alreadyPremium, setAlreadyPremium] = useState(false)
   const router = useRouter()
@@ -24,32 +24,35 @@ export default function PremiumSignupPage() {
 
   // Check if user already has premium
   useEffect(() => {
-    if (userProfile?.plan === 'PREMIUM') {
+    const userTier = userProfile?.tier?.toUpperCase()
+    if (userTier === 'PREMIUM' || userTier === 'PRO') {
       setAlreadyPremium(true)
     }
   }, [userProfile])
 
-  // Fetch pricing settings on mount
+  // Fetch SOL price and calculate equivalent
   useEffect(() => {
-    const fetchSettings = async () => {
+    const fetchSolPrice = async () => {
       try {
-        const response = await fetch('/api/admin/x402-settings')
-        if (response.ok) {
-          const data = await response.json()
-          const testnetMode = data.settings?.useTestnet ?? false
-          setIsTestnet(testnetMode)
-          setPrice(data.settings?.price ?? '29.00')
-          // Asset is determined by testnet mode
-          setAsset(testnetMode ? 'SOL' : 'USDC')
-        }
+        // Fetch current SOL price from a price API
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd')
+        const data = await response.json()
+        const solUsdPrice = data.solana?.usd || 200 // Default to $200 if API fails
+        
+        // Calculate SOL amount needed for $29
+        const solAmount = (29 / solUsdPrice).toFixed(4)
+        setSolPrice(solAmount)
       } catch (err) {
-        console.error('Failed to fetch settings:', err)
+        console.error('Failed to fetch SOL price:', err)
+        // Default to 0.15 SOL (assuming ~$200/SOL)
+        setSolPrice('0.15')
       }
     }
-    fetchSettings()
     
-    // Poll for settings changes every 5 seconds
-    const interval = setInterval(fetchSettings, 5000)
+    fetchSolPrice()
+    
+    // Refresh SOL price every 60 seconds
+    const interval = setInterval(fetchSolPrice, 60000)
     return () => clearInterval(interval)
   }, [])
 
@@ -178,8 +181,9 @@ export default function PremiumSignupPage() {
                           : 'border-white/20 hover:border-white/40'
                       }`}
                     >
-                      <div className="text-xl font-bold text-white font-mono">{price}</div>
+                      <div className="text-xl font-bold text-white font-mono">{solPrice}</div>
                       <div className="text-xs text-white/60 font-mono">SOL</div>
+                      <div className="text-xs text-white/40 font-mono">≈ $29</div>
                     </button>
                     <button
                       onClick={() => setSelectedPaymentAsset('USDC')}
@@ -189,8 +193,9 @@ export default function PremiumSignupPage() {
                           : 'border-white/20 hover:border-white/40'
                       }`}
                     >
-                      <div className="text-xl font-bold text-white font-mono">{price}</div>
+                      <div className="text-xl font-bold text-white font-mono">{usdcPrice}</div>
                       <div className="text-xs text-white/60 font-mono">USDC</div>
+                      <div className="text-xs text-white/40 font-mono">$29.00</div>
                     </button>
                   </div>
                 </div>
@@ -203,7 +208,10 @@ export default function PremiumSignupPage() {
                   <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/40"></div>
                   
                   <div className="text-4xl font-bold text-white font-mono mb-1">
-                    {price} {selectedPaymentAsset}
+                    {selectedPaymentAsset === 'SOL' ? solPrice : usdcPrice} {selectedPaymentAsset}
+                  </div>
+                  <div className="text-sm text-white/60 font-mono mb-2">
+                    ≈ $29.00 USD
                   </div>
                   <div className="text-xs text-white/60 font-mono uppercase tracking-wider">
                     30-Day Subscription
@@ -231,7 +239,7 @@ export default function PremiumSignupPage() {
                   ) : (
                     <span className="flex items-center justify-center gap-2">
                       <Wallet className="w-4 h-4" />
-                      PAY {price} {selectedPaymentAsset}
+                      PAY {selectedPaymentAsset === 'SOL' ? solPrice : usdcPrice} {selectedPaymentAsset}
                     </span>
                   )}
                 </button>

@@ -87,13 +87,44 @@ export async function POST(request: NextRequest) {
     const { action, userId, updates } = body
 
     if (action === 'update' && userId && updates) {
-      // Update user
-      await adminDb.collection('users').doc(userId).update({
-        ...updates,
-        updatedAt: new Date().toISOString()
+      console.log('[Admin API] Updating user:', userId)
+      console.log('[Admin API] Updates:', JSON.stringify(updates, null, 2))
+      
+      // Get current user data
+      const userDoc = await adminDb.collection('users').doc(userId).get()
+      const currentData = userDoc.data()
+      console.log('[Admin API] Current data:', { 
+        tier: currentData?.tier, 
+        plan: currentData?.plan,
+        role: currentData?.role 
       })
       
-      return NextResponse.json({ success: true, message: 'User updated successfully' })
+      // Update user
+      const updateData = {
+        ...updates,
+        updatedAt: new Date().toISOString()
+      }
+      
+      await adminDb.collection('users').doc(userId).update(updateData)
+      
+      // Verify update
+      const updatedDoc = await adminDb.collection('users').doc(userId).get()
+      const updatedData = updatedDoc.data()
+      console.log('[Admin API] Updated data:', { 
+        tier: updatedData?.tier, 
+        plan: updatedData?.plan,
+        role: updatedData?.role 
+      })
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: 'User updated successfully',
+        updated: {
+          tier: updatedData?.tier,
+          plan: updatedData?.plan,
+          role: updatedData?.role
+        }
+      })
     }
 
     if (action === 'delete' && userId) {

@@ -20,6 +20,7 @@ export interface UserDocument {
   walletAddress?: string
   role?: 'user' | 'admin'
   plan: 'FREE' | 'PAY_PER_USE' | 'PREMIUM'
+  tier?: 'FREE' | 'PAY_PER_USE' | 'PREMIUM' | 'PRO' // Alias for plan (supports legacy 'PRO' value)
   
   // Credits for PAY_PER_USE tier
   credits?: number // Number of credits available (1 credit = $0.10)

@@ -128,8 +128,11 @@ export default function ModernAdminPanel() {
         setUsers(data.users || [])
         setStats({
           totalUsers: data.users?.length || 0,
-          premiumUsers: data.users?.filter((u: User) => u.tier === 'pro' || u.plan === 'PREMIUM').length || 0,
-          payPerUseUsers: data.users?.filter((u: User) => u.plan === 'PAY_PER_USE').length || 0,
+          premiumUsers: data.users?.filter((u: User) => {
+            const tier = u.tier?.toUpperCase()
+            return tier === 'PREMIUM' || tier === 'PRO'
+          }).length || 0,
+          payPerUseUsers: data.users?.filter((u: User) => u.tier?.toUpperCase() === 'PAY_PER_USE').length || 0,
           totalCredits: data.users?.reduce((sum: number, u: User) => sum + (u.credits || 0), 0) || 0,
           cachedTokens: 13,
           queries24h: 0
@@ -371,7 +374,12 @@ export default function ModernAdminPanel() {
     setEditingName(user.name || '')
     setEditingEmail(user.email)
     setEditingRole(user.role)
-    setEditingTier(user.tier)
+    
+    // Normalize tier to uppercase
+    let normalizedTier = user.tier?.toUpperCase() || 'FREE'
+    if (normalizedTier === 'PRO') normalizedTier = 'PREMIUM'
+    
+    setEditingTier(normalizedTier)
     setShowEditModal(true)
   }
 
@@ -391,8 +399,7 @@ export default function ModernAdminPanel() {
       
       // Prepare updates object
       const updates: any = {
-        tier: editingTier,
-        plan: editingTier,  // Keep both in sync
+        tier: editingTier,  // Use uppercase: FREE, PREMIUM, ADMIN
         role: editingRole
       }
       
@@ -505,8 +512,8 @@ export default function ModernAdminPanel() {
       <Navbar />
       <div className="min-h-screen bg-black pt-20">
         <div className="flex">
-          {/* Modern Floating Sidebar */}
-          <div className="w-20 fixed left-4 top-24 bottom-4 bg-black/60 backdrop-blur-xl border border-white/20 rounded-2xl flex flex-col items-center py-6 gap-2 z-40 shadow-2xl">
+          {/* Modern Floating Sidebar - Hidden on mobile, visible on desktop */}
+          <div className="hidden md:flex w-20 fixed left-4 top-24 bottom-4 bg-black/60 backdrop-blur-xl border border-white/20 rounded-2xl flex-col items-center py-6 gap-2 z-40 shadow-2xl">
             <button
               onClick={() => setActiveTab('users')}
               className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all relative group ${
@@ -621,23 +628,52 @@ export default function ModernAdminPanel() {
             </button>
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1 ml-28 mr-4 p-8">
+          {/* Main Content - Responsive margins */}
+          <div className="flex-1 md:ml-28 ml-0 mr-4 p-4 md:p-8">
+            {/* Mobile Tab Navigation */}
+            <div className="md:hidden mb-6 overflow-x-auto">
+              <div className="flex gap-2 min-w-max pb-2">
+                {[
+                  { id: 'users', icon: Users, label: 'Users' },
+                  { id: 'cache', icon: Database, label: 'Cache' },
+                  { id: 'system', icon: Activity, label: 'System' },
+                  { id: 'analytics', icon: TrendingUp, label: 'Analytics' },
+                  { id: 'settings', icon: Settings, label: 'Settings' },
+                  { id: 'logs', icon: Activity, label: 'Logs' },
+                  { id: 'payments', icon: DollarSign, label: 'Payments' },
+                  { id: 'alerts', icon: Zap, label: 'Alerts' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`px-4 py-2 rounded-lg flex items-center gap-2 font-mono text-xs whitespace-nowrap transition-all ${
+                      activeTab === tab.id
+                        ? 'bg-white text-black'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    <tab.icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
             {/* Header */}
             <div className="mb-8">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <Shield className="w-6 h-6 text-white" />
-                    <h1 className="text-2xl font-bold text-white font-mono tracking-wider">
+                    <h1 className="text-xl md:text-2xl font-bold text-white font-mono tracking-wider">
                       Admin Control Panel
                     </h1>
                   </div>
-                  <p className="text-white/60 text-sm font-mono">SYSTEM ADMINISTRATOR • ALL ACCESS</p>
+                  <p className="text-white/60 text-xs md:text-sm font-mono">SYSTEM ADMINISTRATOR • ALL ACCESS</p>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/30">
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                  <span className="text-green-500 text-xs font-mono font-bold">SYSTEM STATUS: OPERATIONAL</span>
+                  <span className="text-green-500 text-xs font-mono font-bold">OPERATIONAL</span>
                 </div>
               </div>
 
