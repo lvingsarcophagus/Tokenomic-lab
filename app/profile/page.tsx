@@ -314,11 +314,20 @@ export default function ProfilePage() {
                 <div>
                   <div className={`${theme.text.small} ${theme.text.secondary} ${theme.fonts.mono} uppercase ${theme.fonts.tracking}`}>Current Plan</div>
                   <div className={`${theme.text.xlarge} ${theme.fonts.bold} ${theme.text.primary} mt-1 ${theme.fonts.mono} ${theme.fonts.tracking}`}>
-                    {userData?.plan === "PREMIUM" ? "PREMIUM ($29/mo)" : 
-                     userData?.plan === "PAY_PER_USE" ? "PAY-AS-YOU-GO" : 
-                     "FREE"}
+                    {(() => {
+                      const tier = userData?.tier?.toUpperCase()
+                      if (tier === 'PREMIUM' || tier === 'PRO') return "PREMIUM ($29/mo)"
+                      if (tier === 'PAY_PER_USE') return "PAY-AS-YOU-GO"
+                      return "FREE"
+                    })()}
                   </div>
                 </div>
+                <Button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all text-xs font-mono uppercase"
+                >
+                  REFRESH
+                </Button>
               </div>
 
               {/* Credits Display for PAY_PER_USE */}

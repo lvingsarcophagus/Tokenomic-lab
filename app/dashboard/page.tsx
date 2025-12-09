@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
-import { auth } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
 import Navbar from '@/components/navbar'
 import AIAnalysisAccordion from '@/components/ai-analysis-accordion'
 import { MorphingSquare } from '@/components/ui/morphing-square'
@@ -170,9 +170,64 @@ export default function PremiumDashboard() {
     // No redirect - unified dashboard handles both free and premium users
   }, [user, userProfile, authLoading, router])
   
+  // Automatic profile refresh to detect admin upgrades
+  useEffect(() => {
+    if (!user) return
+    
+    const checkForUpgrade = async () => {
+      try {
+        const { getDoc, doc } = await import('firebase/firestore')
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        
+        if (userDoc.exists()) {
+          const data = userDoc.data()
+          const newTier = data.tier?.toUpperCase()
+          const currentTier = userProfile?.tier?.toUpperCase()
+          
+          console.log('[Dashboard] Profile check:', { 
+            currentTier, 
+            newTier,
+            isPremiumNow: newTier === 'PREMIUM' || newTier === 'PRO',
+            wasPremium: currentTier === 'PREMIUM' || currentTier === 'PRO'
+          })
+          
+          // If tier changed to PREMIUM/PRO, reload the page
+          const isPremiumNow = newTier === 'PREMIUM' || newTier === 'PRO'
+          const wasPremium = currentTier === 'PREMIUM' || currentTier === 'PRO'
+          
+          if (isPremiumNow && !wasPremium) {
+            console.log('[Dashboard] ✅ Upgrade to PREMIUM detected! Reloading page...')
+            window.location.reload()
+          }
+        }
+      } catch (error) {
+        console.error('[Dashboard] Profile check error:', error)
+      }
+    }
+    
+    // Check immediately on mount
+    checkForUpgrade()
+    
+    // Check every 10 seconds (faster detection)
+    const refreshInterval = setInterval(checkForUpgrade, 10000)
+    
+    // Also check when page gains focus (user switches back to tab)
+    const handleFocus = () => {
+      console.log('[Dashboard] Page focused, checking for updates...')
+      checkForUpgrade()
+    }
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      clearInterval(refreshInterval)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [user, userProfile?.plan])
+  
   // Determine if user has premium features (PREMIUM or PAY_PER_USE)
-  const isPremium = userProfile?.plan === 'PREMIUM' || userProfile?.plan === 'PAY_PER_USE'
-  const isPayPerUse = userProfile?.plan === 'PAY_PER_USE'
+  const userTier = userProfile?.tier?.toUpperCase() || 'FREE'
+  const isPremium = userTier === 'PREMIUM' || userTier === 'PRO' || userTier === 'PAY_PER_USE'
+  const isPayPerUse = userTier === 'PAY_PER_USE'
   const credits = userProfile?.credits || 0
   
   // DEBUG: Log premium status
@@ -207,7 +262,7 @@ export default function PremiumDashboard() {
     setLoading(true)
     try {
       // Load real data from Firebase
-      const userPlan = (userProfile?.plan === 'PREMIUM' || userProfile?.plan === 'PAY_PER_USE') ? 'PREMIUM' : 'FREE'
+      const userPlan = isPremium ? 'PREMIUM' : 'FREE'
       const [stats, userWatchlist] = await Promise.all([
         getDashboardStats(user.uid, userPlan),
         getWatchlist(user.uid)
@@ -601,7 +656,7 @@ export default function PremiumDashboard() {
           body: JSON.stringify({
             tokenAddress: data.address,
             chainId: String(chainIdToSend),
-            plan: 'PREMIUM', // Use PREMIUM plan for full behavioral data
+            plan: 'PREMIUM', // Always use PREMIUM for accurate risk calculation
             userId: user?.uid, // Pass user ID for rate limiting
             bypassCache: true, // Always bypass cache for user-initiated scans
             forceFresh: true, // Force fresh data fetch
