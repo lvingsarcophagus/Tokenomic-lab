@@ -149,6 +149,10 @@ export default function PremiumDashboard() {
   const [walletData, setWalletData] = useState<any>(null)
   const [loadingWallet, setLoadingWallet] = useState(false)
   
+  // Automatic profile refresh to detect admin upgrades (with reload prevention)
+  const [lastKnownTier, setLastKnownTier] = useState<string | null>(null)
+  const [hasReloaded, setHasReloaded] = useState(false)
+
   // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -170,10 +174,6 @@ export default function PremiumDashboard() {
     }
     // No redirect - unified dashboard handles both free and premium users
   }, [user, authLoading, router, hasReloaded])
-  
-  // Automatic profile refresh to detect admin upgrades (with reload prevention)
-  const [lastKnownTier, setLastKnownTier] = useState<string | null>(null)
-  const [hasReloaded, setHasReloaded] = useState(false)
   
   useEffect(() => {
     if (!user || !userProfile) return
