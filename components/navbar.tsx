@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { Shield, Home, Search, TrendingUp, LogOut, User, Activity, X } from "lucide-react"
+import { Shield, Home, Search, TrendingUp, LogOut, User, Activity, X, ArrowRight } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
@@ -143,13 +143,7 @@ export default function Navbar() {
                 </div>
               </Link>
 
-              {/* Login Button (Desktop) */}
-              <Link href="/login" className="hidden sm:block">
-                <button className="px-4 py-2 rounded-xl border border-white/30 hover:border-white/40 bg-black/40 hover:bg-white/10 backdrop-blur-md transition-all duration-300 h-9 flex items-center gap-2">
-                  <User className="w-4 h-4 text-white/60" />
-                  <span className="text-xs font-mono text-white/70 font-bold tracking-wider">LOGIN</span>
-                </button>
-              </Link>
+              {/* Login Button removed from desktop - now only in mobile menu */}
 
               {/* Hamburger Menu Button */}
               <button
@@ -203,13 +197,21 @@ export default function Navbar() {
               {/* Login & Sign Up Buttons */}
               <div className="flex flex-col gap-4 mt-8">
                 <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <button className="px-8 py-4 rounded-xl border-2 border-white/30 bg-black/40 hover:bg-white/10 text-white transition-all duration-300 font-mono text-lg font-bold tracking-wider hover:scale-110">
-                    LOGIN
+                  <button className="group relative px-12 py-5 bg-transparent text-white font-mono text-lg border-2 border-white hover:bg-white hover:text-black transition-all duration-300 overflow-hidden">
+                    <span className="relative z-10 flex items-center gap-3 justify-center font-bold tracking-wider">
+                      LOG IN
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </button>
                 </Link>
                 <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                  <button className="px-8 py-4 rounded-xl border-2 border-white/30 bg-white/10 hover:bg-white hover:text-black text-white transition-all duration-300 font-mono text-lg font-bold tracking-wider hover:scale-110">
-                    SIGN UP
+                  <button className="group relative px-12 py-5 bg-white text-black font-mono text-lg border-2 border-white hover:bg-black hover:text-white transition-all duration-300 overflow-hidden">
+                    <span className="relative z-10 flex items-center gap-3 justify-center font-bold tracking-wider">
+                      SIGN UP
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </button>
                 </Link>
               </div>

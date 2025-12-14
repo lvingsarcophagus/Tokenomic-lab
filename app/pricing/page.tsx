@@ -50,89 +50,230 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Tier 1: Free */}
             <Card className={`${theme.backgrounds.card} border ${theme.borders.default}`}>
-              <CardContent className="p-8">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4 opacity-60">
                   <div className="w-6 h-px bg-white"></div>
                   <span className={`${theme.text.primary} text-[9px] ${theme.fonts.mono}`}>TIER.01</span>
                 </div>
-                <h2 className={`${theme.text.xlarge} ${theme.fonts.bold} ${theme.text.primary} mb-2 ${theme.fonts.mono} ${theme.fonts.tracking}`}>FREE</h2>
-                <div className={`text-5xl ${theme.fonts.bold} ${theme.text.primary} mb-6 ${theme.fonts.mono}`}>
-                  $0<span className={`text-lg ${theme.text.secondary} ${theme.fonts.mono}`}>/MONTH</span>
+                <h2 className={`${theme.text.large} ${theme.fonts.bold} ${theme.text.primary} mb-2 ${theme.fonts.mono} ${theme.fonts.tracking}`}>FREE</h2>
+                <div className={`text-4xl ${theme.fonts.bold} ${theme.text.primary} mb-4 ${theme.fonts.mono}`}>
+                  $0<span className={`text-sm ${theme.text.secondary} ${theme.fonts.mono}`}>/MONTH</span>
                 </div>
-                <ul className="space-y-3 mb-8">
-                  <li className={`flex items-center ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
-                    <span className={`${theme.text.primary} mr-3`}>▸</span>
-                    20 ANALYSES/DAY
+                <p className={`${theme.text.secondary} text-xs ${theme.fonts.mono} mb-6`}>Casual User / Social Sharer</p>
+                
+                <ul className="space-y-2 mb-6">
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>✓</span>
+                    Honeypot Check
                   </li>
-                  <li className={`flex items-center ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
-                    <span className={`${theme.text.primary} mr-3`}>▸</span>
-                    BASIC RISK SCORE
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>✓</span>
+                    Risk Score (0-100)
                   </li>
-                  <li className={`flex items-center ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
-                    <span className={`${theme.text.primary} mr-3`}>▸</span>
-                    COMMUNITY ALERTS
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>✓</span>
+                    PDF Export (Watermarked)
                   </li>
-                  <li className={`flex items-center ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
-                    <span className={`${theme.text.primary} mr-3`}>▸</span>
-                    REAL-TIME SCANNING
+                  <li className={`flex items-center text-white/40 text-sm ${theme.fonts.mono}`}>
+                    <span className={`text-white/30 mr-3`}>✗</span>
+                    AI Risk Analyst
+                  </li>
+                  <li className={`flex items-center text-white/40 text-sm ${theme.fonts.mono}`}>
+                    <span className={`text-white/30 mr-3`}>✗</span>
+                    Portfolio Audit
+                  </li>
+                  <li className={`flex items-center text-white/40 text-sm ${theme.fonts.mono}`}>
+                    <span className={`text-white/30 mr-3`}>✗</span>
+                    Smart Alerts
                   </li>
                 </ul>
+                
                 <Link href="/signup">
-                  <Button className={`w-full ${theme.buttons.primary} uppercase`}>
+                  <Button className={`w-full ${theme.buttons.primary} uppercase text-sm`}>
                     GET STARTED
                   </Button>
                 </Link>
               </CardContent>
             </Card>
 
-            <Card className={`${theme.backgrounds.card} border-2 ${theme.borders.accent} relative`}>
-              <div className={`absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 ${theme.text.small} ${theme.fonts.mono} ${theme.fonts.tracking}`}>
-                RECOMMENDED
+            {/* Tier 2: Pay-As-You-Go */}
+            <Card className={`${theme.backgrounds.card} border-2 border-blue-500/30 relative`}>
+              <div className={`absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 ${theme.text.small} ${theme.fonts.mono} ${theme.fonts.tracking} font-bold`}>
+                ⚡ x402 CREDITS
               </div>
-              <CardContent className="p-8">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4 opacity-60">
                   <div className="w-6 h-px bg-white"></div>
                   <span className={`${theme.text.primary} text-[9px] ${theme.fonts.mono}`}>TIER.02</span>
                 </div>
-                <h2 className={`${theme.text.xlarge} ${theme.fonts.bold} ${theme.text.primary} mb-2 ${theme.fonts.mono} ${theme.fonts.tracking}`}>PRO</h2>
-                <div className={`text-5xl ${theme.fonts.bold} ${theme.text.primary} mb-6 ${theme.fonts.mono}`}>
-                  $29<span className={`text-lg ${theme.text.secondary} ${theme.fonts.mono}`}>/MONTH</span>
+                <h2 className={`${theme.text.large} ${theme.fonts.bold} ${theme.text.primary} mb-2 ${theme.fonts.mono} ${theme.fonts.tracking}`}>PAY-AS-YOU-GO</h2>
+                <div className={`text-4xl ${theme.fonts.bold} ${theme.text.primary} mb-2 ${theme.fonts.mono}`}>
+                  $5<span className={`text-sm ${theme.text.secondary} ${theme.fonts.mono}`}> = 50 Credits</span>
                 </div>
-                <ul className="space-y-3 mb-8">
-                  <li className={`flex items-center ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
-                    <span className={`${theme.text.primary} mr-3`}>▸</span>
-                    UNLIMITED ANALYSES
+                <p className={`${theme.text.secondary} text-xs ${theme.fonts.mono} mb-1`}>USDC on Base (x402)</p>
+                <p className={`${theme.text.secondary} text-xs ${theme.fonts.mono} mb-4`}>Weekend Trader</p>
+                
+                <ul className="space-y-2 mb-6">
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>✓</span>
+                    Honeypot Check (Free)
                   </li>
-                  <li className={`flex items-center ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
-                    <span className={`${theme.text.primary} mr-3`}>▸</span>
-                    ADVANCED AI INSIGHTS
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>✓</span>
+                    Risk Score (Free)
                   </li>
-                  <li className={`flex items-center ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
-                    <span className={`${theme.text.primary} mr-3`}>▸</span>
-                    CUSTOM ALERTS
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>✓</span>
+                    PDF Export (No watermark)
                   </li>
-                  <li className={`flex items-center ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
-                    <span className={`${theme.text.primary} mr-3`}>▸</span>
-                    API ACCESS
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`text-blue-400 mr-3`}>⚡</span>
+                    AI Risk Analyst (1 Credit)
                   </li>
-                  <li className={`flex items-center ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
-                    <span className={`${theme.text.primary} mr-3`}>▸</span>
-                    PORTFOLIO TRACKING
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`text-blue-400 mr-3`}>⚡</span>
+                    Portfolio Audit (0.5 Credits/token)
                   </li>
-                  <li className={`flex items-center ${theme.text.secondary} ${theme.text.base} ${theme.fonts.mono}`}>
-                    <span className={`${theme.text.primary} mr-3`}>▸</span>
-                    PRIORITY SUPPORT
+                  <li className={`flex items-center text-white/40 text-sm ${theme.fonts.mono}`}>
+                    <span className={`text-white/30 mr-3`}>✗</span>
+                    Smart Alerts
                   </li>
                 </ul>
+                
+                <Link href="/pay-per-scan">
+                  <Button className={`w-full bg-blue-500 hover:bg-blue-600 text-white border-blue-500 uppercase text-sm font-bold`}>
+                    BUY CREDITS
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            {/* Tier 3: Pro Plan */}
+            <Card className={`${theme.backgrounds.card} border-2 ${theme.borders.accent} relative`}>
+              <div className={`absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 ${theme.text.small} ${theme.fonts.mono} ${theme.fonts.tracking} font-bold`}>
+                ⚡ RECOMMENDED
+              </div>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4 opacity-60">
+                  <div className="w-6 h-px bg-white"></div>
+                  <span className={`${theme.text.primary} text-[9px] ${theme.fonts.mono}`}>TIER.03</span>
+                </div>
+                <h2 className={`${theme.text.large} ${theme.fonts.bold} ${theme.text.primary} mb-2 ${theme.fonts.mono} ${theme.fonts.tracking}`}>PRO PLAN</h2>
+                <div className={`text-4xl ${theme.fonts.bold} ${theme.text.primary} mb-2 ${theme.fonts.mono}`}>
+                  $29<span className={`text-sm ${theme.text.secondary} ${theme.fonts.mono}`}>/MONTH</span>
+                </div>
+                <p className={`${theme.text.secondary} text-xs ${theme.fonts.mono} mb-6`}>Active Power User</p>
+                
+                <ul className="space-y-2 mb-6">
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>✓</span>
+                    Honeypot Check
+                  </li>
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>✓</span>
+                    Risk Score
+                  </li>
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>✓</span>
+                    PDF Export (Custom branding)
+                  </li>
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>∞</span>
+                    AI Risk Analyst (Unlimited)
+                  </li>
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>∞</span>
+                    Portfolio Audit (Unlimited)
+                  </li>
+                  <li className={`flex items-center ${theme.text.secondary} text-sm ${theme.fonts.mono}`}>
+                    <span className={`${theme.text.primary} mr-3`}>⚡</span>
+                    Smart Alerts (24/7)
+                  </li>
+                </ul>
+                
                 <Link href="/premium-signup">
-                  <Button className={`w-full ${theme.buttons.secondary} uppercase`}>
+                  <Button className={`w-full ${theme.buttons.secondary} uppercase text-sm font-bold`}>
                     UPGRADE TO PRO
                   </Button>
                 </Link>
               </CardContent>
             </Card>
+          </div>
+
+          {/* How Credits Work Section */}
+          <div className="mt-16 border border-white/20 bg-black/40 backdrop-blur-lg p-8 rounded-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 border border-white/30 flex items-center justify-center">
+                <span className="text-white text-lg">⚡</span>
+              </div>
+              <h3 className={`${theme.text.large} ${theme.fonts.bold} ${theme.text.primary} ${theme.fonts.mono} ${theme.fonts.tracking}`}>HOW x402 CREDITS WORK</h3>
+            </div>
+            
+            <div className="grid md:grid-cols-4 gap-6 mb-8">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mx-auto mb-3 text-white/90 font-mono font-bold">
+                  1
+                </div>
+                <h4 className={`${theme.text.primary} ${theme.fonts.mono} text-sm font-bold mb-2`}>SIGN IN</h4>
+                <p className={`${theme.text.secondary} text-xs ${theme.fonts.mono} leading-relaxed`}>
+                  Log in using your Web3 Wallet via Firebase Authentication
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mx-auto mb-3 text-white/90 font-mono font-bold">
+                  2
+                </div>
+                <h4 className={`${theme.text.primary} ${theme.fonts.mono} text-sm font-bold mb-2`}>TOP-UP</h4>
+                <p className={`${theme.text.secondary} text-xs ${theme.fonts.mono} leading-relaxed`}>
+                  Click "Add Funds" and select $5.00 (50 Credits). Pay with USDC via x402
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mx-auto mb-3 text-white/90 font-mono font-bold">
+                  3
+                </div>
+                <h4 className={`${theme.text.primary} ${theme.fonts.mono} text-sm font-bold mb-2`}>TRACK BALANCE</h4>
+                <p className={`${theme.text.secondary} text-xs ${theme.fonts.mono} leading-relaxed`}>
+                  Dashboard displays progress bar: "Credits Remaining: 50 / 50"
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/10 border border-white/30 flex items-center justify-center mx-auto mb-3 text-white/90 font-mono font-bold">
+                  4
+                </div>
+                <h4 className={`${theme.text.primary} ${theme.fonts.mono} text-sm font-bold mb-2`}>USE INSTANTLY</h4>
+                <p className={`${theme.text.secondary} text-xs ${theme.fonts.mono} leading-relaxed`}>
+                  Request AI Report (1 credit) or Portfolio Audit (0.5 credits/token). No wallet popup needed
+                </p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 border border-white/30 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-sm">🤖</span>
+                </div>
+                <div>
+                  <h5 className={`${theme.text.primary} ${theme.fonts.mono} text-sm font-bold mb-1`}>AI ANALYST (1 Credit)</h5>
+                  <p className={`${theme.text.secondary} text-xs ${theme.fonts.mono}`}>Natural language risk explanation powered by Llama 3.3 70B</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 border border-white/30 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-sm">👁️</span>
+                </div>
+                <div>
+                  <h5 className={`${theme.text.primary} ${theme.fonts.mono} text-sm font-bold mb-1`}>PORTFOLIO AUDIT (0.5 Credits/token)</h5>
+                  <p className={`${theme.text.secondary} text-xs ${theme.fonts.mono}`}>Batch scan your wallet. 10 tokens = 5 credits ($0.50)</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Bottom decorative line */}

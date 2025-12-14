@@ -1,0 +1,536 @@
+{
+  "timestamp": "2025-12-11T18:51:00.549Z",
+  "summary": {
+    "total": 18,
+    "passed": 9,
+    "failed": 9,
+    "accuracy": "50.0"
+  },
+  "categoryBreakdown": {
+    "SAFE_TOKEN": {
+      "total": 6,
+      "passed": 6
+    },
+    "MEDIUM_RISK_TOKEN": {
+      "total": 4,
+      "passed": 3
+    },
+    "RISKY_TOKEN": {
+      "total": 8,
+      "passed": 0
+    }
+  },
+  "detailedResults": [
+    {
+      "token": "Uniswap (UNI)",
+      "category": "SAFE_TOKEN",
+      "riskType": "N/A",
+      "expected": {
+        "risk": "LOW",
+        "score": 31.16290925324418
+      },
+      "actual": {
+        "risk": "LOW",
+        "score": 22
+      },
+      "passed": true,
+      "breakdown": {
+        "supplyDilution": 20,
+        "holderConcentration": 10,
+        "liquidityDepth": 50,
+        "contractControl": 0,
+        "taxFee": 20,
+        "vestingUnlock": 10,
+        "distribution": 10,
+        "burnDeflation": 50,
+        "adoption": 10,
+        "auditTransparency": 20
+      },
+      "criticalFlags": []
+    },
+    {
+      "token": "Chainlink (LINK)",
+      "category": "SAFE_TOKEN",
+      "riskType": "N/A",
+      "expected": {
+        "risk": "LOW",
+        "score": 32.29611523295025
+      },
+      "actual": {
+        "risk": "LOW",
+        "score": 23
+      },
+      "passed": true,
+      "breakdown": {
+        "supplyDilution": 20,
+        "holderConcentration": 30,
+        "liquidityDepth": 30,
+        "contractControl": 0,
+        "taxFee": 20,
+        "vestingUnlock": 10,
+        "distribution": 20,
+        "burnDeflation": 50,
+        "adoption": 10,
+        "auditTransparency": 20
+      },
+      "criticalFlags": []
+    },
+    {
+      "token": "Aave Token (AAVE)",
+      "category": "SAFE_TOKEN",
+      "riskType": "N/A",
+      "expected": {
+        "risk": "LOW",
+        "score": 17.43457642847197
+      },
+      "actual": {
+        "risk": "LOW",
+        "score": 25
+      },
+      "passed": true,
+      "breakdown": {
+        "supplyDilution": 20,
+        "holderConcentration": 30,
+        "liquidityDepth": 50,
+        "contractControl": 0,
+        "taxFee": 20,
+        "vestingUnlock": 10,
+        "distribution": 10,
+        "burnDeflation": 50,
+        "adoption": 10,
+        "auditTransparency": 20
+      },
+      "criticalFlags": []
+    },
+    {
+      "token": "PancakeSwap (CAKE)",
+      "category": "SAFE_TOKEN",
+      "riskType": "N/A",
+      "expected": {
+        "risk": "LOW",
+        "score": 24.767330121003816
+      },
+      "actual": {
+        "risk": "LOW",
+        "score": 28
+      },
+      "passed": true,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 10,
+        "liquidityDepth": 30,
+        "contractControl": 0,
+        "taxFee": 0,
+        "vestingUnlock": 10,
+        "distribution": 10,
+        "burnDeflation": 50,
+        "adoption": 10,
+        "auditTransparency": 20
+      },
+      "criticalFlags": []
+    },
+    {
+      "token": "Polygon Token (MATIC)",
+      "category": "SAFE_TOKEN",
+      "riskType": "N/A",
+      "expected": {
+        "risk": "LOW",
+        "score": 17.149092496439337
+      },
+      "actual": {
+        "risk": "LOW",
+        "score": 25
+      },
+      "passed": true,
+      "breakdown": {
+        "supplyDilution": 40,
+        "holderConcentration": 10,
+        "liquidityDepth": 50,
+        "contractControl": 0,
+        "taxFee": 20,
+        "vestingUnlock": 10,
+        "distribution": 10,
+        "burnDeflation": 50,
+        "adoption": 10,
+        "auditTransparency": 20
+      },
+      "criticalFlags": []
+    },
+    {
+      "token": "Solana (SOL)",
+      "category": "SAFE_TOKEN",
+      "riskType": "N/A",
+      "expected": {
+        "risk": "LOW",
+        "score": 22.088471197454727
+      },
+      "actual": {
+        "risk": "LOW",
+        "score": 29
+      },
+      "passed": true,
+      "breakdown": {
+        "supplyDilution": 40,
+        "holderConcentration": 10,
+        "liquidityDepth": 70,
+        "contractControl": 0,
+        "taxFee": 20,
+        "vestingUnlock": 10,
+        "distribution": 20,
+        "burnDeflation": 50,
+        "adoption": 10,
+        "auditTransparency": 20
+      },
+      "criticalFlags": []
+    },
+    {
+      "token": "DefiCoin (DEFI)",
+      "category": "MEDIUM_RISK_TOKEN",
+      "riskType": "N/A",
+      "expected": {
+        "risk": "MEDIUM",
+        "score": 53.94310246033369
+      },
+      "actual": {
+        "risk": "MEDIUM",
+        "score": 51
+      },
+      "passed": true,
+      "breakdown": {
+        "supplyDilution": 40,
+        "holderConcentration": 30,
+        "liquidityDepth": 50,
+        "contractControl": 100,
+        "taxFee": 40,
+        "vestingUnlock": 30,
+        "distribution": 40,
+        "burnDeflation": 50,
+        "adoption": 40,
+        "auditTransparency": 60
+      },
+      "criticalFlags": [
+        "Freeze authority exists",
+        "Mint authority exists"
+      ]
+    },
+    {
+      "token": "YieldFarm (YIELD)",
+      "category": "MEDIUM_RISK_TOKEN",
+      "riskType": "N/A",
+      "expected": {
+        "risk": "MEDIUM",
+        "score": 40.57990359044626
+      },
+      "actual": {
+        "risk": "MEDIUM",
+        "score": 56
+      },
+      "passed": false,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 50,
+        "liquidityDepth": 10,
+        "contractControl": 100,
+        "taxFee": 60,
+        "vestingUnlock": 30,
+        "distribution": 40,
+        "burnDeflation": 50,
+        "adoption": 20,
+        "auditTransparency": 60
+      },
+      "criticalFlags": [
+        "Freeze authority exists"
+      ]
+    },
+    {
+      "token": "GameToken (GAME)",
+      "category": "MEDIUM_RISK_TOKEN",
+      "riskType": "N/A",
+      "expected": {
+        "risk": "MEDIUM",
+        "score": 56.03873826888966
+      },
+      "actual": {
+        "risk": "MEDIUM",
+        "score": 53
+      },
+      "passed": true,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 30,
+        "liquidityDepth": 10,
+        "contractControl": 100,
+        "taxFee": 60,
+        "vestingUnlock": 30,
+        "distribution": 40,
+        "burnDeflation": 50,
+        "adoption": 40,
+        "auditTransparency": 20
+      },
+      "criticalFlags": [
+        "Mint authority exists"
+      ]
+    },
+    {
+      "token": "MetaToken (META)",
+      "category": "MEDIUM_RISK_TOKEN",
+      "riskType": "N/A",
+      "expected": {
+        "risk": "MEDIUM",
+        "score": 47.77697066343397
+      },
+      "actual": {
+        "risk": "MEDIUM",
+        "score": 54
+      },
+      "passed": true,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 50,
+        "liquidityDepth": 30,
+        "contractControl": 75,
+        "taxFee": 60,
+        "vestingUnlock": 30,
+        "distribution": 20,
+        "burnDeflation": 50,
+        "adoption": 20,
+        "auditTransparency": 60
+      },
+      "criticalFlags": [
+        "Mint authority exists"
+      ]
+    },
+    {
+      "token": "HoneyTrap (HONEY)",
+      "category": "RISKY_TOKEN",
+      "riskType": "HONEYPOT",
+      "expected": {
+        "risk": "CRITICAL",
+        "score": 87.1506880849463
+      },
+      "actual": {
+        "risk": "HIGH",
+        "score": 78
+      },
+      "passed": false,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 70,
+        "liquidityDepth": 50,
+        "contractControl": 100,
+        "taxFee": 100,
+        "vestingUnlock": 50,
+        "distribution": 80,
+        "burnDeflation": 50,
+        "adoption": 60,
+        "auditTransparency": 60
+      },
+      "criticalFlags": [
+        "Honeypot detected",
+        "Extreme sell tax (>50%)",
+        "LP tokens in owner wallet",
+        "Freeze authority exists",
+        "Mint authority exists"
+      ]
+    },
+    {
+      "token": "CantSell (SELL)",
+      "category": "RISKY_TOKEN",
+      "riskType": "HONEYPOT",
+      "expected": {
+        "risk": "CRITICAL",
+        "score": 95.5900260845301
+      },
+      "actual": {
+        "risk": "HIGH",
+        "score": 78
+      },
+      "passed": false,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 70,
+        "liquidityDepth": 30,
+        "contractControl": 100,
+        "taxFee": 100,
+        "vestingUnlock": 70,
+        "distribution": 80,
+        "burnDeflation": 50,
+        "adoption": 60,
+        "auditTransparency": 60
+      },
+      "criticalFlags": [
+        "Honeypot detected",
+        "Extreme sell tax (>50%)",
+        "LP tokens in owner wallet",
+        "Freeze authority exists",
+        "Mint authority exists"
+      ]
+    },
+    {
+      "token": "RugCoin (RUG)",
+      "category": "RISKY_TOKEN",
+      "riskType": "RUG_PULL",
+      "expected": {
+        "risk": "CRITICAL",
+        "score": 91.01046296117802
+      },
+      "actual": {
+        "risk": "HIGH",
+        "score": 75
+      },
+      "passed": false,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 70,
+        "liquidityDepth": 70,
+        "contractControl": 90,
+        "taxFee": 40,
+        "vestingUnlock": 70,
+        "distribution": 60,
+        "burnDeflation": 50,
+        "adoption": 60,
+        "auditTransparency": 60
+      },
+      "criticalFlags": [
+        "LP tokens in owner wallet"
+      ]
+    },
+    {
+      "token": "ExitScam (EXIT)",
+      "category": "RISKY_TOKEN",
+      "riskType": "RUG_PULL",
+      "expected": {
+        "risk": "CRITICAL",
+        "score": 81.34568939025449
+      },
+      "actual": {
+        "risk": "HIGH",
+        "score": 75
+      },
+      "passed": false,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 90,
+        "liquidityDepth": 50,
+        "contractControl": 90,
+        "taxFee": 40,
+        "vestingUnlock": 70,
+        "distribution": 60,
+        "burnDeflation": 50,
+        "adoption": 60,
+        "auditTransparency": 60
+      },
+      "criticalFlags": [
+        "LP tokens in owner wallet"
+      ]
+    },
+    {
+      "token": "PumpCoin (PUMP)",
+      "category": "RISKY_TOKEN",
+      "riskType": "PUMP_DUMP",
+      "expected": {
+        "risk": "HIGH",
+        "score": 84.81756286966522
+      },
+      "actual": {
+        "risk": "HIGH",
+        "score": 64
+      },
+      "passed": false,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 90,
+        "liquidityDepth": 50,
+        "contractControl": 0,
+        "taxFee": 0,
+        "vestingUnlock": 90,
+        "distribution": 80,
+        "burnDeflation": 50,
+        "adoption": 60,
+        "auditTransparency": 20
+      },
+      "criticalFlags": []
+    },
+    {
+      "token": "MoonShot (MOON)",
+      "category": "RISKY_TOKEN",
+      "riskType": "PUMP_DUMP",
+      "expected": {
+        "risk": "HIGH",
+        "score": 78.82752206058342
+      },
+      "actual": {
+        "risk": "HIGH",
+        "score": 63
+      },
+      "passed": false,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 90,
+        "liquidityDepth": 50,
+        "contractControl": 0,
+        "taxFee": 20,
+        "vestingUnlock": 70,
+        "distribution": 80,
+        "burnDeflation": 50,
+        "adoption": 60,
+        "auditTransparency": 20
+      },
+      "criticalFlags": []
+    },
+    {
+      "token": "DogeCopy (DOGC)",
+      "category": "RISKY_TOKEN",
+      "riskType": "MEME_RISKY",
+      "expected": {
+        "risk": "MEDIUM",
+        "score": 65.77674790821904
+      },
+      "actual": {
+        "risk": "HIGH",
+        "score": 78
+      },
+      "passed": false,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 70,
+        "liquidityDepth": 90,
+        "contractControl": 15,
+        "taxFee": 0,
+        "vestingUnlock": 70,
+        "distribution": 60,
+        "burnDeflation": 50,
+        "adoption": 40,
+        "auditTransparency": 60
+      },
+      "criticalFlags": []
+    },
+    {
+      "token": "ShibaFake (SHIB2)",
+      "category": "RISKY_TOKEN",
+      "riskType": "MEME_RISKY",
+      "expected": {
+        "risk": "MEDIUM",
+        "score": 66.12353213648072
+      },
+      "actual": {
+        "risk": "HIGH",
+        "score": 78
+      },
+      "passed": false,
+      "breakdown": {
+        "supplyDilution": 80,
+        "holderConcentration": 50,
+        "liquidityDepth": 70,
+        "contractControl": 15,
+        "taxFee": 0,
+        "vestingUnlock": 90,
+        "distribution": 80,
+        "burnDeflation": 50,
+        "adoption": 60,
+        "auditTransparency": 60
+      },
+      "criticalFlags": []
+    }
+  ]
+}
