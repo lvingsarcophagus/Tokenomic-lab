@@ -1,5 +1,6 @@
 // Firebase Security Rules for Firestore
-// Updated with activity logging and admin features
+// Updated with activity logging, admin features, and pay-per-use plan support
+// Supports three user tiers: FREE, PAY_PER_USE, PREMIUM
 // Deploy: Firebase Console > Firestore Database > Rules
 
 rules_version = '2';
@@ -18,6 +19,20 @@ service cloud.firestore {
     function isPremium(userId) {
       return isAuthenticated() && isOwner(userId) && 
              get(/databases/$(database)/documents/users/$(userId)).data.plan == 'PREMIUM';
+    }
+    
+    function isPayPerUse(userId) {
+      return isAuthenticated() && isOwner(userId) && 
+             get(/databases/$(database)/documents/users/$(userId)).data.plan == 'PAY_PER_USE';
+    }
+    
+    function isPaidUser(userId) {
+      return isPremium(userId) || isPayPerUse(userId);
+    }
+    
+    function hasCredits(userId) {
+      return isAuthenticated() && isOwner(userId) && 
+             get(/databases/$(database)/documents/users/$(userId)).data.credits > 0;
     }
     
     function isAdmin() {
@@ -52,10 +67,10 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
     
-    // Alerts subcollection (Premium only for creation)
+    // Alerts subcollection (Premium gets smart alerts, Pay-per-use gets basic alerts)
     match /alerts/{userId}/notifications/{alertId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isPremium(userId);
+      allow create: if isPaidUser(userId); // Both Premium and Pay-per-use can create alerts
       allow update: if isOwner(userId); // Can mark as read/dismissed
       allow delete: if isOwner(userId);
     }
@@ -68,10 +83,10 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
     
-    // Portfolio collection (Premium only)
+    // Portfolio collection (Premium and Pay-per-use)
     match /portfolio/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow write: if isPremium(userId);
+      allow write: if isPaidUser(userId); // Both Premium and Pay-per-use can use portfolio
       allow delete: if isOwner(userId);
     }
     
@@ -123,7 +138,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Credit transactions - NEW: For PAY_PER_USE tier
+    // Credit transactions - For PAY_PER_USE tier
     match /credit_transactions/{transactionId} {
       // Users can read their own transactions
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
@@ -136,6 +151,38 @@ service cloud.firestore {
       
       // No updates or deletes (audit trail)
       allow update, delete: if false;
+    }
+    
+    // Payment history - For tracking x402 payments
+    match /payment_history/{userId}/payments/{paymentId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId); // User can record their payments
+      allow update: if false; // Immutable payment records
+      allow delete: if false; // Never delete payment history
+    }
+    
+    // Feature usage tracking - For pay-per-use billing
+    match /feature_usage/{userId}/usage/{usageId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId); // Track feature usage
+      allow update: if false; // Immutable usage records
+      allow delete: if false; // Never delete usage history
+    }
+    
+    // x402 payment sessions - For tracking payment flows
+    match /x402_sessions/{sessionId} {
+      // Users can read their own payment sessions
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Admins can read all sessions
+      allow read: if isAdmin();
+      
+      // System can create and update sessions
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // No deletes (audit trail)
+      allow delete: if false;
     }
     
     // Legacy collections (backward compatibility)

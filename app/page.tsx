@@ -133,13 +133,23 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* CTA Button - Centered */}
-          <div className="flex justify-center mb-16">
+          {/* CTA Buttons - Centered */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link href="/signup">
-              <button className="group relative px-16 py-6 bg-white text-black font-mono text-base lg:text-xl border-2 border-white hover:bg-black hover:text-white transition-all duration-300 overflow-hidden">
+              <button className="group relative px-12 py-5 bg-white text-black font-mono text-base lg:text-lg border-2 border-white hover:bg-black hover:text-white transition-all duration-300 overflow-hidden">
                 <span className="relative z-10 flex items-center gap-3 justify-center font-bold tracking-wider">
                   GET STARTED
-                  <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </button>
+            </Link>
+            
+            <Link href="/login">
+              <button className="group relative px-12 py-5 bg-transparent text-white font-mono text-base lg:text-lg border-2 border-white hover:bg-white hover:text-black transition-all duration-300 overflow-hidden">
+                <span className="relative z-10 flex items-center gap-3 justify-center font-bold tracking-wider">
+                  LOG IN
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
@@ -1007,17 +1017,22 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link href="/signup">
-              <button className="px-10 py-5 bg-white text-black font-mono text-base border-2 border-white hover:bg-transparent hover:text-white transition-all duration-200 group font-bold">
-                <span className="flex items-center gap-2 justify-center">
+              <button className="group relative px-12 py-5 bg-white text-black font-mono text-base border-2 border-white hover:bg-black hover:text-white transition-all duration-300 overflow-hidden">
+                <span className="relative z-10 flex items-center gap-3 justify-center font-bold tracking-wider">
                   GET STARTED FREE
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
             </Link>
 
-            <Link href="/dashboard">
-              <button className="px-10 py-5 bg-transparent border-2 border-white text-white font-mono text-base hover:bg-white/10 transition-all duration-200">
-                VIEW DEMO
+            <Link href="/login">
+              <button className="group relative px-12 py-5 bg-transparent text-white font-mono text-base border-2 border-white hover:bg-white hover:text-black transition-all duration-300 overflow-hidden">
+                <span className="relative z-10 flex items-center gap-3 justify-center font-bold tracking-wider">
+                  LOG IN
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
             </Link>
           </div>

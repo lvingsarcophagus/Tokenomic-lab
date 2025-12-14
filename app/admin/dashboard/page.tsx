@@ -132,7 +132,7 @@ export default function ModernAdminPanel() {
             const tier = u.tier?.toUpperCase()
             return tier === 'PREMIUM' || tier === 'PRO'
           }).length || 0,
-          payPerUseUsers: data.users?.filter((u: User) => u.tier?.toUpperCase() === 'PAY_PER_USE').length || 0,
+          payPerUseUsers: data.users?.filter((u: User) => u.tier?.toUpperCase() === 'PAY_PER_USE' || u.plan?.toUpperCase() === 'PAY_PER_USE').length || 0,
           totalCredits: data.users?.reduce((sum: number, u: User) => sum + (u.credits || 0), 0) || 0,
           cachedTokens: 13,
           queries24h: 0
@@ -375,9 +375,14 @@ export default function ModernAdminPanel() {
     setEditingEmail(user.email)
     setEditingRole(user.role)
     
-    // Normalize tier to uppercase
-    let normalizedTier = user.tier?.toUpperCase() || 'FREE'
+    // Normalize tier to uppercase, check both tier and plan fields
+    let normalizedTier = user.tier?.toUpperCase() || user.plan?.toUpperCase() || 'FREE'
     if (normalizedTier === 'PRO') normalizedTier = 'PREMIUM'
+    
+    // Handle PAY_PER_USE from either field
+    if (user.plan === 'PAY_PER_USE' || user.tier === 'PAY_PER_USE') {
+      normalizedTier = 'PAY_PER_USE'
+    }
     
     setEditingTier(normalizedTier)
     setShowEditModal(true)
@@ -399,8 +404,14 @@ export default function ModernAdminPanel() {
       
       // Prepare updates object
       const updates: any = {
-        tier: editingTier,  // Use uppercase: FREE, PREMIUM, ADMIN
+        tier: editingTier,  // Use uppercase: FREE, PAY_PER_USE, PREMIUM, ADMIN
+        plan: editingTier,  // Also set plan field for consistency
         role: editingRole
+      }
+      
+      // Add credits field for PAY_PER_USE users
+      if (editingTier === 'PAY_PER_USE') {
+        updates.credits = selectedUser.credits || 0 // Preserve existing credits or set to 0
       }
       
       // Add name if changed
@@ -810,15 +821,15 @@ export default function ModernAdminPanel() {
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 rounded text-xs font-mono font-bold ${
                               (user.tier === 'pro' || user.tier === 'PREMIUM' || user.plan === 'PREMIUM') ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 
-                              user.plan === 'PAY_PER_USE' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                              (user.plan === 'PAY_PER_USE' || user.tier === 'PAY_PER_USE') ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
                               'bg-white/10 text-white/60'
                             }`}>
                               {(user.tier === 'pro' || user.tier === 'PREMIUM' || user.plan === 'PREMIUM') ? 'PREMIUM' : 
-                               user.plan === 'PAY_PER_USE' ? 'PAY-PER-USE' : 'FREE'}
+                               (user.plan === 'PAY_PER_USE' || user.tier === 'PAY_PER_USE') ? 'PAY-PER-USE' : 'FREE'}
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            {user.plan === 'PAY_PER_USE' ? (
+                            {(user.plan === 'PAY_PER_USE' || user.tier === 'PAY_PER_USE') ? (
                               <span className="text-white font-mono text-sm font-bold">
                                 {user.credits || 0} <span className="text-white/40 text-xs">credits</span>
                               </span>
@@ -1488,6 +1499,7 @@ export default function ModernAdminPanel() {
                     className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white font-mono focus:outline-none focus:border-white/40"
                   >
                     <option value="FREE">FREE</option>
+                    <option value="PAY_PER_USE">PAY-PER-USE</option>
                     <option value="PREMIUM">PREMIUM</option>
                     <option value="ADMIN">ADMIN</option>
                   </select>

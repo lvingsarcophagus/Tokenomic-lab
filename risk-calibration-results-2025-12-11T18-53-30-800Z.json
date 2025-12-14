@@ -1,0 +1,139 @@
+{
+  "timestamp": "2025-12-11T18:53:30.815Z",
+  "bestConfiguration": {
+    "config": {
+      "name": "Optimized",
+      "lowThreshold": 30,
+      "mediumThreshold": 55,
+      "highThreshold": 78,
+      "criticalPenalties": {
+        "honeypot": 35,
+        "extremeTax": 30,
+        "rugPull": 20,
+        "freezeAuthority": 12,
+        "mintAuthority": 12
+      },
+      "memePenalty": 18
+    },
+    "accuracy": 77.8,
+    "correct": 14,
+    "total": 18
+  },
+  "allResults": [
+    {
+      "name": "Current (Baseline)",
+      "config": {
+        "name": "Current (Baseline)",
+        "lowThreshold": 30,
+        "mediumThreshold": 60,
+        "highThreshold": 80,
+        "criticalPenalties": {
+          "honeypot": 25,
+          "extremeTax": 20,
+          "rugPull": 15,
+          "freezeAuthority": 10,
+          "mintAuthority": 10
+        },
+        "memePenalty": 15
+      },
+      "accuracy": 72.2,
+      "correct": 13,
+      "total": 18
+    },
+    {
+      "name": "Aggressive Thresholds",
+      "config": {
+        "name": "Aggressive Thresholds",
+        "lowThreshold": 25,
+        "mediumThreshold": 50,
+        "highThreshold": 75,
+        "criticalPenalties": {
+          "honeypot": 30,
+          "extremeTax": 25,
+          "rugPull": 20,
+          "freezeAuthority": 15,
+          "mintAuthority": 15
+        },
+        "memePenalty": 20
+      },
+      "accuracy": 55.6,
+      "correct": 10,
+      "total": 18
+    },
+    {
+      "name": "Conservative (Observed)",
+      "config": {
+        "name": "Conservative (Observed)",
+        "lowThreshold": 30,
+        "mediumThreshold": 60,
+        "highThreshold": 85,
+        "criticalPenalties": {
+          "honeypot": 20,
+          "extremeTax": 15,
+          "rugPull": 12,
+          "freezeAuthority": 8,
+          "mintAuthority": 8
+        },
+        "memePenalty": 15
+      },
+      "accuracy": 66.7,
+      "correct": 12,
+      "total": 18
+    },
+    {
+      "name": "High Critical Penalties",
+      "config": {
+        "name": "High Critical Penalties",
+        "lowThreshold": 30,
+        "mediumThreshold": 60,
+        "highThreshold": 80,
+        "criticalPenalties": {
+          "honeypot": 40,
+          "extremeTax": 35,
+          "rugPull": 25,
+          "freezeAuthority": 20,
+          "mintAuthority": 20
+        },
+        "memePenalty": 15
+      },
+      "accuracy": 72.2,
+      "correct": 13,
+      "total": 18
+    },
+    {
+      "name": "Optimized",
+      "config": {
+        "name": "Optimized",
+        "lowThreshold": 30,
+        "mediumThreshold": 55,
+        "highThreshold": 78,
+        "criticalPenalties": {
+          "honeypot": 35,
+          "extremeTax": 30,
+          "rugPull": 20,
+          "freezeAuthority": 12,
+          "mintAuthority": 12
+        },
+        "memePenalty": 18
+      },
+      "accuracy": 77.8,
+      "correct": 14,
+      "total": 18
+    }
+  ],
+  "recommendations": {
+    "thresholds": {
+      "low": 30,
+      "medium": 55,
+      "high": 78
+    },
+    "penalties": {
+      "honeypot": 35,
+      "extremeTax": 30,
+      "rugPull": 20,
+      "freezeAuthority": 12,
+      "mintAuthority": 12
+    },
+    "memePenalty": 18
+  }
+}

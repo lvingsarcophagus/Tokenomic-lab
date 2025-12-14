@@ -185,7 +185,7 @@ export async function calculateRisk(
     
     // MEME BASELINE: Add baseline risk to meme tokens (not just minimum)
     if (memeDetection.isMeme) {
-      const memeBaselineBonus = 15 // Add 15 points to meme tokens
+      const memeBaselineBonus = 15 // Add 15 points to meme tokens (balanced)
       const beforeBaseline = overallScoreRaw
       overallScoreRaw = Math.min(overallScoreRaw + memeBaselineBonus, 100) // Cap at 100
       console.log(`✓ Meme Baseline Applied: ${beforeBaseline.toFixed(2)} + ${memeBaselineBonus} = ${overallScoreRaw.toFixed(2)}`)
@@ -304,18 +304,46 @@ export async function calculateRisk(
   }
 
   // ═══════════════════════════════════════════════════════════
-  // ✅ CRITICAL OVERRIDE: Apply critical flags penalty
+  // ✅ CRITICAL OVERRIDE: Apply optimized critical flags penalty
   // ═══════════════════════════════════════════════════════════
   const criticalFlags = extractCriticalFlags(data, hasGoPlus)
   const criticalCount = criticalFlags.length
   
   let overallScoreFinal = overallScoreRaw
+  
+  // Apply individual critical penalties (balanced approach)
+  let criticalPenalty = 0
+  if (data.is_honeypot) {
+    criticalPenalty += 40  // Honeypot: +40 (most critical)
+    console.log(`🚨 [Critical Penalty] Honeypot detected → +40`)
+  }
+  if ((data.sell_tax || 0) > 0.90) {
+    criticalPenalty += 35  // Extreme tax: +35 (very critical)
+    console.log(`🚨 [Critical Penalty] Extreme sell tax → +35`)
+  }
+  if (data.lp_in_owner_wallet) {
+    criticalPenalty += 25  // Rug pull risk: +25 (high critical)
+    console.log(`🚨 [Critical Penalty] LP in owner wallet → +25`)
+  }
+  if (data.freeze_authority_exists) {
+    criticalPenalty += 8   // Freeze authority: +8 (moderate penalty)
+    console.log(`🚨 [Critical Penalty] Freeze authority exists → +8`)
+  }
+  if (data.mint_authority_exists) {
+    criticalPenalty += 8   // Mint authority: +8 (moderate penalty)
+    console.log(`🚨 [Critical Penalty] Mint authority exists → +8`)
+  }
+  
+  // Apply the penalties
+  if (criticalPenalty > 0) {
+    overallScoreFinal = Math.min(overallScoreRaw + criticalPenalty, 100)
+    console.log(`🚨 [Critical Override] Applied ${criticalPenalty} total penalty → Score: ${overallScoreFinal}`)
+  }
+  
+  // Force minimum score for multiple critical flags
   if (criticalCount >= 3) {
-    console.log(`🚨 [Critical Override] ${criticalCount} CRITICAL flags detected → Min score 75`)
-    overallScoreFinal = Math.max(overallScoreRaw, 75)
-  } else if (criticalCount >= 1) {
-    console.log(`⚠️ [Critical Override] ${criticalCount} CRITICAL flag(s) detected → +15 penalty`)
-    overallScoreFinal = Math.min(overallScoreRaw + 15, 100)
+    overallScoreFinal = Math.max(overallScoreFinal, 82)  // Force to CRITICAL zone (82+)
+    console.log(`🚨 [Critical Override] ${criticalCount} flags → Force minimum 82`)
   }
 
   // Apply Official Token Override (reduces score by 45+)
@@ -325,8 +353,15 @@ export async function calculateRisk(
     const override = applyOfficialTokenOverride(overallScoreFinal, true, officialTokenResult.marketCap, isMeme)
     overallScoreFinal = override.score
     
+    // CRITICAL: Ensure meme tokens maintain minimum risk level (product requirement)
     if (isMeme) {
-      console.log(`⚠️ [Official Meme Token] Reduced bonus applied (meme coins are inherently volatile)`)
+      const memeMinimumRisk = 35 // Meme tokens should be at least MEDIUM risk (31-60)
+      if (overallScoreFinal < memeMinimumRisk) {
+        console.log(`⚠️ [Official Meme Token] Enforcing minimum risk: ${overallScoreFinal} → ${memeMinimumRisk} (meme volatility baseline)`)
+        overallScoreFinal = memeMinimumRisk
+      } else {
+        console.log(`⚠️ [Official Meme Token] Reduced bonus applied (meme coins are inherently volatile)`)
+      }
     }
   }
 
@@ -532,11 +567,10 @@ export async function calculateRisk(
 }
 
 function classifyRisk(score: number): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
-  if (score >= 75) return 'CRITICAL'
-  if (score >= 50) return 'HIGH'
-  if (score >= 35) return 'MEDIUM'  // Adjusted from 30 to reduce false positives
-  if (score >= 20) return 'LOW'      // Added explicit LOW threshold
-  return 'LOW'
+  if (score > 80) return 'CRITICAL'  // Balanced: 81+ = CRITICAL (matches product spec)
+  if (score > 60) return 'HIGH'      // Balanced: 61-80 = HIGH (matches product spec)
+  if (score > 30) return 'MEDIUM'    // Balanced: 31-60 = MEDIUM (matches product spec)
+  return 'LOW'                       // Balanced: 0-30 = LOW (matches product spec)
 }
 
 // FACTOR 1: Supply Dilution (Pure Mobula - no fallback needed)
