@@ -735,7 +735,7 @@ export default function PremiumDashboard() {
             symbol: data.priceData?.symbol,
             overallRisk: riskScore,
             breakdown,
-            isMeme: result.is_meme_token,
+            isMeme: result.ai_insights?.classification === 'MEME_TOKEN',
             classification: result.ai_insights?.classification,
             logo: data.priceData?.logo
           })

@@ -404,9 +404,6 @@ export async function calculateRisk(
     return {
       ...baseResult,
       breakdown: scores,
-      // Add meme detection fields for test compatibility
-      is_meme_token: memeDetection.isMeme,
-      meme_penalty_applied: memeDetection.isMeme, // Penalty is applied if it's a meme token
       upgrade_message:
         overallRounded > 40
           ? '⚡ Premium unlocks forecasts, critical flags, and detailed insights'
@@ -421,10 +418,7 @@ export async function calculateRisk(
     critical_flags: extractCriticalFlags(data, hasGoPlus),
     positive_signals: extractPositiveSignals(data),
     upcoming_risks: calculateUpcomingRisks(data),
-    detailed_insights: generateInsights(scores, data, hasGoPlus),
-    // Add meme detection fields for test compatibility
-    is_meme_token: memeDetection.isMeme,
-    meme_penalty_applied: memeDetection.isMeme // Penalty is applied if it's a meme token
+    detailed_insights: generateInsights(scores, data, hasGoPlus)
   }
   
   // ═══════════════════════════════════════════════════════════
