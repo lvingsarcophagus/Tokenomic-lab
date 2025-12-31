@@ -368,10 +368,12 @@ export default function PremiumDashboard() {
       
       // Add real scan activities from Firebase
       scanHistory.forEach((scan, index) => {
-        const scanTimestamp = scan.analyzedAt instanceof Date 
-          ? scan.analyzedAt.getTime() 
-          : (typeof scan.analyzedAt?.toDate === 'function' 
-              ? scan.analyzedAt.toDate().getTime() 
+        // Handle Firestore Timestamp or Date
+        const analyzedAt = scan.analyzedAt as any
+        const scanTimestamp = analyzedAt instanceof Date 
+          ? analyzedAt.getTime() 
+          : (typeof analyzedAt?.toDate === 'function' 
+              ? analyzedAt.toDate().getTime() 
               : Date.now() - (index * 60000)) // Fallback with staggered times
         
         activities.push({
@@ -381,12 +383,12 @@ export default function PremiumDashboard() {
           token: {
             symbol: scan.tokenSymbol || 'UNKNOWN',
             name: scan.tokenName || 'Unknown Token',
-            riskScore: scan.riskScore || 0,
-            riskLevel: scan.riskLevel || 'MEDIUM',
+            riskScore: scan.results?.overall_risk_score || 0,
+            riskLevel: scan.results?.risk_level || 'MEDIUM',
             address: scan.tokenAddress
           },
           timestamp: scanTimestamp,
-          details: `Risk Score: ${scan.riskScore || 0}/100 - ${scan.riskLevel || 'MEDIUM'} Risk${scan.marketData?.marketCap ? ` • $${scan.marketData.marketCap}` : ''}${scan.confidence ? ` • ${scan.confidence}% confidence` : ''}`
+          details: `Risk Score: ${scan.results?.overall_risk_score || 0}/100 - ${scan.results?.risk_level || 'MEDIUM'} Risk${scan.marketSnapshot?.marketCap ? ` • $${scan.marketSnapshot.marketCap}` : ''}${scan.results?.confidence_score ? ` • ${scan.results.confidence_score}% confidence` : ''}`
         })
       })
       
