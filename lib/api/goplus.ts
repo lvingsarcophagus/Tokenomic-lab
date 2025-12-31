@@ -55,7 +55,6 @@ export async function tryGoPlusWithFallback(
       }
 
       // Cache the RAW GoPlus data (wrapped in token address key)
-      // This preserves ALL fields including holder_count for the adapter
       const rawData = { [lower]: data }
       
       console.log(`[GoPlus] Raw data for ${tokenAddress}: holder_count=${data.holder_count}, owner_address=${data.owner_address}`)

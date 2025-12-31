@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth"
@@ -11,24 +11,168 @@ import { auth, db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Shield } from "lucide-react"
+import { Shield, Check, X, AlertCircle } from "lucide-react"
 import { theme } from "@/lib/theme"
 import { analyticsEvents } from "@/lib/firebase-analytics"
 import Navbar from "@/components/navbar"
 import { logAuth } from "@/lib/services/activity-logger"
+
+// Rate limiting configuration
+const RATE_LIMIT_ATTEMPTS = 5
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
+const LOCKOUT_DURATION = 30 * 60 * 1000 // 30 minutes
+
+interface PasswordStrength {
+  score: number // 0-100
+  level: 'weak' | 'fair' | 'good' | 'strong' | 'excellent'
+  color: string
+  checks: {
+    length: boolean
+    uppercase: boolean
+    lowercase: boolean
+    number: boolean
+    special: boolean
+    unique: boolean
+  }
+}
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [name, setName] = useState("")
-  const [company, setCompany] = useState("")
-  const [country, setCountry] = useState("")
-  const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'PAY_PER_USE'>('FREE')
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength | null>(null)
+  const [isRateLimited, setIsRateLimited] = useState(false)
+  const [rateLimitMessage, setRateLimitMessage] = useState("")
+  const [emailError, setEmailError] = useState("")
+  const [passwordMatchError, setPasswordMatchError] = useState("")
   const router = useRouter()
+
+  // Check rate limiting on component mount
+  useEffect(() => {
+    checkRateLimit()
+  }, [])
+
+  // Calculate password strength whenever password changes
+  useEffect(() => {
+    if (password.length > 0) {
+      const strength = calculatePasswordStrength(password)
+      setPasswordStrength(strength)
+    } else {
+      setPasswordStrength(null)
+    }
+  }, [password])
+
+  // Validate email format in real-time
+  useEffect(() => {
+    if (email.length > 0) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        setEmailError("Invalid email format")
+      } else {
+        setEmailError("")
+      }
+    } else {
+      setEmailError("")
+    }
+  }, [email])
+
+  // Check password match in real-time
+  useEffect(() => {
+    if (confirmPassword.length > 0) {
+      if (password !== confirmPassword) {
+        setPasswordMatchError("Passwords do not match")
+      } else {
+        setPasswordMatchError("")
+      }
+    } else {
+      setPasswordMatchError("")
+    }
+  }, [password, confirmPassword])
+
+  const checkRateLimit = () => {
+    const attempts = JSON.parse(localStorage.getItem('signup_attempts') || '[]')
+    const now = Date.now()
+    
+    // Clean old attempts
+    const recentAttempts = attempts.filter((timestamp: number) => now - timestamp < RATE_LIMIT_WINDOW)
+    
+    // Check if locked out
+    const lockoutUntil = localStorage.getItem('signup_lockout')
+    if (lockoutUntil && now < parseInt(lockoutUntil)) {
+      const remainingMinutes = Math.ceil((parseInt(lockoutUntil) - now) / 60000)
+      setIsRateLimited(true)
+      setRateLimitMessage(`Too many attempts. Please try again in ${remainingMinutes} minutes.`)
+      return false
+    }
+    
+    // Check rate limit
+    if (recentAttempts.length >= RATE_LIMIT_ATTEMPTS) {
+      const lockoutTime = now + LOCKOUT_DURATION
+      localStorage.setItem('signup_lockout', lockoutTime.toString())
+      setIsRateLimited(true)
+      setRateLimitMessage(`Too many signup attempts. Please try again in 30 minutes.`)
+      return false
+    }
+    
+    localStorage.setItem('signup_attempts', JSON.stringify(recentAttempts))
+    setIsRateLimited(false)
+    return true
+  }
+
+  const recordAttempt = () => {
+    const attempts = JSON.parse(localStorage.getItem('signup_attempts') || '[]')
+    attempts.push(Date.now())
+    localStorage.setItem('signup_attempts', JSON.stringify(attempts))
+  }
+
+  const calculatePasswordStrength = (pwd: string): PasswordStrength => {
+    const checks = {
+      length: pwd.length >= 12,
+      uppercase: /[A-Z]/.test(pwd),
+      lowercase: /[a-z]/.test(pwd),
+      number: /[0-9]/.test(pwd),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
+      unique: new Set(pwd).size >= pwd.length * 0.6 // At least 60% unique characters
+    }
+
+    // Calculate score
+    let score = 0
+    if (pwd.length >= 8) score += 20
+    if (pwd.length >= 12) score += 10
+    if (pwd.length >= 16) score += 10
+    if (checks.uppercase) score += 15
+    if (checks.lowercase) score += 15
+    if (checks.number) score += 15
+    if (checks.special) score += 15
+    if (checks.unique) score += 10
+
+    // Determine level and color
+    let level: PasswordStrength['level']
+    let color: string
+    
+    if (score < 40) {
+      level = 'weak'
+      color = 'bg-red-500'
+    } else if (score < 60) {
+      level = 'fair'
+      color = 'bg-orange-500'
+    } else if (score < 75) {
+      level = 'good'
+      color = 'bg-yellow-500'
+    } else if (score < 90) {
+      level = 'strong'
+      color = 'bg-blue-500'
+    } else {
+      level = 'excellent'
+      color = 'bg-green-500'
+    }
+
+    return { score, level, color, checks }
+  }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,7 +227,13 @@ export default function SignUpPage() {
     }
 
     // Name validation
-    if (name && name.length > 100) {
+    if (!name || name.trim().length === 0) {
+      setError("Full name is required")
+      setLoading(false)
+      return
+    }
+    
+    if (name.length > 100) {
       setError("Name is too long (max 100 characters)")
       setLoading(false)
       return
@@ -91,20 +241,6 @@ export default function SignUpPage() {
     
     // Sanitize name input
     const sanitizedName = name.trim().replace(/[<>]/g, '')
-    
-    // Company validation
-    if (company && company.length > 200) {
-      setError("Company name is too long (max 200 characters)")
-      setLoading(false)
-      return
-    }
-    
-    // Country validation
-    if (country && country.length > 100) {
-      setError("Country name is too long (max 100 characters)")
-      setLoading(false)
-      return
-    }
 
     // Terms agreement
     if (!agreeToTerms) {
@@ -116,17 +252,16 @@ export default function SignUpPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
-      // Use selected plan or check auto-premium
-      let userTier: 'FREE' | 'PAY_PER_USE' | 'PREMIUM' = selectedPlan
-      let userPlan: 'FREE' | 'PAY_PER_USE' | 'PREMIUM' = selectedPlan
-      let redirectPath = selectedPlan === 'PAY_PER_USE' ? '/dashboard' : '/free-dashboard'
-      let userCredits = selectedPlan === 'PAY_PER_USE' ? 0 : undefined
+      // Default to FREE plan, check auto-premium
+      let userTier: 'FREE' | 'PAY_PER_USE' | 'PREMIUM' = 'FREE'
+      let userPlan: 'FREE' | 'PAY_PER_USE' | 'PREMIUM' = 'FREE'
+      let redirectPath = '/dashboard'
       
       try {
         const settingsDoc = await getDoc(doc(db, "system", "platform_settings"))
         const settings = settingsDoc.data()
         
-        if (settings?.autoPremiumEnabled === true && selectedPlan === 'FREE') {
+        if (settings?.autoPremiumEnabled === true) {
           userTier = "PREMIUM"
           userPlan = "PREMIUM"
           redirectPath = "/premium/dashboard"
@@ -141,22 +276,17 @@ export default function SignUpPage() {
       const userDoc: any = {
         uid: userCredential.user.uid,
         email,
-        name: sanitizedName || null,
-        company: company?.trim() || null,
-        country: country?.trim() || null,
+        name: sanitizedName,
         tier: userTier,
         plan: userPlan,
         usage: {
           tokensAnalyzed: 0,
           lastResetDate: new Date(),
-          dailyLimit: (userTier === "PREMIUM" || userTier === "PAY_PER_USE") ? 999999 : 10
+          dailyLimit: (userTier === "PREMIUM") ? 999999 : 10
         },
       }
       
-      // Add credits field for PAY_PER_USE users
-      if (userTier === 'PAY_PER_USE') {
-        userDoc.credits = userCredits
-      }
+
       
       await setDoc(doc(db, "users", userCredential.user.uid), {
         ...userDoc,
@@ -186,8 +316,8 @@ export default function SignUpPage() {
       // Log user signup
       await logAuth(userCredential.user.uid, email, 'user_signup')
       
-      // Redirect based on tier
-      router.push(redirectPath)
+      // Redirect to email verification page instead of dashboard
+      router.push('/verify-email')
     } catch (error: unknown) {
       console.error("Sign up failed:", error)
       const err = error as { code?: string; message?: string }
@@ -242,8 +372,6 @@ export default function SignUpPage() {
           email: email,
           name: displayName,
           photoURL: photoURL,
-          company: null,
-          country: null,
           tier: "FREE",
           plan: "FREE",
           role: "user",
@@ -336,6 +464,20 @@ export default function SignUpPage() {
           Create Account
         </h2>
 
+        {isRateLimited && (
+          <div className={`mb-4 p-3 border ${theme.status.danger.border} ${theme.status.danger.bg} flex items-start gap-2`}>
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className={`${theme.status.danger.text} ${theme.text.small} ${theme.fonts.mono} font-bold`}>
+                RATE LIMIT EXCEEDED
+              </p>
+              <p className={`${theme.status.danger.text} ${theme.text.tiny} ${theme.fonts.mono} mt-1`}>
+                {rateLimitMessage}
+              </p>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className={`mb-4 p-3 border ${theme.status.danger.border} ${theme.status.danger.bg} ${theme.status.danger.text} ${theme.text.small} ${theme.fonts.mono}`}>
             {error}
@@ -343,102 +485,72 @@ export default function SignUpPage() {
         )}
 
         <form onSubmit={handleSignUp} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name" className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase`}>
-                Full Name *
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => {
-                  const value = e.target.value
-                  if (value.length <= 100) {
-                    setName(value)
-                  }
-                }}
-                className={`mt-1 ${theme.inputs.default}`}
-                placeholder="John Doe"
-                maxLength={100}
-                required
-              />
-              <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
+          <div>
+            <Label htmlFor="name" className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase`}>
+              Full Name *
+            </Label>
+            <Input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => {
+                const value = e.target.value
+                if (value.length <= 100) {
+                  setName(value)
+                }
+              }}
+              className={`mt-1 ${theme.inputs.default}`}
+              placeholder="John Doe"
+              maxLength={100}
+              required
+            />
+            {name.length > 80 && (
+              <p className={`mt-1 ${theme.text.tiny} ${name.length > 95 ? theme.status.danger.text : theme.text.secondary} ${theme.fonts.mono}`}>
                 {name.length}/100 characters
               </p>
-            </div>
-
-            <div>
-              <Label htmlFor="company" className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase`}>
-                Company (Optional)
-              </Label>
-              <Input
-                id="company"
-                type="text"
-                value={company}
-                onChange={(e) => {
-                  const value = e.target.value
-                  if (value.length <= 200) {
-                    setCompany(value)
-                  }
-                }}
-                className={`mt-1 ${theme.inputs.default}`}
-                placeholder="Acme Inc."
-                maxLength={200}
-              />
-              <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
-                {company.length}/200 characters
-              </p>
-            </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="email" className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase`}>
-                Email *
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  const value = e.target.value
-                  if (value.length <= 254) {
-                    setEmail(value)
-                  }
-                }}
-                className={`mt-1 ${theme.inputs.default}`}
-                placeholder="you@example.com"
-                maxLength={254}
-                required
-              />
-              <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
+          <div>
+            <Label htmlFor="email" className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase`}>
+              Email *
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                const value = e.target.value
+                if (value.length <= 254) {
+                  setEmail(value)
+                }
+              }}
+              className={`mt-1 ${theme.inputs.default}`}
+              placeholder="you@example.com"
+              maxLength={254}
+              required
+            />
+            {emailError && (
+              <div className="flex items-center gap-2 mt-2">
+                <X className="w-4 h-4 text-red-400" />
+                <p className={`${theme.text.tiny} text-red-400 ${theme.fonts.mono}`}>
+                  {emailError}
+                </p>
+              </div>
+            )}
+            {email.length > 0 && !emailError && (
+              <div className="flex items-center gap-2 mt-2">
+                <Check className="w-4 h-4 text-green-400" />
+                <p className={`${theme.text.tiny} text-green-400 ${theme.fonts.mono}`}>
+                  Valid email format
+                </p>
+              </div>
+            )}
+            {email.length > 200 && (
+              <p className={`mt-1 ${theme.text.tiny} ${email.length > 240 ? theme.status.danger.text : theme.text.secondary} ${theme.fonts.mono}`}>
                 {email.length}/254 characters
               </p>
-            </div>
-
-            <div>
-              <Label htmlFor="country" className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase`}>
-                Country (Optional)
-              </Label>
-              <Input
-                id="country"
-                type="text"
-                value={country}
-                onChange={(e) => {
-                  const value = e.target.value
-                  if (value.length <= 100) {
-                    setCountry(value)
-                  }
-                }}
-                className={`mt-1 ${theme.inputs.default}`}
-                placeholder="United States"
-                maxLength={100}
-              />
-              <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
-                {country.length}/100 characters
-              </p>
-            </div>
+            )}
           </div>
 
           <div>
@@ -461,9 +573,113 @@ export default function SignUpPage() {
               minLength={8}
               maxLength={128}
             />
-            <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
-              {password.length}/128 characters - must include uppercase, lowercase, and numbers
-            </p>
+            
+            {/* Password Strength Indicator */}
+            {passwordStrength && (
+              <div className="mt-3 space-y-2">
+                {/* Progress Bar */}
+                <div className="relative h-2 bg-white/10 border border-white/20 overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-300 ${passwordStrength.color}`}
+                    style={{ width: `${passwordStrength.score}%` }}
+                  />
+                </div>
+                
+                {/* Strength Label */}
+                <div className="flex items-center justify-between">
+                  <span className={`${theme.text.tiny} ${theme.fonts.mono} uppercase`}>
+                    <span className="text-white/60">Strength: </span>
+                    <span className={
+                      passwordStrength.level === 'weak' ? 'text-red-400' :
+                      passwordStrength.level === 'fair' ? 'text-orange-400' :
+                      passwordStrength.level === 'good' ? 'text-yellow-400' :
+                      passwordStrength.level === 'strong' ? 'text-blue-400' :
+                      'text-green-400'
+                    }>
+                      {passwordStrength.level.toUpperCase()}
+                    </span>
+                  </span>
+                  <span className={`${theme.text.tiny} ${theme.fonts.mono} text-white/40`}>
+                    {passwordStrength.score}/100
+                  </span>
+                </div>
+
+                {/* Requirements Checklist */}
+                <div className="grid grid-cols-2 gap-2 mt-3 p-3 bg-black/40 border border-white/10">
+                  <div className={`flex items-center gap-2 ${theme.text.tiny} ${theme.fonts.mono}`}>
+                    {passwordStrength.checks.length ? (
+                      <Check className="w-3 h-3 text-green-400" />
+                    ) : (
+                      <X className="w-3 h-3 text-red-400" />
+                    )}
+                    <span className={passwordStrength.checks.length ? 'text-green-400' : 'text-white/40'}>
+                      12+ characters
+                    </span>
+                  </div>
+                  
+                  <div className={`flex items-center gap-2 ${theme.text.tiny} ${theme.fonts.mono}`}>
+                    {passwordStrength.checks.uppercase ? (
+                      <Check className="w-3 h-3 text-green-400" />
+                    ) : (
+                      <X className="w-3 h-3 text-red-400" />
+                    )}
+                    <span className={passwordStrength.checks.uppercase ? 'text-green-400' : 'text-white/40'}>
+                      Uppercase (A-Z)
+                    </span>
+                  </div>
+                  
+                  <div className={`flex items-center gap-2 ${theme.text.tiny} ${theme.fonts.mono}`}>
+                    {passwordStrength.checks.lowercase ? (
+                      <Check className="w-3 h-3 text-green-400" />
+                    ) : (
+                      <X className="w-3 h-3 text-red-400" />
+                    )}
+                    <span className={passwordStrength.checks.lowercase ? 'text-green-400' : 'text-white/40'}>
+                      Lowercase (a-z)
+                    </span>
+                  </div>
+                  
+                  <div className={`flex items-center gap-2 ${theme.text.tiny} ${theme.fonts.mono}`}>
+                    {passwordStrength.checks.number ? (
+                      <Check className="w-3 h-3 text-green-400" />
+                    ) : (
+                      <X className="w-3 h-3 text-red-400" />
+                    )}
+                    <span className={passwordStrength.checks.number ? 'text-green-400' : 'text-white/40'}>
+                      Number (0-9)
+                    </span>
+                  </div>
+                  
+                  <div className={`flex items-center gap-2 ${theme.text.tiny} ${theme.fonts.mono}`}>
+                    {passwordStrength.checks.special ? (
+                      <Check className="w-3 h-3 text-green-400" />
+                    ) : (
+                      <X className="w-3 h-3 text-red-400" />
+                    )}
+                    <span className={passwordStrength.checks.special ? 'text-green-400' : 'text-white/40'}>
+                      Special (!@#$...)
+                    </span>
+                  </div>
+                  
+                  <div className={`flex items-center gap-2 ${theme.text.tiny} ${theme.fonts.mono}`}>
+                    {passwordStrength.checks.unique ? (
+                      <Check className="w-3 h-3 text-green-400" />
+                    ) : (
+                      <X className="w-3 h-3 text-red-400" />
+                    )}
+                    <span className={passwordStrength.checks.unique ? 'text-green-400' : 'text-white/40'}>
+                      Unique chars
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {password.length > 0 && !passwordStrength && (
+              <p className={`mt-2 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
+                Must include uppercase, lowercase, and numbers
+              </p>
+            )}
           </div>
 
           <div>
@@ -486,46 +702,30 @@ export default function SignUpPage() {
               minLength={8}
               maxLength={128}
             />
-            <p className={`mt-1 ${theme.text.tiny} ${theme.text.secondary} ${theme.fonts.mono}`}>
-              {confirmPassword.length}/128 characters
-            </p>
+            {passwordMatchError && (
+              <div className="flex items-center gap-2 mt-2">
+                <X className="w-4 h-4 text-red-400" />
+                <p className={`${theme.text.tiny} text-red-400 ${theme.fonts.mono}`}>
+                  {passwordMatchError}
+                </p>
+              </div>
+            )}
+            {confirmPassword.length > 0 && !passwordMatchError && password.length > 0 && (
+              <div className="flex items-center gap-2 mt-2">
+                <Check className="w-4 h-4 text-green-400" />
+                <p className={`${theme.text.tiny} text-green-400 ${theme.fonts.mono}`}>
+                  Passwords match
+                </p>
+              </div>
+            )}
+            {confirmPassword.length > 100 && (
+              <p className={`mt-1 ${theme.text.tiny} ${confirmPassword.length > 120 ? theme.status.danger.text : theme.text.secondary} ${theme.fonts.mono}`}>
+                {confirmPassword.length}/128 characters
+              </p>
+            )}
           </div>
 
-          {/* Plan Selection */}
-          <div className="pt-4">
-            <Label className={`${theme.text.secondary} ${theme.fonts.mono} ${theme.text.small} ${theme.fonts.tracking} uppercase mb-3 block`}>
-              Select Plan *
-            </Label>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => setSelectedPlan('FREE')}
-                className={`p-4 border-2 transition-all ${
-                  selectedPlan === 'FREE'
-                    ? 'border-white bg-white/10'
-                    : 'border-white/30 bg-black/40 hover:border-white/50'
-                }`}
-              >
-                <div className="text-white font-mono text-sm font-bold mb-1">FREE</div>
-                <div className="text-white/60 font-mono text-xs">Basic features</div>
-                <div className="text-white/40 font-mono text-[10px] mt-2">20 scans/day</div>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => setSelectedPlan('PAY_PER_USE')}
-                className={`p-4 border-2 transition-all ${
-                  selectedPlan === 'PAY_PER_USE'
-                    ? 'border-white bg-white/10'
-                    : 'border-white/30 bg-black/40 hover:border-white/50'
-                }`}
-              >
-                <div className="text-white font-mono text-sm font-bold mb-1">PAY-AS-YOU-GO</div>
-                <div className="text-white/60 font-mono text-xs">Buy credits</div>
-                <div className="text-white/40 font-mono text-[10px] mt-2">$5 = 50 credits</div>
-              </button>
-            </div>
-          </div>
+
 
           <div className="flex items-start gap-3 pt-2">
             <input
@@ -550,10 +750,10 @@ export default function SignUpPage() {
 
           <Button
             type="submit"
-            disabled={loading}
-            className={`w-full ${theme.buttons.primary} uppercase mt-6`}
+            disabled={loading || isRateLimited}
+            className={`w-full ${theme.buttons.primary} uppercase mt-6 ${isRateLimited ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {loading ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}
+            {loading ? "CREATING ACCOUNT..." : isRateLimited ? "RATE LIMITED" : "CREATE ACCOUNT"}
           </Button>
         </form>
 

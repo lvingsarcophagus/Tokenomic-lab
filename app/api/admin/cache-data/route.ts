@@ -41,8 +41,16 @@ export async function GET(request: NextRequest) {
 
     const snapshot = await query.get()
     
-    let cacheData = snapshot.docs.map(doc => {
+    console.log(`[Cache API] Found ${snapshot.docs.length} cache entries in Firestore`)
+    
+    // Process Firestore documents into cache entries
+    const rawCacheData = snapshot.docs.map(doc => {
       const data = doc.data()
+      console.log(`[Cache API] Processing cache entry: ${doc.id}`, {
+        symbol: data.symbol,
+        riskScore: data.riskScore,
+        cachedAt: data.cachedAt
+      })
       return {
         id: doc.id,
         address: data.address || doc.id,
@@ -62,15 +70,15 @@ export async function GET(request: NextRequest) {
     })
 
     // Apply search filter if provided
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      cacheData = cacheData.filter(item => 
-        item.address.toLowerCase().includes(query) ||
-        item.symbol.toLowerCase().includes(query) ||
-        item.name.toLowerCase().includes(query) ||
-        item.chain.toLowerCase().includes(query)
-      )
-    }
+    const cacheData = searchQuery 
+      ? rawCacheData.filter(item => {
+          const query = searchQuery.toLowerCase()
+          return item.address.toLowerCase().includes(query) ||
+                 item.symbol.toLowerCase().includes(query) ||
+                 item.name.toLowerCase().includes(query) ||
+                 item.chain.toLowerCase().includes(query)
+        })
+      : rawCacheData
 
     // Calculate statistics
     const totalSize = cacheData.reduce((sum, item) => sum + item.dataSize, 0)

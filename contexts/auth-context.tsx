@@ -56,6 +56,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (user) {
           console.log('[Auth Context] User logged in, loading profile...')
           
+          // Check if email is verified
+          if (!user.emailVerified) {
+            console.log('[Auth Context] Email not verified, user needs to verify')
+            // Don't load profile for unverified users
+            setUserProfile(null)
+            setUserData(null)
+            setLoading(false)
+            return
+          }
+          
           // First, try to migrate old schema if needed
           let profile = await migrateUserSchema(user.uid)
           

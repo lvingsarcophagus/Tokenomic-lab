@@ -54,20 +54,20 @@ export const MEME_WEIGHTS: FactorWeights = {
 };
 
 /**
- * Solana-specific weights
+ * Solana-specific weights (CORRECTED - now totals 100%)
  * Focus: Contract control (freeze/mint authority)
  */
 export const SOLANA_WEIGHTS: FactorWeights = {
-  supply_dilution: 0.13,       // 13% - Lower - Solana tokens often fixed supply
-  holder_concentration: 0.20,  // 20% - Standard but enhanced with wash trading detection
-  liquidity_depth: 0.18,       // 18% - Slightly higher - rug pulls common + liquidity drops
-  contract_control: 0.35,      // 35% - HIGHEST - Solana has unique critical risks
+  supply_dilution: 0.12,       // 12% - Normalized from 13%
+  holder_concentration: 0.185, // 18.5% - Normalized from 20%
+  liquidity_depth: 0.167,      // 16.7% - Normalized from 18%
+  contract_control: 0.324,     // 32.4% - Normalized from 35% (still highest priority)
   tax_fee: 0.00,               // 0% - N/A - Solana doesn't have token taxes
-  distribution: 0.06,          // 6% - Standard
-  burn_deflation: 0.04,        // 4% - Lower
-  adoption: 0.10,              // 10% - Standard
-  audit: 0.02                  // 2% - Lower - SPL tokens rarely audited
-};
+  distribution: 0.056,         // 5.6% - Normalized from 6%
+  burn_deflation: 0.037,       // 3.7% - Normalized from 4%
+  adoption: 0.093,             // 9.3% - Normalized from 10%
+  audit: 0.019                 // 1.9% - Normalized from 2%
+}; // TOTAL: 100% ✅
 
 /**
  * Cardano-specific weights
@@ -86,28 +86,36 @@ export const CARDANO_WEIGHTS: FactorWeights = {
 };
 
 /**
- * Get weights based on token type and chain
+ * Get weights based on token type and chain (with automatic normalization)
  */
 export function getWeights(
   isMeme: boolean,
   chainType: ChainType = ChainType.EVM
 ): FactorWeights {
   
+  let baseWeights: FactorWeights;
+  
   // Meme tokens always use meme weights regardless of chain
   if (isMeme) {
-    return MEME_WEIGHTS;
+    baseWeights = MEME_WEIGHTS;
+  } else {
+    // Chain-specific weights for utility tokens
+    switch (chainType) {
+      case ChainType.SOLANA:
+        baseWeights = SOLANA_WEIGHTS;
+        break;
+      case ChainType.CARDANO:
+        baseWeights = CARDANO_WEIGHTS;
+        break;
+      case ChainType.EVM:
+      default:
+        baseWeights = STANDARD_WEIGHTS;
+        break;
+    }
   }
   
-  // Chain-specific weights for utility tokens
-  switch (chainType) {
-    case ChainType.SOLANA:
-      return SOLANA_WEIGHTS;
-    case ChainType.CARDANO:
-      return CARDANO_WEIGHTS;
-    case ChainType.EVM:
-    default:
-      return STANDARD_WEIGHTS;
-  }
+  // Always normalize to ensure 100% total
+  return normalizeWeights(baseWeights);
 }
 
 /**
@@ -119,20 +127,62 @@ export function getWeightingRationale(
 ): string {
   
   if (isMeme) {
-    return 'Meme token weights: Prioritizes whale concentration (22%), liquidity depth (20%), and social adoption (15%). Meme coins are sentiment-driven and vulnerable to influencer manipulation.';
+    return 'Meme token weights: Prioritizes whale concentration (24%), liquidity depth (20%), and social adoption (15%). Meme coins are sentiment-driven and vulnerable to influencer manipulation.';
   }
   
   switch (chainType) {
     case ChainType.SOLANA:
-      return 'Solana weights: Prioritizes contract control (35%) due to unique freeze/mint authority risks. Solana SPL tokens can have authorities that lock user wallets.';
+      return 'Solana weights: Prioritizes contract control (32.4%) due to unique freeze/mint authority risks. Solana SPL tokens can have authorities that lock user wallets.';
     
     case ChainType.CARDANO:
       return 'Cardano weights: Prioritizes supply policy (25%) as Cardano uses time-locked minting policies. Once a policy expires or is locked, supply is fixed forever.';
     
     case ChainType.EVM:
     default:
-      return 'Standard weights: Balanced approach prioritizing supply dilution (20%), holder concentration (18%), and liquidity depth (16%) for utility tokens.';
+      return 'Standard weights: Balanced approach prioritizing holder concentration (20%), supply dilution (18%), and liquidity depth (16%) for utility tokens.';
   }
+}
+
+/**
+ * Validate that weights total approximately 100%
+ */
+function validateWeights(weights: FactorWeights, name: string): void {
+  const total = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
+  const percentage = total * 100;
+  
+  if (Math.abs(total - 1.0) > 0.01) { // Allow 1% tolerance
+    console.warn(`⚠️ [${name}] Weights total ${percentage.toFixed(1)}% (should be 100%)`);
+    
+    // Log individual weights for debugging
+    console.log(`[${name}] Weight breakdown:`);
+    for (const [key, value] of Object.entries(weights)) {
+      console.log(`  ${key}: ${(value * 100).toFixed(1)}%`);
+    }
+  } else {
+    console.log(`✅ [${name}] Weights validated: ${percentage.toFixed(1)}%`);
+  }
+}
+
+/**
+ * Normalize weights to ensure they total exactly 1.0 (100%)
+ */
+function normalizeWeights(weights: FactorWeights): FactorWeights {
+  const total = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
+  
+  if (Math.abs(total - 1.0) < 0.001) {
+    // Already normalized (within 0.1% tolerance)
+    return weights;
+  }
+  
+  console.log(`[Weights] Normalizing from ${(total * 100).toFixed(1)}% to 100%`);
+  
+  // Scale all weights proportionally
+  const normalized: FactorWeights = {} as FactorWeights;
+  for (const [key, value] of Object.entries(weights)) {
+    normalized[key as keyof FactorWeights] = value / total;
+  }
+  
+  return normalized;
 }
 
 /**
