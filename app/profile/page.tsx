@@ -111,17 +111,27 @@ export default function ProfilePage() {
   }
 
   const handleExportData = async () => {
+    if (!user) {
+      showError("Not Authenticated", "Please log in to export your data.")
+      return
+    }
+    
     setExportingData(true)
     try {
+      // Get the user's ID token for authentication
+      const token = await user.getIdToken()
+      
       const response = await fetch('/api/user/export-data', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       })
 
       if (!response.ok) {
-        throw new Error('Failed to export data')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to export data')
       }
 
       const data = await response.json()
@@ -129,15 +139,15 @@ export default function ProfilePage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `tokenguard-data-${new Date().toISOString().split('T')[0]}.json`
+      a.download = `tokenomics-lab-data-${new Date().toISOString().split('T')[0]}.json`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
       showSuccess("Data Exported", "Your data has been exported successfully!")
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error exporting data:', error)
-      showError("Export Failed", "Failed to export data. Please try again.")
+      showError("Export Failed", error?.message || "Failed to export data. Please try again.")
     } finally {
       setExportingData(false)
     }

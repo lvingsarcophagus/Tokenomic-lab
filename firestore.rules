@@ -123,12 +123,14 @@ service cloud.firestore {
     // Token cache (read-only for users, write for system/admin)
     match /token_cache/{tokenAddress} {
       allow read: if isAuthenticated();
+      allow create, update: if request.auth == null; // Allow server-side writes
       allow write: if isAdmin();
     }
     
     // Token cache collection (alternative naming)
     match /tokenCache/{tokenAddress} {
       allow read: if isAuthenticated();
+      allow create, update: if request.auth == null; // Allow server-side writes
       allow write: if isAdmin();
     }
     

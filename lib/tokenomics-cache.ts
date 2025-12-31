@@ -87,6 +87,7 @@ export async function setCachedTokenData(
   data: Partial<CachedTokenData>
 ): Promise<void> {
   try {
+    console.log(`[Cache] Attempting to cache data for ${address}`)
     const db = getAdminDb()
     const cacheRef = db.collection('tokenCache').doc(address.toLowerCase())
 
@@ -102,24 +103,44 @@ export async function setCachedTokenData(
       queryCount: (existingData?.queryCount || 0) + 1,
     }
 
-    // Only add optional fields if they have values
-    if (data.priceData || existingData?.priceData) {
-      cacheData.priceData = data.priceData || existingData?.priceData
-    }
-    if (data.securityData || existingData?.securityData) {
-      cacheData.securityData = data.securityData || existingData?.securityData
-    }
-    if (data.tokenomics || existingData?.tokenomics) {
-      cacheData.tokenomics = data.tokenomics || existingData?.tokenomics
-    }
-    if (data.aiSummary || existingData?.aiSummary) {
-      cacheData.aiSummary = data.aiSummary || existingData?.aiSummary
+    // Add Firestore timestamp fields for admin viewer compatibility
+    const now = new Date()
+    const cacheDataWithTimestamps = {
+      ...cacheData,
+      cachedAt: now,
+      expiresAt: new Date(now.getTime() + CACHE_TTL_MS),
+      hitCount: cacheData.queryCount,
+      lastAccessed: now
     }
 
-    await cacheRef.set(cacheData, { merge: true })
-    console.log(`✅ Cached data for ${address}`)
+    // Only add optional fields if they have values
+    if (data.priceData || existingData?.priceData) {
+      cacheDataWithTimestamps.priceData = data.priceData || existingData?.priceData
+    }
+    if (data.securityData || existingData?.securityData) {
+      cacheDataWithTimestamps.securityData = data.securityData || existingData?.securityData
+    }
+    if (data.tokenomics || existingData?.tokenomics) {
+      cacheDataWithTimestamps.tokenomics = data.tokenomics || existingData?.tokenomics
+    }
+    if (data.aiSummary || existingData?.aiSummary) {
+      cacheDataWithTimestamps.aiSummary = data.aiSummary || existingData?.aiSummary
+    }
+
+    console.log(`[Cache] Saving cache data:`, {
+      address: cacheDataWithTimestamps.address,
+      name: cacheDataWithTimestamps.name,
+      symbol: cacheDataWithTimestamps.symbol,
+      hasPriceData: !!cacheDataWithTimestamps.priceData,
+      hasSecurityData: !!cacheDataWithTimestamps.securityData,
+      hasTokenomics: !!cacheDataWithTimestamps.tokenomics,
+      hasAiSummary: !!cacheDataWithTimestamps.aiSummary
+    })
+
+    await cacheRef.set(cacheDataWithTimestamps, { merge: true })
+    console.log(`✅ Successfully cached data for ${address}`)
   } catch (error) {
-    console.error('Set cache error:', error)
+    console.error(`❌ Failed to cache data for ${address}:`, error)
     // Don't throw - caching is optional
   }
 }

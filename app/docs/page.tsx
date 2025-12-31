@@ -81,7 +81,7 @@ export default function DocsPage() {
               <span className="text-white/90 font-mono text-sm">05. Supported Blockchains</span>
             </a>
             <a href="#premium" className="block p-4 border border-white/20 hover:border-white/40 bg-black/40 backdrop-blur-sm transition-all">
-              <span className="text-white/90 font-mono text-sm">06. Premium Features</span>
+              <span className="text-white/90 font-mono text-sm">06. Pricing Plans</span>
             </a>
             <a href="#watchlist" className="block p-4 border border-white/20 hover:border-white/40 bg-black/40 backdrop-blur-sm transition-all">
               <span className="text-white/90 font-mono text-sm">07. Watchlist Management</span>
@@ -430,90 +430,172 @@ export default function DocsPage() {
         </div>
       </section>
 
-      {/* Premium Features */}
+      {/* Pricing Plans */}
       <section id="premium" className="relative px-6 py-16 border-b border-white/10">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-white mb-8 font-mono">06. PREMIUM FEATURES</h2>
+          <h2 className="text-3xl font-bold text-white mb-8 font-mono">06. PRICING PLANS</h2>
           
           <div className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Free Tier */}
               <Card className="bg-black/60 backdrop-blur-lg border border-white/20">
                 <CardHeader>
-                  <CardTitle className="text-white/60 font-mono text-sm">FREE TIER</CardTitle>
+                  <CardTitle className="text-white/60 font-mono text-sm">FREE (PUBLIC UTILITY)</CardTitle>
+                  <div className="text-2xl font-bold text-white font-mono">$0.00/month</div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2 text-white/70 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>10 scans per day</span>
+                    <span>Honeypot Check</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/70 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Basic risk analysis</span>
+                    <span>Risk Score (0-100)</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/70 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>5 watchlist tokens</span>
+                    <span>Standard Charts</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/70 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>2 dashboard charts</span>
+                    <span>PDF Export (watermarked)</span>
                   </div>
-                  <div className="flex items-center gap-2 text-white/70 font-mono text-sm">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Multi-chain support</span>
+                  <div className="flex items-center gap-2 text-red-400 font-mono text-sm">
+                    <span className="w-4 h-4 text-center">✗</span>
+                    <span>AI Risk Analyst</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-red-400 font-mono text-sm">
+                    <span className="w-4 h-4 text-center">✗</span>
+                    <span>Portfolio Audit</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-red-400 font-mono text-sm">
+                    <span className="w-4 h-4 text-center">✗</span>
+                    <span>Smart Alerts</span>
+                  </div>
+                  <div className="text-yellow-400 font-mono text-xs mt-2">
+                    ⚠️ Ad-supported interface
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-white/10 to-transparent backdrop-blur-lg border border-white/40">
+              {/* Pay-As-You-Go Tier */}
+              <Card className="bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-lg border border-blue-500/30">
                 <CardHeader>
-                  <CardTitle className="text-white font-mono text-sm flex items-center gap-2">
+                  <CardTitle className="text-blue-400 font-mono text-sm flex items-center gap-2">
                     <Zap className="w-4 h-4" />
-                    PREMIUM TIER
+                    PAY-AS-YOU-GO (x402)
                   </CardTitle>
+                  <div className="text-2xl font-bold text-white font-mono">Micropayments</div>
+                  <div className="text-blue-400 font-mono text-xs">USDC on Base</div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span>Unlimited scans</span>
+                    <span>All Free features</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span>AI-powered insights</span>
+                    <span>AI Risk Analyst ($0.10/report)</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span>Unlimited watchlist</span>
+                    <span>Portfolio Audit ($0.05/token)</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span>4 advanced charts</span>
+                    <span>Enhanced Charts</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span>Real-time alerts</span>
+                    <span>Unbranded PDF Export</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span>Historical analytics</span>
+                    <span>Ad-Free (24h after payment)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-red-400 font-mono text-sm">
+                    <span className="w-4 h-4 text-center">✗</span>
+                    <span>Smart Alerts</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pro Plan */}
+              <Card className="bg-gradient-to-br from-white/10 to-transparent backdrop-blur-lg border border-white/40">
+                <CardHeader>
+                  <CardTitle className="text-white font-mono text-sm flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    PRO PLAN (SUBSCRIPTION)
+                  </CardTitle>
+                  <div className="text-2xl font-bold text-white font-mono">$29.00/month</div>
+                  <div className="text-white/60 font-mono text-xs">Active daily traders</div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <span>Unlimited Access</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
                     <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span>Priority support</span>
+                    <span>Smart Alerts (24/7 monitoring)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <span>Custom Branding</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <span>Enhanced Charts</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <span>Always Ad-Free</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-white/90 font-mono text-sm">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <span>Priority Support</span>
+                  </div>
+                  <div className="text-green-400 font-mono text-xs mt-2">
+                    ✓ Best value for power users
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="bg-black/60 backdrop-blur-lg border border-white/20">
+            {/* x402 Protocol Explanation */}
+            <Card className="bg-gradient-to-br from-blue-500/5 to-transparent backdrop-blur-lg border border-blue-500/20">
               <CardHeader>
-                <CardTitle className="text-white font-mono">Upgrade to Premium</CardTitle>
+                <CardTitle className="text-blue-400 font-mono flex items-center gap-2">
+                  <Zap className="w-5 h-5" />
+                  What is x402 Protocol?
+                </CardTitle>
               </CardHeader>
               <CardContent className="text-white/70 font-mono text-sm space-y-4">
-                <p>Ready to unlock all features? Upgrade from your profile page or dashboard.</p>
+                <p>
+                  The x402 protocol enables micropayments for individual features without monthly subscriptions. 
+                  Perfect for casual traders who only need occasional AI analysis or portfolio audits.
+                </p>
+                <div className="bg-black/40 p-4 border border-white/10">
+                  <h4 className="text-white mb-3">How it works:</h4>
+                  <ol className="list-decimal list-inside space-y-2">
+                    <li>Connect your wallet (supports Base network)</li>
+                    <li>Pay with USDC for individual features</li>
+                    <li>No monthly commitments or subscriptions</li>
+                    <li>Payments as low as $0.05 per token audit</li>
+                  </ol>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20">
+              <CardHeader>
+                <CardTitle className="text-white font-mono">Choose Your Plan</CardTitle>
+              </CardHeader>
+              <CardContent className="text-white/70 font-mono text-sm space-y-4">
+                <p>Start with Free to test the platform, upgrade to Pay-As-You-Go for occasional use, or go Pro for unlimited access.</p>
                 <Link href="/pricing">
                   <Button className="bg-white text-black hover:bg-white/90 font-mono">
-                    VIEW PRICING
+                    VIEW DETAILED PRICING
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
@@ -584,8 +666,20 @@ export default function DocsPage() {
               <CardContent className="text-white/70 font-mono text-sm">
                 <p>
                   Our 10-factor algorithm analyzes real-time data from multiple sources (Mobula, Moralis, GoPlus, Helius). 
-                  Confidence scores range from 70-96% depending on data availability. Premium users get higher confidence 
-                  scores due to additional data sources.
+                  Confidence scores range from 70-96% depending on data availability. Pro users get the highest confidence 
+                  scores due to additional data sources and 24/7 monitoring.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/60 backdrop-blur-lg border border-white/20">
+              <CardHeader>
+                <CardTitle className="text-white font-mono text-base">How does the x402 micropayment system work?</CardTitle>
+              </CardHeader>
+              <CardContent className="text-white/70 font-mono text-sm">
+                <p>
+                  x402 enables micropayments using USDC on Base network. Connect your wallet, pay only for features you use 
+                  (AI reports, portfolio audits) without monthly subscriptions. Perfect for casual traders.
                 </p>
               </CardContent>
             </Card>
@@ -634,8 +728,9 @@ export default function DocsPage() {
               </CardHeader>
               <CardContent className="text-white/70 font-mono text-sm">
                 <p>
-                  Every scan fetches fresh data from APIs in real-time. Watchlist tokens are updated every 
-                  15 minutes for Premium users, every hour for Free users. Historical charts update daily.
+                  Every scan fetches fresh data from APIs in real-time. Watchlist tokens update every 
+                  15 minutes for Pro users, every hour for Pay-As-You-Go users, and daily for Free users. 
+                  Historical charts update daily across all tiers.
                 </p>
               </CardContent>
             </Card>
@@ -655,11 +750,11 @@ export default function DocsPage() {
 
             <Card className="bg-black/60 backdrop-blur-lg border border-white/20">
               <CardHeader>
-                <CardTitle className="text-white font-mono text-base">Can I cancel my Premium subscription?</CardTitle>
+                <CardTitle className="text-white font-mono text-base">Can I cancel my Pro Plan subscription?</CardTitle>
               </CardHeader>
               <CardContent className="text-white/70 font-mono text-sm">
                 <p>
-                  Yes, you can cancel anytime from your profile settings. You'll retain Premium access until 
+                  Yes, you can cancel anytime from your profile settings. You'll retain Pro access until 
                   the end of your billing period, then automatically revert to the Free tier.
                 </p>
               </CardContent>

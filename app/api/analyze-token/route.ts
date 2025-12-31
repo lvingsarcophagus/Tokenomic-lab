@@ -413,20 +413,39 @@ export async function POST(req: NextRequest) {
         // Don't fail the request if Firestore fails
       }
 
-      // Cache the results for future automatic refreshes
+      // Cache the complete analysis results for future use
       try {
-        if (result.ai_summary) {
-          await setCachedTokenData(tokenAddress, {
-            address: tokenAddress,
-            name: metadata?.tokenName || tokenAddress.substring(0, 8),
-            symbol: metadata?.tokenSymbol || 'TOKEN',
-            aiSummary: result.ai_summary,
-            chainId: chainId
-          })
-          console.log(`✅ Cached AI summary for ${tokenAddress}`)
-        }
+        await setCachedTokenData(tokenAddress, {
+          address: tokenAddress,
+          name: metadata?.tokenName || tokenAddress.substring(0, 8),
+          symbol: metadata?.tokenSymbol || 'TOKEN',
+          chainId: chainId,
+          priceData: {
+            price: 0, // Price not available in TokenData interface
+            marketCap: tokenData.marketCap || 0,
+            volume24h: tokenData.volume24h || 0,
+            priceChange24h: 0, // Price change not available in TokenData interface
+            liquidity: tokenData.liquidityUSD || 0,
+            circulatingSupply: tokenData.circulatingSupply || 0,
+            totalSupply: tokenData.totalSupply || 0
+          },
+          securityData: {
+            riskScore: result.overall_risk_score || 0,
+            riskLevel: result.risk_level || 'UNKNOWN',
+            issues: result.critical_flags || [],
+            isHoneypot: tokenData.is_honeypot || false
+          },
+          tokenomics: {
+            holderCount: tokenData.holderCount || 0,
+            topHoldersPercentage: tokenData.top10HoldersPct || 0,
+            burnMechanism: (tokenData.burnedSupply || 0) > 0,
+            maxSupply: tokenData.maxSupply || undefined
+          },
+          aiSummary: result.ai_summary
+        })
+        console.log(`✅ Cached complete analysis data for ${tokenAddress}`)
       } catch (cacheError) {
-        console.error('Failed to cache AI summary:', cacheError)
+        console.error('Failed to cache analysis data:', cacheError)
         // Don't fail the request if caching fails
       }
     }
